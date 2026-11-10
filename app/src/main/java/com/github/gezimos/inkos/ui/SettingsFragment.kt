@@ -405,34 +405,7 @@ class SettingsFragment : Fragment() {
                                     }
                                 },
                                 showStatusBar = uiState.showStatusBar,
-                                pageIndicator = {
-                                    val interactionSource = remember { MutableInteractionSource() }
-                                    val isFocused = interactionSource.collectIsFocusedAsState().value
-                                    val textColor = Theme.colors.text
-                                    val bgColor = Theme.colors.background
-                                    Text(
-                                        text = stringResource(R.string.buy_me_a_coffee),
-                                        style = SettingsTheme.typography.title,
-                                        fontSize = if (settingsSize > 0) (settingsSize * 1.2).sp else TextUnit.Unspecified,
-                                        color = if (isFocused) bgColor else textColor,
-                                        modifier = Modifier
-                                            .padding(start = 8.dp)
-                                            .clip(supportButtonShape)
-                                            .background(if (isFocused) textColor else Color.Transparent)
-                                            .border(
-                                                width = 2.dp,
-                                                color = textColor,
-                                                shape = supportButtonShape
-                                            )
-                                            .clickable(
-                                                interactionSource = interactionSource,
-                                                indication = null
-                                            ) {
-                                                try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://buymeacoffee.com/gezimos".toUri())) } catch (_: Exception) {}
-                                            }
-                                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                                    )
-                                },
+                                pageIndicator = {},
                                 titleFontSize = if (settingsSize > 0) (settingsSize * 1.5).sp else TextUnit.Unspecified
                             )
                         } else {
