@@ -277,7 +277,8 @@ object IconUtility {
     }
 
     fun isSyntheticPackage(packageName: String): Boolean {
-        return packageName.startsWith("com.inkos.") || packageName.startsWith("app.inkos")
+        return packageName.startsWith("com.inkos.") ||
+            packageName.startsWith("app.inkos") || packageName.startsWith("app.binkos")
     }
 
     fun isInkOSInternalShortcut(shortcutId: String): Boolean {

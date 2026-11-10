@@ -670,7 +670,9 @@ class RecentsFragment : Fragment() {
                 .filterNot { app ->
                     // Exclude inkOS and inkOS debug from recents
                     app.activityPackage == "app.inkos" ||
-                    app.activityPackage == "app.inkos.debug"
+            app.activityPackage == "app.binkos" ||
+                    app.activityPackage == "app.inkos.debug" ||
+            app.activityPackage == "app.binkos.debug"
                 }
                 .mapNotNull { app ->
                     usageMap[app.activityPackage]?.let { (lastUsed, totalTime) ->

@@ -3638,7 +3638,7 @@ private fun HomeAppIconContent(
             )
         }
     } else {
-        val effectivePackage = if (isPlaceholder) "app.inkos" else app.activityPackage
+        val effectivePackage = if (isPlaceholder) "app.binkos" else app.activityPackage
         val tintArgb = remember(systemTintedIconTintOverride, labelColor, iconSourceMode) {
             if (IconShapeUtility.isTintedMode(iconSourceMode)) (systemTintedIconTintOverride ?: labelColor).toArgb() else 0
         }

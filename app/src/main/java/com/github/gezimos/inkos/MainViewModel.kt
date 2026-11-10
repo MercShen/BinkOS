@@ -335,7 +335,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     val startTime = cal.timeInMillis
                     val installedPackages = appsRepository.appList.value
                         .map { it.activityPackage }
-                        .filterNot { it == "app.inkos" || it == "app.inkos.debug" || it == appContext.packageName }
+                        .filterNot {
+                            it == "app.inkos" || it == "app.inkos.debug" ||
+                                it == "app.binkos" || it == "app.binkos.debug" ||
+                                it == appContext.packageName
+                        }
                         .toSet()
                     val usageMap = usm.queryUsageStats(android.app.usage.UsageStatsManager.INTERVAL_DAILY, startTime, endTime)
                         .filter { it.totalTimeInForeground > 0 && it.lastTimeUsed > 0 }

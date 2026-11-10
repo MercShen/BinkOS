@@ -12,11 +12,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "app.inkos"
+        applicationId = "app.binkos"
         minSdk = 26
         targetSdk = 36
-        versionCode = 101013
-        versionName = "0.6"
+        versionCode = 1
+        versionName = "0.1"
     }
 
     dependenciesInfo {

@@ -149,7 +149,7 @@ class Migration(val context: Context) {
                         continue
                     }
                     val newShortcutId = legacyToShortcutId[pkg] ?: continue
-                    editor.putString(pkgKey, "app.inkos")
+                    editor.putString(pkgKey, BuildConfig.APPLICATION_ID)
                     editor.putString("APP_SHORTCUT_ID_$slot", newShortcutId)
                     editor.putString("APP_ACTIVITY_$slot", "com.github.gezimos.inkos.MainActivity")
                 }
