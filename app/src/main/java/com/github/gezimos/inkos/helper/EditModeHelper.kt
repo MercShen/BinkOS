@@ -1085,7 +1085,9 @@ object EditModeHelper {
                             label = "Page Indicator",
                             options = pagerOptions,
                             currentIndex = uiState.pageIndicatorAlignment.coerceIn(0, 1),
-                            showAlignment = true
+                            showAlignment = true,
+                            // 0=Left → 对齐图标左；1=Right → 对齐图标右（不再出现居中图标）
+                            alignmentIndexFor = { if (it == 0) 0 else 2 }
                         ) { nextIndex ->
                             vm.setPageIndicatorAlignment(nextIndex)
                             onUpdate()
@@ -2581,7 +2583,7 @@ object EditModeHelper {
     }
 
     @Composable
-    private fun CycleRow(label: String, options: Array<String>, currentIndex: Int, showAlignment: Boolean = false, onCycle: (Int) -> Unit) {
+    private fun CycleRow(label: String, options: Array<String>, currentIndex: Int, showAlignment: Boolean = false, alignmentIndexFor: ((Int) -> Int)? = null, onCycle: (Int) -> Unit) {
         var idx by androidx.compose.runtime.remember(currentIndex) { mutableStateOf(currentIndex.coerceIn(0, options.size - 1)) }
         val interactionSource = remember { MutableInteractionSource() }
         val isFocused = interactionSource.collectIsFocusedAsState().value
@@ -2616,7 +2618,7 @@ object EditModeHelper {
             if (showAlignment) {
                 with(SettingsComposable) {
                     AlignmentIcon(
-                        alignment = idx,
+                        alignment = alignmentIndexFor?.invoke(idx) ?: idx,
                         tint = if (isHighlighted) prefBackgroundColor else prefTextColor
                     )
                 }
