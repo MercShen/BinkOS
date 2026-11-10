@@ -179,6 +179,32 @@ object BigmeEink {
         )
     }
 
+    /**
+     * 全刷（整屏清残影）。走厂商的 static `XrzEinkManager.forceGlobalRefresh(int)`：
+     * native 侧会写 `vendor.xrz.force_global_refresh_mode` 并触发一次整屏重绘，
+     * HWC 随之执行 clean。实测系统自己的全刷用的 mode 是 0xb1（=177，HD）。
+     *
+     * @param mode 刷新波形，建议 [MODE_HD]（177，系统全刷实测值）或 [MODE_CLEAN]（176）
+     */
+    fun forceGlobalRefresh(context: Context, mode: Int = MODE_HD): Boolean {
+        if (!init(context)) return false
+        return try {
+            val clazz = Class.forName(CLASS_NAME)
+            val method = clazz.getMethod("forceGlobalRefresh", Int::class.javaPrimitiveType)
+                .apply { isAccessible = true }
+            method.invoke(null, mode)
+            Log.i(TAG, "forceGlobalRefresh($mode) invoked")
+            true
+        } catch (t: Throwable) {
+            Log.w(TAG, "forceGlobalRefresh failed: ${t.javaClass.simpleName}: ${t.message}")
+            false
+        }
+    }
+
+    /** 系统全刷实测使用的波形（hwcomposer: handle delay clean,globalRefreshMode=b1）。 */
+    const val MODE_HD = 177
+    const val MODE_CLEAN = 176
+
     private fun recentSwipe(): Direction? =
         lastSwipe?.takeIf { SystemClock.uptimeMillis() - lastSwipeAt <= SWIPE_WINDOW_MS }
 
