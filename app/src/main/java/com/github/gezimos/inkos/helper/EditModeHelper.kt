@@ -1079,12 +1079,15 @@ object EditModeHelper {
                             onUpdate()
                         }
 
-                        SettingRow(label = "Margin/Offset", value = "${uiState.topWidgetMargin}/${uiState.bottomWidgetMargin}/${uiState.homeAppsYOffset}") {
+                        val shiftX = (uiState.homeAppsInsetStart - uiState.homeAppsInsetEnd) / 2
+                        val shiftY = (uiState.homeAppsInsetTop - uiState.homeAppsInsetBottom) / 2
+                        SettingRow(label = "Margin/Offset", value = "${uiState.topWidgetMargin}/${uiState.bottomWidgetMargin}/X${shiftX}/Y${shiftY}") {
                             currentSheet?.dismiss()
                             showDialog(context, prefs) {
                                 var topMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.topWidgetMargin) }
                                 var bottomMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.bottomWidgetMargin) }
-                                var yOffset by remember { androidx.compose.runtime.mutableIntStateOf(prefs.homeAppsYOffset) }
+                                var xOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftX) }
+                                var yOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftY) }
 
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Text(
@@ -1130,6 +1133,25 @@ object EditModeHelper {
                                     )
 
                                     Text(
+                                        "Home apps X-offset: $xOffset",
+                                        style = SettingsTheme.typography.item,
+                                        color = Theme.colors.text
+                                    )
+                                    com.github.gezimos.inkos.ui.dialogs.StepperSlider(
+                                        value = xOffset,
+                                        onValueChange = { value ->
+                                            xOffset = value
+                                            try {
+                                                val vmRef = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
+                                                vmRef.setHomeAppsShiftX(value)
+                                            } catch (_: Exception) {}
+                                            onUpdate()
+                                        },
+                                        minValue = -400,
+                                        maxValue = 400
+                                    )
+
+                                    Text(
                                         "Home apps Y-offset: $yOffset",
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
@@ -1140,14 +1162,12 @@ object EditModeHelper {
                                             yOffset = value
                                             try {
                                                 val vmRef = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
-                                                vmRef.setHomeAppsYOffset(value)
-                                            } catch (_: Exception) {
-                                                prefs.homeAppsYOffset = value
-                                            }
+                                                vmRef.setHomeAppsShiftY(value)
+                                            } catch (_: Exception) {}
                                             onUpdate()
                                         },
-                                        minValue = Constants.MIN_HOME_APPS_Y_OFFSET,
-                                        maxValue = uiState.maxHomeAppsYOffset
+                                        minValue = -400,
+                                        maxValue = 400
                                     )
                                 }
                             }
