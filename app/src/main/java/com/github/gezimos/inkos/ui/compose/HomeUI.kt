@@ -3006,7 +3006,7 @@ private fun HomeAppsPager(
     val appNameHeight = remember(state.appTextSize, screenScale, pagerAppsFontFamily, textMeasurer) {
         try {
             val measuredHeight = textMeasurer.measure(
-                text = AnnotatedString("Ag"),
+                text = AnnotatedString("Ag中"),
                 style = TextStyle(fontSize = scaledAppTextSize.sp, fontFamily = pagerAppsFontFamily)
             ).size.height
             with(density) { measuredHeight.toDp() }

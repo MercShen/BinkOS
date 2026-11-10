@@ -312,7 +312,7 @@ fun RecentAppItem(
     val appNameHeight = remember(uiState.appDrawerSize, appFontFamily, screenScale, textMeasurer) {
         try {
             val measuredHeight = textMeasurer.measure(
-                text = AnnotatedString("Ag"),
+                text = AnnotatedString("Ag中"),
                 style = TextStyle(fontSize = uiState.appDrawerSize.sp.scaled(screenScale), fontFamily = appFontFamily)
             ).size.height
             with(density) { measuredHeight.toDp() }
@@ -522,7 +522,7 @@ fun RecentAppPlaceholderItem(uiState: AppsDrawerUiState, isLastItem: Boolean = f
     val placeholderHeight = remember(uiState.appDrawerSize, placeholderFontFamily, screenScale, placeholderTextMeasurer) {
         try {
             val measured = placeholderTextMeasurer.measure(
-                text = AnnotatedString("Ag"),
+                text = AnnotatedString("Ag中"),
                 style = TextStyle(fontSize = uiState.appDrawerSize.sp.scaled(screenScale), fontFamily = placeholderFontFamily)
             ).size.height
             with(density) { measured.toDp() }

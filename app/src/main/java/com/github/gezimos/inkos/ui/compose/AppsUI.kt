@@ -145,7 +145,7 @@ fun AppsDrawerLayout(
     val iconHeight: Dp = remember(uiState.appDrawerSize, appFontFamily, screenScale, density) {
         try {
             val measuredHeight = textMeasurer.measure(
-                text = AnnotatedString("Ag"),
+                text = AnnotatedString("Ag中"),
                 style = TextStyle(fontSize = uiState.appDrawerSize.sp.scaled(screenScale), fontFamily = appFontFamily)
             ).size.height
             with(density) { measuredHeight.toDp() }
