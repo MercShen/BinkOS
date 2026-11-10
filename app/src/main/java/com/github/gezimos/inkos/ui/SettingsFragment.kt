@@ -915,11 +915,23 @@ class SettingsFragment : Fragment() {
                 }
             )
             SettingsSelect(
-                title = stringResource(R.string.home_apps_y_offset), option = homeUiState.homeAppsYOffset.toString(), fontSize = titleFontSize,
-                description = stringResource(R.string.desc_home_y_offset),
+                title = "Home apps X offset",
+                option = ((homeUiState.homeAppsInsetStart - homeUiState.homeAppsInsetEnd) / 2).toString(),
+                fontSize = titleFontSize,
+                description = "水平偏移（与编辑模式拖动联动）",
                 onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), getString(R.string.home_apps_y_offset),
-                        Constants.MIN_HOME_APPS_Y_OFFSET, homeUiState.maxHomeAppsYOffset, homeUiState.homeAppsYOffset) { viewModel.setHomeAppsYOffset(it) }
+                    dialogBuilder.showSliderDialog(requireContext(), "Home apps X offset",
+                        -400, 400, (homeUiState.homeAppsInsetStart - homeUiState.homeAppsInsetEnd) / 2) { viewModel.setHomeAppsShiftX(it) }
+                }
+            )
+            SettingsSelect(
+                title = "Home apps Y offset",
+                option = ((homeUiState.homeAppsInsetTop - homeUiState.homeAppsInsetBottom) / 2).toString(),
+                fontSize = titleFontSize,
+                description = "垂直偏移（与编辑模式拖动联动）",
+                onClick = {
+                    dialogBuilder.showSliderDialog(requireContext(), "Home apps Y offset",
+                        -400, 400, (homeUiState.homeAppsInsetTop - homeUiState.homeAppsInsetBottom) / 2) { viewModel.setHomeAppsShiftY(it) }
                 }
             )
             SettingsSelect(

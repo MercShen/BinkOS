@@ -2233,6 +2233,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         applyHomeAppsInsets(s.homeAppsInsetTop, s.homeAppsInsetBottom, s.homeAppsInsetStart, v)
     }
 
+    /** 水平偏移（dp）→ 左右边距；与拖动共用同一套换算。 */
+    fun setHomeAppsShiftX(shiftDp: Int) {
+        val (wDp, _) = screenDp()
+        val availW = (wDp - 64).coerceAtLeast(120)
+        val maxShift = ((availW - 96) / 2f).coerceAtLeast(0f)
+        val x = shiftDp.toFloat().coerceIn(-maxShift, maxShift)
+        val start = (x.coerceAtLeast(0f) * 2f).toInt()
+        val end = ((-x).coerceAtLeast(0f) * 2f).toInt()
+        val s = _homeUiState.value
+        applyHomeAppsInsets(s.homeAppsInsetTop, s.homeAppsInsetBottom, start, end)
+    }
+
+    /** 垂直偏移（dp）→ 上下边距；与拖动共用同一套换算。 */
+    fun setHomeAppsShiftY(shiftDp: Int) {
+        val (_, hDp) = screenDp()
+        val availH = (hDp - 64).coerceAtLeast(120)
+        val maxShift = ((availH - 120) / 2f).coerceAtLeast(0f)
+        val y = shiftDp.toFloat().coerceIn(-maxShift, maxShift)
+        val top = (y.coerceAtLeast(0f) * 2f).toInt()
+        val bottom = ((-y).coerceAtLeast(0f) * 2f).toInt()
+        val s = _homeUiState.value
+        applyHomeAppsInsets(top, bottom, s.homeAppsInsetStart, s.homeAppsInsetEnd)
+    }
     fun resetHomeAppsInsets() {
         applyHomeAppsInsets(0, 0, 0, 0)
     }
