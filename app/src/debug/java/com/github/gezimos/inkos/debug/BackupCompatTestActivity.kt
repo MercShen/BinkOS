@@ -18,6 +18,11 @@ class BackupCompatTestActivity : Activity() {
                 Log.d("BackupTest", "alias=" + pkg)
                 return finish()
             }
+            if (intent.getBooleanExtra("gestures", false)) {
+                val pr = Prefs(applicationContext)
+                Log.d("BackupTest", "gestures up=" + pr.swipeUpAction + " down=" + pr.swipeDownAction + " right=" + pr.swipeRightAction + " short=" + pr.shortSwipeThresholdRatio + " long=" + pr.longSwipeThresholdRatio + " edgeBack=" + pr.edgeSwipeBackEnabled)
+                return finish()
+            }
             if (intent.getBooleanExtra("checkwall", false)) {
                 val pr = Prefs(applicationContext)
                 val wp = pr.inkosWallpaperPath
