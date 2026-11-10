@@ -440,14 +440,10 @@ class HomeFragmentCompose : Fragment() {
                             }),
                             // 编辑模式：手势动作让位给「拖动 App 区域」布局调整
                             onSwipeUp = if (isEditMode || prefs.swipeUpAction == Action.Disabled) null else ({
-                                {
-                                    try { GestureHelper.handleSwipeUp(requireContext(), this@HomeFragmentCompose, viewModel, prefs) } catch (_: Exception) {}
-                                }
+                                try { GestureHelper.handleSwipeUp(requireContext(), this@HomeFragmentCompose, viewModel, prefs) } catch (_: Exception) {}
                             }),
                             onSwipeDown = if (isEditMode || prefs.swipeDownAction == Action.Disabled) null else ({
-                                {
-                                    try { GestureHelper.handleSwipeDown(requireContext(), this@HomeFragmentCompose, viewModel, prefs) } catch (_: Exception) {}
-                                }
+                                try { GestureHelper.handleSwipeDown(requireContext(), this@HomeFragmentCompose, viewModel, prefs) } catch (_: Exception) {}
                             }),
                             // 编辑模式下不响应竖向翻页，把竖向拖动让给「拖动 App 区域调整边距」
                             onVerticalPageMove = if (isEditMode) null else ({ delta: Int ->
