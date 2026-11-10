@@ -362,11 +362,12 @@ fun HomeUI(
             )
 
             if (showEditMode) {
+                // 放在区域右上角，避免挡住 App 行的点击（行是整宽的）
                 HomeAppsMoveHandle(
                     onDrag = { dx, dy -> callbacks.onAppsAreaDrag(dx, dy) },
                     modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = state.homeAppsYOffset.dp)
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-4).dp, y = 4.dp)
                 )
             }
         }
