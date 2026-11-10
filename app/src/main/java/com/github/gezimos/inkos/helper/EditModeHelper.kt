@@ -1081,7 +1081,7 @@ object EditModeHelper {
 
                         val shiftX = (uiState.homeAppsInsetStart - uiState.homeAppsInsetEnd) / 2
                         val shiftY = (uiState.homeAppsInsetTop - uiState.homeAppsInsetBottom) / 2
-                        SettingRow(label = "Margin/Offset", value = "${uiState.topWidgetMargin}/${uiState.bottomWidgetMargin}/X${shiftX}/Y${shiftY}") {
+                        SettingRow(label = "Margin/Offset", value = "Set") {
                             currentSheet?.dismiss()
                             showDialog(context, prefs) {
                                 var topMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.topWidgetMargin) }
@@ -1091,7 +1091,7 @@ object EditModeHelper {
 
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Text(
-                                        "Top widget margin: $topMargin",
+                                        "Top widget offset: $topMargin",
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
@@ -1112,7 +1112,7 @@ object EditModeHelper {
                                     )
 
                                     Text(
-                                        "Bottom widget margin: $bottomMargin",
+                                        "Bottom widget offset: $bottomMargin",
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
