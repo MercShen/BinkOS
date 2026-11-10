@@ -431,9 +431,9 @@ fun storeFile(launcher: ActivityResultLauncher<Intent>, backupType: Constants.Ba
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
         addCategory(Intent.CATEGORY_OPENABLE)
-        type = "application/json"
+        type = if (backupType == Constants.BackupType.FullSystem) "application/zip" else "application/json"
         putExtra(Intent.EXTRA_TITLE, when (backupType) {
-            Constants.BackupType.FullSystem -> "backup_$timeStamp.json"
+            Constants.BackupType.FullSystem -> "backup_$timeStamp.zip"
             Constants.BackupType.Theme -> "inkos_theme_$timeStamp.json"
         })
     }

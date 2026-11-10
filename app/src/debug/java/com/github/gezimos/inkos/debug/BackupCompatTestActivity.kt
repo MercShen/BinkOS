@@ -36,6 +36,23 @@ class BackupCompatTestActivity : Activity() {
                 Log.d("BackupTest", "checkwall path=" + wp + " exists=" + (f?.exists()) + " size=" + (f?.length()) + " bmp=" + (bmp != null) + " opacity=" + pr.backgroundOpacity)
                 return finish()
             }
+            if (intent.getBooleanExtra("zipbackup", false)) {
+                val zip = com.github.gezimos.inkos.helper.BackupZipHelper.createBackupZip(
+                    applicationContext, Prefs(applicationContext)
+                )
+                val dest = File(filesDir, "export.zip")
+                zip.copyTo(dest, overwrite = true)
+                zip.delete()
+                Log.d("BackupTest", "zipbackup=" + dest.length())
+                return finish()
+            }
+            intent.getStringExtra("ziprestore")?.let { zp ->
+                val ok = com.github.gezimos.inkos.helper.BackupZipHelper.restore(
+                    applicationContext, Prefs(applicationContext), File(zp)
+                )
+                Log.d("BackupTest", "ziprestore=" + ok)
+                return finish()
+            }
             if (intent.getBooleanExtra("dump", false)) {
                 val s = Prefs(applicationContext).saveToString()
                 File(filesDir, "dump.json").writeText(s)
