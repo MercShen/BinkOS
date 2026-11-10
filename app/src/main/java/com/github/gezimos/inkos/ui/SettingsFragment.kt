@@ -779,18 +779,21 @@ class SettingsFragment : Fragment() {
                 defaultState = uiState.einkSystemFullRefresh,
                 onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
             )
-            SettingsSelect(
-                title = stringResource(R.string.eink_refresh_delay), option = "${uiState.einkRefreshDelay} ms", fontSize = titleFontSize,
-                description = stringResource(R.string.desc_eink_interval),
-                onClick = {
-                    dialogBuilder.showSliderDialog(
-                        context = requireContext(), title = getString(R.string.eink_refresh_delay),
-                        minValue = Constants.MIN_EINK_REFRESH_DELAY, maxValue = Constants.MAX_EINK_REFRESH_DELAY,
-                        currentValue = uiState.einkRefreshDelay.toInt(),
-                        onValueSelected = { newDelay -> viewModel.setEinkRefreshDelay(((newDelay + 12) / 25) * 25) }
-                    )
-                }
-            )
+            // 延迟只用于闪烁回退方案；启用系统全刷后该选项无意义，直接隐藏
+            if (!uiState.einkSystemFullRefresh) {
+                SettingsSelect(
+                    title = stringResource(R.string.eink_refresh_delay), option = "${uiState.einkRefreshDelay} ms", fontSize = titleFontSize,
+                    description = stringResource(R.string.desc_eink_interval),
+                    onClick = {
+                        dialogBuilder.showSliderDialog(
+                            context = requireContext(), title = getString(R.string.eink_refresh_delay),
+                            minValue = Constants.MIN_EINK_REFRESH_DELAY, maxValue = Constants.MAX_EINK_REFRESH_DELAY,
+                            currentValue = uiState.einkRefreshDelay.toInt(),
+                            onValueSelected = { newDelay -> viewModel.setEinkRefreshDelay(((newDelay + 12) / 25) * 25) }
+                        )
+                    }
+                )
+            }
             SettingsSwitch(
                 text = "Page Turn Animation (Bigme)",
                 fontSize = titleFontSize,
