@@ -265,15 +265,28 @@ class SettingsFragment : Fragment() {
         backStack.add(currentRoute)
         currentRoute = route
         resetScroll()
+        animateRouteChange(forward = true)
     }
 
     private fun navigateBack(): Boolean {
         if (backStack.isNotEmpty()) {
             currentRoute = backStack.removeAt(backStack.lastIndex)
             resetScroll()
+            animateRouteChange(forward = false)
             return true
         }
         return false
+    }
+
+    /** 进入/返回上下级菜单时播放大我翻页动画（方向与进入/返回一致）。 */
+    private fun animateRouteChange(forward: Boolean) {
+        try {
+            if (!prefs.einkPageTurnAnimation) return
+            com.github.gezimos.inkos.helper.BigmeEink.onHomePageTurn(
+                requireContext().applicationContext,
+                forward
+            )
+        } catch (_: Exception) {}
     }
 
     // Signal to Compose to reset scroll position
