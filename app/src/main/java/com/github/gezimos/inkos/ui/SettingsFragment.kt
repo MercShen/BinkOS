@@ -282,9 +282,15 @@ class SettingsFragment : Fragment() {
     private fun animateRouteChange(forward: Boolean) {
         try {
             if (!prefs.einkPageTurnAnimation) return
-            com.github.gezimos.inkos.helper.BigmeEink.onHomePageTurn(
+            // 上下级菜单用左右方向：进入 R2L，返回 L2R
+            val direction = if (forward) {
+                com.github.gezimos.inkos.helper.BigmeEink.Direction.R2L
+            } else {
+                com.github.gezimos.inkos.helper.BigmeEink.Direction.L2R
+            }
+            com.github.gezimos.inkos.helper.BigmeEink.onScreenOpened(
                 requireContext().applicationContext,
-                forward
+                direction
             )
         } catch (_: Exception) {}
     }
