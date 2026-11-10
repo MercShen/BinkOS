@@ -18,6 +18,11 @@ class BackupCompatTestActivity : Activity() {
                 Log.d("BackupTest", "alias=" + pkg)
                 return finish()
             }
+            if (intent.getBooleanExtra("params", false)) {
+                val pr = Prefs(applicationContext)
+                Log.d("BackupTest", "params clock=" + pr.homeClockAlignment + " date=" + pr.homeDateAlignment + " apps=" + pr.homeAlignment + " quote=" + pr.homeQuoteAlignment + " insets=" + pr.homeAppsInsetTop + "/" + pr.homeAppsInsetBottom + "/" + pr.homeAppsInsetStart + "/" + pr.homeAppsInsetEnd + " topM=" + pr.topWidgetMargin + " botM=" + pr.bottomWidgetMargin + " pager=" + pr.homePager + "/" + pr.homePagerAlign + " clockStyle=" + pr.clockStyle)
+                return finish()
+            }
             if (intent.getBooleanExtra("gestures", false)) {
                 val pr = Prefs(applicationContext)
                 Log.d("BackupTest", "gestures up=" + pr.swipeUpAction + " down=" + pr.swipeDownAction + " right=" + pr.swipeRightAction + " short=" + pr.shortSwipeThresholdRatio + " long=" + pr.longSwipeThresholdRatio + " edgeBack=" + pr.edgeSwipeBackEnabled)
