@@ -918,7 +918,7 @@ class SettingsFragment : Fragment() {
                 title = "Home apps X offset",
                 option = ((homeUiState.homeAppsInsetStart - homeUiState.homeAppsInsetEnd) / 2).toString(),
                 fontSize = titleFontSize,
-                description = "水平偏移（与编辑模式拖动联动）",
+                description = "Horizontal offset, synced with the edit-mode drag",
                 onClick = {
                     dialogBuilder.showSliderDialog(requireContext(), "Home apps X offset",
                         -400, 400, (homeUiState.homeAppsInsetStart - homeUiState.homeAppsInsetEnd) / 2) { viewModel.setHomeAppsShiftX(it) }
@@ -928,63 +928,31 @@ class SettingsFragment : Fragment() {
                 title = "Home apps Y offset",
                 option = ((homeUiState.homeAppsInsetTop - homeUiState.homeAppsInsetBottom) / 2).toString(),
                 fontSize = titleFontSize,
-                description = "垂直偏移（与编辑模式拖动联动）",
+                description = "Vertical offset, synced with the edit-mode drag",
                 onClick = {
                     dialogBuilder.showSliderDialog(requireContext(), "Home apps Y offset",
                         -400, 400, (homeUiState.homeAppsInsetTop - homeUiState.homeAppsInsetBottom) / 2) { viewModel.setHomeAppsShiftY(it) }
                 }
             )
-            SettingsSelect(
-                title = "Home apps margin: top", option = homeUiState.homeAppsInsetTop.toString(), fontSize = titleFontSize,
-                description = "自定义首页 App 区域的上边距（编辑模式可拖动预览）",
-                onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: top",
-                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetTop) { viewModel.setHomeAppsInsetTop(it) }
-                }
-            )
-            SettingsSelect(
-                title = "Home apps margin: bottom", option = homeUiState.homeAppsInsetBottom.toString(), fontSize = titleFontSize,
-                description = "下边距",
-                onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: bottom",
-                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetBottom) { viewModel.setHomeAppsInsetBottom(it) }
-                }
-            )
-            SettingsSelect(
-                title = "Home apps margin: left", option = homeUiState.homeAppsInsetStart.toString(), fontSize = titleFontSize,
-                description = "左边距",
-                onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: left",
-                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetStart) { viewModel.setHomeAppsInsetStart(it) }
-                }
-            )
-            SettingsSelect(
-                title = "Home apps margin: right", option = homeUiState.homeAppsInsetEnd.toString(), fontSize = titleFontSize,
-                description = "右边距",
-                onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: right",
-                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetEnd) { viewModel.setHomeAppsInsetEnd(it) }
-                }
-            )
 
             SettingsSelect(
-                title = "Reset home apps margins", option = "→ 0", fontSize = titleFontSize,
-                description = "把首页 App 区域四个边距恢复为 0（拖出屏幕时用这个救回来）",
+                title = "Reset home apps offset", option = "", fontSize = titleFontSize,
+                description = "Restore the home apps offset to 0",
                 onClick = { viewModel.resetHomeAppsInsets() }
             )
             SettingsSelect(
-                title = stringResource(R.string.top_widget_margin), option = homeUiState.topWidgetMargin.toString(), fontSize = titleFontSize,
-                description = stringResource(R.string.desc_top_widget_margin),
+                title = "Top Widget Offset", option = homeUiState.topWidgetMargin.toString(), fontSize = titleFontSize,
+                description = "Space above the clock/date",
                 onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), getString(R.string.top_widget_margin),
+                    dialogBuilder.showSliderDialog(requireContext(), "Top Widget Offset",
                         0, Constants.MAX_TOP_WIDGET_MARGIN, homeUiState.topWidgetMargin) { viewModel.setTopWidgetMargin(it) }
                 }
             )
             SettingsSelect(
-                title = stringResource(R.string.bottom_widget_margin), option = homeUiState.bottomWidgetMargin.toString(), fontSize = titleFontSize,
-                description = stringResource(R.string.desc_bottom_widget_margin),
+                title = "Bottom Widget Offset", option = homeUiState.bottomWidgetMargin.toString(), fontSize = titleFontSize,
+                description = "Space below the bottom widget",
                 onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), getString(R.string.bottom_widget_margin),
+                    dialogBuilder.showSliderDialog(requireContext(), "Bottom Widget Offset",
                         0, Constants.MAX_BOTTOM_WIDGET_MARGIN, homeUiState.bottomWidgetMargin) { viewModel.setBottomWidgetMargin(it) }
                 }
             )
