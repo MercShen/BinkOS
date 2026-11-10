@@ -106,6 +106,10 @@ private const val APP_DRAWER_SEARCH_MUSIC = "APP_DRAWER_SEARCH_MUSIC"
 private const val APP_DRAWER_SEARCH_FILES = "APP_DRAWER_SEARCH_FILES"
 private const val INITIAL_LAUNCH_COMPLETED = "INITIAL_LAUNCH_COMPLETED"
 private const val HOME_APPS_Y_OFFSET = "HOME_APPS_Y_OFFSET"
+private const val HOME_APPS_INSET_TOP = "HOME_APPS_INSET_TOP"
+private const val HOME_APPS_INSET_BOTTOM = "HOME_APPS_INSET_BOTTOM"
+private const val HOME_APPS_INSET_START = "HOME_APPS_INSET_START"
+private const val HOME_APPS_INSET_END = "HOME_APPS_INSET_END"
 private const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
 private const val HOME_ALIGNMENT = "HOME_ALIGNMENT"
 private const val TEXT_ISLANDS = "TEXT_ISLANDS"
@@ -317,6 +321,7 @@ class Prefs(val context: Context) {
         HOME_APPS_NUM, HOME_PAGES_NUM, HOME_ALIGNMENT,
         "HOME_CLOCK_ALIGNMENT", "HOME_DATE_ALIGNMENT", "HOME_QUOTE_ALIGNMENT",
         HOME_APPS_Y_OFFSET, HIDE_HOME_APPS,
+        HOME_APPS_INSET_TOP, HOME_APPS_INSET_BOTTOM, HOME_APPS_INSET_START, HOME_APPS_INSET_END,
         "APP_DRAWER_ALIGNMENT", "APP_DRAWER_SIZE", "APP_DRAWER_GAP",
         Constants.PrefKeys.APP_DRAWER_SEARCH_ENABLED,
         "APP_DRAWER_AUTO_LAUNCH", "APP_DRAWER_AUTO_SHOW_KEYBOARD",
@@ -1508,6 +1513,23 @@ class Prefs(val context: Context) {
             0
         }
     set(value) = prefs.edit { putInt(HOME_APPS_Y_OFFSET, value.coerceIn(Constants.MIN_HOME_APPS_Y_OFFSET, Constants.MAX_HOME_APPS_Y_OFFSET)) }
+
+    // --- Home apps area margins (custom positioning, edit-mode drag) ---
+    var homeAppsInsetTop: Int
+        get() = prefs.getInt(HOME_APPS_INSET_TOP, 0)
+        set(value) = prefs.edit { putInt(HOME_APPS_INSET_TOP, value.coerceIn(0, Constants.MAX_HOME_APPS_INSET)) }
+
+    var homeAppsInsetBottom: Int
+        get() = prefs.getInt(HOME_APPS_INSET_BOTTOM, 0)
+        set(value) = prefs.edit { putInt(HOME_APPS_INSET_BOTTOM, value.coerceIn(0, Constants.MAX_HOME_APPS_INSET)) }
+
+    var homeAppsInsetStart: Int
+        get() = prefs.getInt(HOME_APPS_INSET_START, 0)
+        set(value) = prefs.edit { putInt(HOME_APPS_INSET_START, value.coerceIn(0, Constants.MAX_HOME_APPS_INSET)) }
+
+    var homeAppsInsetEnd: Int
+        get() = prefs.getInt(HOME_APPS_INSET_END, 0)
+        set(value) = prefs.edit { putInt(HOME_APPS_INSET_END, value.coerceIn(0, Constants.MAX_HOME_APPS_INSET)) }
 
 
     // --- App Drawer specific settings ---

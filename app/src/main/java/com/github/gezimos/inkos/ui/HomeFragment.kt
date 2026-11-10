@@ -438,11 +438,12 @@ class HomeFragmentCompose : Fragment() {
                                     try { GestureHelper.handleSwipeDown(requireContext(), this@HomeFragmentCompose, viewModel, prefs) } catch (_: Exception) {}
                                 }
                             } else null,
-                            onVerticalPageMove = { delta ->
+                            // 编辑模式下不响应竖向翻页，把竖向拖动让给「拖动 App 区域调整边距」
+                            onVerticalPageMove = if (isEditMode) null else ({ delta: Int ->
                                 try {
                                     if (fullRenderState.totalPages > 1) adjustPageBy(delta, fullRenderState.totalPages)
                                 } catch (_: Exception) {}
-                            },
+                            }),
                             onAnyTouch = { try {
                                 dpadMode.value = false
                                 focusZone.value = com.github.gezimos.inkos.ui.compose.FocusZone.APPS
@@ -509,7 +510,8 @@ class HomeFragmentCompose : Fragment() {
                                 onAndroidWidgetMarginEndChange = { margin -> viewModel.setAndroidWidgetMarginEnd(margin) },
                                 onTopMarginDrag = { viewModel.setTopWidgetMargin(it) },
                                 onAppsYOffsetDrag = { viewModel.setHomeAppsYOffset(it) },
-                                onBottomMarginDrag = { viewModel.setBottomWidgetMargin(it) }
+                                onBottomMarginDrag = { viewModel.setBottomWidgetMargin(it) },
+                                onAppsAreaDrag = { dx, dy -> viewModel.dragHomeAppsInsets(dx, dy) }
                             ),
                             onHomeAppsBoundsChanged = { homeAppsBoundsState.value = it },
                             onBottomWidgetHeightChanged = { viewModel.updateBottomWidgetHeightPx(it) }

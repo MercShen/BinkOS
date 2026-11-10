@@ -41,6 +41,9 @@ object Constants {
     const val MIN_HOME_APPS_Y_OFFSET = 0
     const val MAX_HOME_APPS_Y_OFFSET = 500
 
+    /** Max margin (dp) for each edge of the home apps area (custom layout positioning). */
+    const val MAX_HOME_APPS_INSET = 240
+
     // Restore for date_size (not gap)
     const val MIN_CLOCK_SIZE = 12
     const val MAX_CLOCK_SIZE = 100
@@ -149,6 +152,10 @@ object Constants {
         const val HOME_DATE_ALIGNMENT = "HOME_DATE_ALIGNMENT"
         const val HOME_QUOTE_ALIGNMENT = "HOME_QUOTE_ALIGNMENT"
         const val HOME_APPS_Y_OFFSET = "HOME_APPS_Y_OFFSET"
+        const val HOME_APPS_INSET_TOP = "HOME_APPS_INSET_TOP"
+        const val HOME_APPS_INSET_BOTTOM = "HOME_APPS_INSET_BOTTOM"
+        const val HOME_APPS_INSET_START = "HOME_APPS_INSET_START"
+        const val HOME_APPS_INSET_END = "HOME_APPS_INSET_END"
 
         const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
         const val APP_DRAWER_ALIGNMENT = "APP_DRAWER_ALIGNMENT"

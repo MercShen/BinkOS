@@ -923,6 +923,38 @@ class SettingsFragment : Fragment() {
                 }
             )
             SettingsSelect(
+                title = "Home apps margin: top", option = homeUiState.homeAppsInsetTop.toString(), fontSize = titleFontSize,
+                description = "自定义首页 App 区域的上边距（编辑模式可拖动预览）",
+                onClick = {
+                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: top",
+                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetTop) { viewModel.setHomeAppsInsetTop(it) }
+                }
+            )
+            SettingsSelect(
+                title = "Home apps margin: bottom", option = homeUiState.homeAppsInsetBottom.toString(), fontSize = titleFontSize,
+                description = "下边距",
+                onClick = {
+                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: bottom",
+                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetBottom) { viewModel.setHomeAppsInsetBottom(it) }
+                }
+            )
+            SettingsSelect(
+                title = "Home apps margin: left", option = homeUiState.homeAppsInsetStart.toString(), fontSize = titleFontSize,
+                description = "左边距",
+                onClick = {
+                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: left",
+                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetStart) { viewModel.setHomeAppsInsetStart(it) }
+                }
+            )
+            SettingsSelect(
+                title = "Home apps margin: right", option = homeUiState.homeAppsInsetEnd.toString(), fontSize = titleFontSize,
+                description = "右边距",
+                onClick = {
+                    dialogBuilder.showSliderDialog(requireContext(), "Home apps margin: right",
+                        0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetEnd) { viewModel.setHomeAppsInsetEnd(it) }
+                }
+            )
+            SettingsSelect(
                 title = stringResource(R.string.top_widget_margin), option = homeUiState.topWidgetMargin.toString(), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_top_widget_margin),
                 onClick = {

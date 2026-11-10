@@ -334,7 +334,21 @@ fun HomeUI(
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .then(
+                    if (showEditMode) Modifier.pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            callbacks.onAppsAreaDrag(dragAmount.x, dragAmount.y)
+                        }
+                    } else Modifier
+                )
                 .padding(horizontal = 32.dp.scaled(screenScale))
+                .padding(
+                    start = state.homeAppsInsetStart.dp,
+                    end = state.homeAppsInsetEnd.dp,
+                    top = state.homeAppsInsetTop.dp,
+                    bottom = state.homeAppsInsetBottom.dp
+                )
                 .align(Alignment.Center),
             contentAlignment = Alignment.Center
         ) {
@@ -4307,6 +4321,10 @@ data class HomeUiRenderState(
     val quoteAlignment: Int = 0,
     val homeAppsYOffset: Int,
     val maxHomeAppsYOffset: Int = Constants.MAX_HOME_APPS_Y_OFFSET,
+    val homeAppsInsetTop: Int = 0,
+    val homeAppsInsetBottom: Int = 0,
+    val homeAppsInsetStart: Int = 0,
+    val homeAppsInsetEnd: Int = 0,
 
     val bottomWidgetHeightPx: Int = 0,
     val bottomWidgetMargin: Int,
@@ -4402,7 +4420,9 @@ data class HomeUiCallbacks(
     val onAndroidWidgetMarginEndChange: (Int) -> Unit = {},
     val onTopMarginDrag: (Int) -> Unit = {},
     val onAppsYOffsetDrag: (Int) -> Unit = {},
-    val onBottomMarginDrag: (Int) -> Unit = {}
+    val onBottomMarginDrag: (Int) -> Unit = {},
+    /** 编辑模式下拖动整个 App 区域：参数是像素位移，用于实时调整四边距。 */
+    val onAppsAreaDrag: (Float, Float) -> Unit = { _, _ -> }
 )
 
 enum class HomeMediaAction { Open, Previous, PlayPause, Next, Stop }

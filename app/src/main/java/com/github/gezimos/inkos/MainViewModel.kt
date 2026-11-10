@@ -25,6 +25,7 @@ import com.github.gezimos.inkos.services.NotificationManager
 import com.github.gezimos.inkos.ui.compose.HomeUiRenderState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -81,6 +82,10 @@ data class HomeUiState(
     val dateAlignment: Int = 0,
     val quoteAlignment: Int = 0,
     val homeAppsYOffset: Int = 0,
+    val homeAppsInsetTop: Int = 0,
+    val homeAppsInsetBottom: Int = 0,
+    val homeAppsInsetStart: Int = 0,
+    val homeAppsInsetEnd: Int = 0,
 
     val bottomWidgetHeightPx: Int = 0,
     val screenHeightDp: Int = 0,
@@ -413,6 +418,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         dateAlignment = prefs.homeDateAlignment,
         quoteAlignment = prefs.homeQuoteAlignment,
         homeAppsYOffset = prefs.homeAppsYOffset,
+        homeAppsInsetTop = prefs.homeAppsInsetTop,
+        homeAppsInsetBottom = prefs.homeAppsInsetBottom,
+        homeAppsInsetStart = prefs.homeAppsInsetStart,
+        homeAppsInsetEnd = prefs.homeAppsInsetEnd,
         screenHeightDp = (appContext.resources.displayMetrics.heightPixels / appContext.resources.displayMetrics.density).toInt(),
 
         topWidgetMargin = prefs.topWidgetMargin,
@@ -618,6 +627,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             quoteAlignment = homeUi.quoteAlignment,
             homeAppsYOffset = homeUi.homeAppsYOffset,
             maxHomeAppsYOffset = homeUi.maxHomeAppsYOffset,
+            homeAppsInsetTop = homeUi.homeAppsInsetTop,
+            homeAppsInsetBottom = homeUi.homeAppsInsetBottom,
+            homeAppsInsetStart = homeUi.homeAppsInsetStart,
+            homeAppsInsetEnd = homeUi.homeAppsInsetEnd,
 
             bottomWidgetHeightPx = homeUi.bottomWidgetHeightPx,
             bottomWidgetMargin = homeUi.bottomWidgetMargin,
@@ -984,6 +997,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             PrefKeys.HOME_DATE_ALIGNMENT -> currentState.copy(dateAlignment = prefs.homeDateAlignment)
             PrefKeys.HOME_QUOTE_ALIGNMENT -> currentState.copy(quoteAlignment = prefs.homeQuoteAlignment)
             PrefKeys.HOME_APPS_Y_OFFSET -> currentState.copy(homeAppsYOffset = prefs.homeAppsYOffset)
+            PrefKeys.HOME_APPS_INSET_TOP -> currentState.copy(homeAppsInsetTop = prefs.homeAppsInsetTop)
+            PrefKeys.HOME_APPS_INSET_BOTTOM -> currentState.copy(homeAppsInsetBottom = prefs.homeAppsInsetBottom)
+            PrefKeys.HOME_APPS_INSET_START -> currentState.copy(homeAppsInsetStart = prefs.homeAppsInsetStart)
+            PrefKeys.HOME_APPS_INSET_END -> currentState.copy(homeAppsInsetEnd = prefs.homeAppsInsetEnd)
             PrefKeys.TOP_WIDGET_MARGIN -> currentState.copy(topWidgetMargin = prefs.topWidgetMargin)
             PrefKeys.BOTTOM_WIDGET_MARGIN -> currentState.copy(bottomWidgetMargin = prefs.bottomWidgetMargin)
             PrefKeys.HIDE_HOME_APPS -> currentState.copy(hideHomeApps = prefs.hideHomeApps)
@@ -2133,6 +2150,59 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val clamped = offset.coerceIn(Constants.MIN_HOME_APPS_Y_OFFSET, max)
         prefs.homeAppsYOffset = clamped
         _homeUiState.value = _homeUiState.value.copy(homeAppsYOffset = clamped)
+    }
+
+    fun setHomeAppsInsetTop(v: Int) {
+        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        prefs.homeAppsInsetTop = c
+        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetTop = c)
+    }
+
+    fun setHomeAppsInsetBottom(v: Int) {
+        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        prefs.homeAppsInsetBottom = c
+        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetBottom = c)
+    }
+
+    fun setHomeAppsInsetStart(v: Int) {
+        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        prefs.homeAppsInsetStart = c
+        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetStart = c)
+    }
+
+    fun setHomeAppsInsetEnd(v: Int) {
+        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        prefs.homeAppsInsetEnd = c
+        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetEnd = c)
+    }
+
+    /**
+     * 编辑模式拖动首页 App 区域：内容在剩余区域里居中，所以外边距变化量是位移的 2 倍。
+     */
+    fun dragHomeAppsInsets(dxPx: Float, dyPx: Float) {
+        val density = appContext.resources.displayMetrics.density.coerceAtLeast(1f)
+        val dx = (dxPx / density).roundToInt()
+        val dy = (dyPx / density).roundToInt()
+        if (dx == 0 && dy == 0) return
+        val s = _homeUiState.value
+        var start = s.homeAppsInsetStart
+        var end = s.homeAppsInsetEnd
+        var top = s.homeAppsInsetTop
+        var bottom = s.homeAppsInsetBottom
+        if (dx > 0) start = (start + dx * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
+        else if (dx < 0) end = (end - dx * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
+        if (dy > 0) top = (top + dy * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
+        else if (dy < 0) bottom = (bottom - dy * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
+        prefs.homeAppsInsetTop = top
+        prefs.homeAppsInsetBottom = bottom
+        prefs.homeAppsInsetStart = start
+        prefs.homeAppsInsetEnd = end
+        _homeUiState.value = _homeUiState.value.copy(
+            homeAppsInsetTop = top,
+            homeAppsInsetBottom = bottom,
+            homeAppsInsetStart = start,
+            homeAppsInsetEnd = end
+        )
     }
 
     fun updateScreenHeightDp(heightDp: Int) {
