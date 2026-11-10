@@ -334,14 +334,6 @@ fun HomeUI(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(
-                    if (showEditMode) Modifier.pointerInput(Unit) {
-                        detectDragGestures { change, dragAmount ->
-                            change.consume()
-                            callbacks.onAppsAreaDrag(dragAmount.x, dragAmount.y)
-                        }
-                    } else Modifier
-                )
                 .padding(horizontal = 32.dp.scaled(screenScale))
                 .padding(
                     start = state.homeAppsInsetStart.dp,
@@ -371,6 +363,7 @@ fun HomeUI(
 
             if (showEditMode) {
                 HomeAppsMoveHandle(
+                    onDrag = { dx, dy -> callbacks.onAppsAreaDrag(dx, dy) },
                     modifier = Modifier
                         .align(Alignment.Center)
                         .offset(y = state.homeAppsYOffset.dp)
@@ -584,9 +577,21 @@ fun EditModeOverlay() {
 }
 /** 编辑模式下叠在 App 区域中心的十字箭头，提示可以拖动整个区域。 */
 @Composable
-private fun HomeAppsMoveHandle(modifier: Modifier = Modifier) {
+private fun HomeAppsMoveHandle(
+    onDrag: (Float, Float) -> Unit,
+    modifier: Modifier = Modifier
+) {
     val color = Theme.colors.text.copy(alpha = 0.35f)
-    Canvas(modifier = modifier.size(46.dp)) {
+    Canvas(
+        modifier = modifier
+            .size(56.dp)
+            .pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    onDrag(dragAmount.x, dragAmount.y)
+                }
+            }
+    ) {
         val stroke = 2.5.dp.toPx()
         val head = size.minDimension * 0.16f
         val pad = size.minDimension * 0.06f
