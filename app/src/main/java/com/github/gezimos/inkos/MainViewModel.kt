@@ -133,6 +133,7 @@ data class HomeUiState(
     val einkRefreshHomeButtonOnly: Boolean = false,
     val einkRefreshDelay: Int = 0,
     val einkSystemFullRefresh: Boolean = false,
+    val einkPageTurnAnimation: Boolean = true,
     val useVolumeKeysForPages: Boolean = false,
     val selectedAppShortcuts: Set<String>? = null, // null means all selected by default
     val einkHelperMode: Int = 0,
@@ -485,6 +486,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         einkRefreshHomeButtonOnly = prefs.einkRefreshHomeButtonOnly,
         einkRefreshDelay = prefs.einkRefreshDelay,
         einkSystemFullRefresh = prefs.einkSystemFullRefresh,
+        einkPageTurnAnimation = prefs.einkPageTurnAnimation,
         useVolumeKeysForPages = prefs.useVolumeKeysForPages,
         selectedAppShortcuts = prefs.selectedAppShortcuts.takeIf { it.isNotEmpty() },
         einkHelperMode = prefs.einkHelperMode,
@@ -1180,12 +1182,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (clampedPage == previousPage) return
         _homeUiState.value = _homeUiState.value.copy(currentPage = clampedPage)
         // 大我墨水屏翻页动画：方向只看翻到了哪一页（下一页/上一页），不看手指方向
-        try {
-            com.github.gezimos.inkos.helper.BigmeEink.onHomePageTurn(
-                getApplication(),
-                forward = clampedPage > previousPage,
-            )
-        } catch (_: Exception) {}
+        if (prefs.einkPageTurnAnimation) {
+            try {
+                com.github.gezimos.inkos.helper.BigmeEink.onHomePageTurn(
+                    getApplication(),
+                    forward = clampedPage > previousPage,
+                )
+            } catch (_: Exception) {}
+        }
     }
 
     fun nextPage() {
@@ -2390,6 +2394,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             einkRefreshHomeButtonOnly = enabled,
             einkRefreshEnabled = prefs.einkRefreshEnabled
         )
+    }
+
+    fun setEinkPageTurnAnimation(enabled: Boolean) {
+        prefs.einkPageTurnAnimation = enabled
+        _homeUiState.value = _homeUiState.value.copy(einkPageTurnAnimation = enabled)
     }
 
     fun setEinkSystemFullRefresh(enabled: Boolean) {

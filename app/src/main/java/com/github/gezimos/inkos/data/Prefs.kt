@@ -112,6 +112,7 @@ private const val HOME_APPS_INSET_START = "HOME_APPS_INSET_START"
 private const val HOME_APPS_INSET_END = "HOME_APPS_INSET_END"
 private const val HOME_PAGER_ALIGN = "HOME_PAGER_ALIGN"
 private const val EINK_SYSTEM_FULL_REFRESH = "EINK_SYSTEM_FULL_REFRESH"
+private const val EINK_PAGE_TURN_ANIMATION = "EINK_PAGE_TURN_ANIMATION"
 private const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
 private const val HOME_ALIGNMENT = "HOME_ALIGNMENT"
 private const val TEXT_ISLANDS = "TEXT_ISLANDS"
@@ -1537,6 +1538,10 @@ class Prefs(val context: Context) {
     var homePagerAlign: Int
         get() = prefs.getInt(HOME_PAGER_ALIGN, 1)
         set(value) = prefs.edit { putInt(HOME_PAGER_ALIGN, value.coerceIn(0, 1)) }
+    /** 打开/关闭界面时播放大我系统翻页动画 */
+    var einkPageTurnAnimation: Boolean
+        get() = prefs.getBoolean(EINK_PAGE_TURN_ANIMATION, true)
+        set(value) = prefs.edit { putBoolean(EINK_PAGE_TURN_ANIMATION, value) }
     /** 用大我系统的 GC16 全刷代替原来的整屏闪烁 */
     var einkSystemFullRefresh: Boolean
         get() = prefs.getBoolean(EINK_SYSTEM_FULL_REFRESH, false)

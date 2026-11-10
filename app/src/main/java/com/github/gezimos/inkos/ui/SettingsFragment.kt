@@ -791,6 +791,13 @@ class SettingsFragment : Fragment() {
                 }
             )
             SettingsSwitch(
+                text = "Page Turn Animation (Bigme)",
+                fontSize = titleFontSize,
+                description = "Play the vendor e-ink page-turn animation when opening/closing screens",
+                defaultState = uiState.einkPageTurnAnimation,
+                onCheckedChange = { viewModel.setEinkPageTurnAnimation(it) }
+            )
+            SettingsSwitch(
                 text = getString(R.string.use_volume_keys_for_pages), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_volume_keys),
                 defaultState = uiState.useVolumeKeysForPages,

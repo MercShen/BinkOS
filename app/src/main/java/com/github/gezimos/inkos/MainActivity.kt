@@ -418,6 +418,7 @@ class MainActivity : AppCompatActivity() {
      * 其他界面（壁纸、引导等）不触发。
      */
     private fun handleScreenAnimation(currentId: Int, previousId: Int) {
+        if (!prefs.einkPageTurnAnimation) return
         val currentAction = gestureActionFor(currentId)
         val previousAction = gestureActionFor(previousId)
         when {
