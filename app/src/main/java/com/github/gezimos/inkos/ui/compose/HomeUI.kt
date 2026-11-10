@@ -389,7 +389,11 @@ fun HomeUI(
                 borderWidth = (state.pageIndicatorDotSize / 6f).dp.scaled(screenScale),
                 modifier = Modifier
                     .align(if (state.pageIndicatorAlignment == 0) Alignment.CenterStart else Alignment.CenterEnd)
-                    .offset(y = ((state.homeAppsInsetTop - state.homeAppsInsetBottom) / 2 + state.homeAppsYOffset).dp)
+                    // 离屏幕边缘留出安全边距，避免压到编辑模式的虚线安全框
+                    .offset(
+                        x = if (state.pageIndicatorAlignment == 0) 20.dp else (-20).dp,
+                        y = ((state.homeAppsInsetTop - state.homeAppsInsetBottom) / 2 + state.homeAppsYOffset).dp
+                    )
             )
         }
 
