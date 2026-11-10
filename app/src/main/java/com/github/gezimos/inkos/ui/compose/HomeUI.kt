@@ -367,6 +367,13 @@ fun HomeUI(
                     }
             )
 
+            if (showEditMode) {
+                HomeAppsMoveHandle(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .offset(y = state.homeAppsYOffset.dp)
+                )
+            }
             if (state.pageIndicatorVisible && state.totalPages > 1
                 && !(state.shortcutPageDots && state.bottomWidgetType == Constants.BottomWidgetType.Shortcuts.value)
                 && state.bottomWidgetType != Constants.BottomWidgetType.PageDots.value
@@ -572,6 +579,31 @@ fun EditModeOverlay() {
                 )
             }
     )
+}
+/** 编辑模式下叠在 App 区域中心的十字箭头，提示可以拖动整个区域。 */
+@Composable
+private fun HomeAppsMoveHandle(modifier: Modifier = Modifier) {
+    val color = Theme.colors.text.copy(alpha = 0.35f)
+    Canvas(modifier = modifier.size(46.dp)) {
+        val stroke = 2.5.dp.toPx()
+        val head = size.minDimension * 0.16f
+        val pad = size.minDimension * 0.06f
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        val lineStart = pad + head
+        // 十字线
+        drawLine(color, Offset(cx - size.width / 2f + lineStart, cy), Offset(cx + size.width / 2f - lineStart, cy), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(cx, cy - size.height / 2f + lineStart), Offset(cx, cy + size.height / 2f - lineStart), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        // 四个箭头（每个箭头的两条斜线）
+        drawLine(color, Offset(cx, pad), Offset(cx - head, pad + head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(cx, pad), Offset(cx + head, pad + head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(cx, size.height - pad), Offset(cx - head, size.height - pad - head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(cx, size.height - pad), Offset(cx + head, size.height - pad - head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(pad, cy), Offset(pad + head, cy - head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(pad, cy), Offset(pad + head, cy + head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(size.width - pad, cy), Offset(size.width - pad - head, cy - head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+        drawLine(color, Offset(size.width - pad, cy), Offset(size.width - pad - head, cy + head), strokeWidth = stroke, cap = androidx.compose.ui.graphics.StrokeCap.Round)
+    }
 }
 @Composable
 private fun DragCueHandle(

@@ -954,6 +954,12 @@ class SettingsFragment : Fragment() {
                         0, Constants.MAX_HOME_APPS_INSET, homeUiState.homeAppsInsetEnd) { viewModel.setHomeAppsInsetEnd(it) }
                 }
             )
+
+            SettingsSelect(
+                title = "Reset home apps margins", option = "→ 0", fontSize = titleFontSize,
+                description = "把首页 App 区域四个边距恢复为 0（拖出屏幕时用这个救回来）",
+                onClick = { viewModel.resetHomeAppsInsets() }
+            )
             SettingsSelect(
                 title = stringResource(R.string.top_widget_margin), option = homeUiState.topWidgetMargin.toString(), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_top_widget_margin),

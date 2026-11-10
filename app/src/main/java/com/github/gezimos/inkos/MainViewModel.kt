@@ -2152,28 +2152,76 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _homeUiState.value = _homeUiState.value.copy(homeAppsYOffset = clamped)
     }
 
+    /** 屏幕可用区域（dp），用于给首页边距做安全约束。 */
+    private fun screenDp(): Pair<Int, Int> {
+        val dm = appContext.resources.displayMetrics
+        val d = dm.density.coerceAtLeast(1f)
+        return (dm.widthPixels / d).toInt() to (dm.heightPixels / d).toInt()
+    }
+
+    /**
+     * 安全边框：四边距不允许把 App 区域压缩到太小，也不允许把内容推出屏幕。
+     * 水平至少保留 60% 宽度，垂直至少保留 45% 高度；超出时按比例压缩。
+     */
+    private fun sanitizeHomeAppsInsets(top0: Int, bottom0: Int, start0: Int, end0: Int): IntArray {
+        val (wDp, hDp) = screenDp()
+        val availW = (wDp - 64).coerceAtLeast(120)
+        val availH = (hDp - 64).coerceAtLeast(120)
+        var s = start0.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        var e = end0.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        var t = top0.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        var b = bottom0.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
+        val maxWSum = (availW * 0.4f).toInt()
+        val maxHSum = (availH * 0.55f).toInt()
+        if (s + e > maxWSum) {
+            val f = maxWSum.toFloat() / (s + e).toFloat()
+            s = (s * f).toInt()
+            e = (e * f).toInt()
+        }
+        if (t + b > maxHSum) {
+            val f = maxHSum.toFloat() / (t + b).toFloat()
+            t = (t * f).toInt()
+            b = (b * f).toInt()
+        }
+        return intArrayOf(t, b, s, e)
+    }
+
+    private fun applyHomeAppsInsets(top: Int, bottom: Int, start: Int, end: Int) {
+        val v = sanitizeHomeAppsInsets(top, bottom, start, end)
+        prefs.homeAppsInsetTop = v[0]
+        prefs.homeAppsInsetBottom = v[1]
+        prefs.homeAppsInsetStart = v[2]
+        prefs.homeAppsInsetEnd = v[3]
+        _homeUiState.value = _homeUiState.value.copy(
+            homeAppsInsetTop = v[0],
+            homeAppsInsetBottom = v[1],
+            homeAppsInsetStart = v[2],
+            homeAppsInsetEnd = v[3]
+        )
+    }
+
     fun setHomeAppsInsetTop(v: Int) {
-        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
-        prefs.homeAppsInsetTop = c
-        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetTop = c)
+        val s = _homeUiState.value
+        applyHomeAppsInsets(v, s.homeAppsInsetBottom, s.homeAppsInsetStart, s.homeAppsInsetEnd)
     }
 
     fun setHomeAppsInsetBottom(v: Int) {
-        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
-        prefs.homeAppsInsetBottom = c
-        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetBottom = c)
+        val s = _homeUiState.value
+        applyHomeAppsInsets(s.homeAppsInsetTop, v, s.homeAppsInsetStart, s.homeAppsInsetEnd)
     }
 
     fun setHomeAppsInsetStart(v: Int) {
-        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
-        prefs.homeAppsInsetStart = c
-        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetStart = c)
+        val s = _homeUiState.value
+        applyHomeAppsInsets(s.homeAppsInsetTop, s.homeAppsInsetBottom, v, s.homeAppsInsetEnd)
     }
 
     fun setHomeAppsInsetEnd(v: Int) {
-        val c = v.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
-        prefs.homeAppsInsetEnd = c
-        _homeUiState.value = _homeUiState.value.copy(homeAppsInsetEnd = c)
+        val s = _homeUiState.value
+        applyHomeAppsInsets(s.homeAppsInsetTop, s.homeAppsInsetBottom, s.homeAppsInsetStart, v)
+    }
+
+    fun resetHomeAppsInsets() {
+        applyHomeAppsInsets(0, 0, 0, 0)
     }
 
     /**
@@ -2193,16 +2241,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         else if (dx < 0) end = (end - dx * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
         if (dy > 0) top = (top + dy * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
         else if (dy < 0) bottom = (bottom - dy * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
-        prefs.homeAppsInsetTop = top
-        prefs.homeAppsInsetBottom = bottom
-        prefs.homeAppsInsetStart = start
-        prefs.homeAppsInsetEnd = end
-        _homeUiState.value = _homeUiState.value.copy(
-            homeAppsInsetTop = top,
-            homeAppsInsetBottom = bottom,
-            homeAppsInsetStart = start,
-            homeAppsInsetEnd = end
-        )
+        applyHomeAppsInsets(top, bottom, start, end)
     }
 
     fun updateScreenHeightDp(heightDp: Int) {
