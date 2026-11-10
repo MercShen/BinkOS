@@ -1364,6 +1364,20 @@ object EditModeHelper {
 
                     
 
+                    val pagerOptions = arrayOf("Hide", "Left", "Right")
+                    val pagerCurrent = when {
+                        !uiState.pageIndicatorVisible -> 0
+                        uiState.pageIndicatorAlignment == 0 -> 1
+                        else -> 2
+                    }
+                    CycleRow(label = "Page Indicator", options = pagerOptions, currentIndex = pagerCurrent) { nextIndex ->
+                        when (nextIndex) {
+                            0 -> vm.setPageIndicatorVisible(false)
+                            1 -> { vm.setPageIndicatorVisible(true); vm.setPageIndicatorAlignment(0) }
+                            2 -> { vm.setPageIndicatorVisible(true); vm.setPageIndicatorAlignment(1) }
+                        }
+                        onUpdate()
+                    }
                     val appNameOptions = arrayOf(
                         context.getString(R.string.app_name_mode_normal),
                         context.getString(R.string.app_name_mode_all_caps),

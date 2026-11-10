@@ -184,6 +184,7 @@ object Constants {
         const val HAPTIC_FEEDBACK = "HAPTIC_FEEDBACK"
         const val VIBRATION_SCALE = "VIBRATION_SCALE"
         const val HOME_PAGER = "HOME_PAGER"
+        const val HOME_PAGER_ALIGN = "HOME_PAGER_ALIGN"
         const val LOCKED_APPS = "LOCKED_APPS"
         const val SHOW_ANDROID_WIDGET = "SHOW_ANDROID_WIDGET"
         const val ANDROID_WIDGET_ID = "ANDROID_WIDGET_ID"

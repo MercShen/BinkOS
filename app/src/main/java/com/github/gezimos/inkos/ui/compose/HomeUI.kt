@@ -369,25 +369,28 @@ fun HomeUI(
                         .offset(y = state.homeAppsYOffset.dp)
                 )
             }
-            if (state.pageIndicatorVisible && state.totalPages > 1
-                && !(state.shortcutPageDots && state.bottomWidgetType == Constants.BottomWidgetType.Shortcuts.value)
-                && state.bottomWidgetType != Constants.BottomWidgetType.PageDots.value
-            ) {
-                PageIndicator(
-                    currentPage = state.currentPage,
-                    totalPages = state.totalPages,
-                    color = Theme.colors.text,
-                    showTextIslands = state.textIslands,
-                    textIslandsInverted = state.textIslandsInverted,
-                    textIslandsShape = state.textIslandsShape,
-                    dotSize = state.pageIndicatorDotSize.dp.scaled(screenScale),
-                    dotSpacing = (state.pageIndicatorDotSize * 0.8f).dp.scaled(screenScale),
-                    borderWidth = (state.pageIndicatorDotSize / 6f).dp.scaled(screenScale),
-                    modifier = Modifier
-                        .align(if (state.homeAlignment == 2) Alignment.CenterStart else Alignment.CenterEnd)
-                        .offset(y = state.homeAppsYOffset.dp)
-                )
-            }
+        }
+
+        // Page indicator 水平贴屏幕边，不随 App 区域的左右边距移动；
+        // 垂直方向跟随 App 区域中心（(top-bottom)/2 即内容中心偏移）。
+        if (state.pageIndicatorVisible && state.totalPages > 1
+            && !(state.shortcutPageDots && state.bottomWidgetType == Constants.BottomWidgetType.Shortcuts.value)
+            && state.bottomWidgetType != Constants.BottomWidgetType.PageDots.value
+        ) {
+            PageIndicator(
+                currentPage = state.currentPage,
+                totalPages = state.totalPages,
+                color = Theme.colors.text,
+                showTextIslands = state.textIslands,
+                textIslandsInverted = state.textIslandsInverted,
+                textIslandsShape = state.textIslandsShape,
+                dotSize = state.pageIndicatorDotSize.dp.scaled(screenScale),
+                dotSpacing = (state.pageIndicatorDotSize * 0.8f).dp.scaled(screenScale),
+                borderWidth = (state.pageIndicatorDotSize / 6f).dp.scaled(screenScale),
+                modifier = Modifier
+                    .align(if (state.pageIndicatorAlignment == 0) Alignment.CenterStart else Alignment.CenterEnd)
+                    .offset(y = ((state.homeAppsInsetTop - state.homeAppsInsetBottom) / 2 + state.homeAppsYOffset).dp)
+            )
         }
 
         Column(
@@ -518,15 +521,6 @@ fun HomeUI(
                     .offset(y = topOffset + headerHeightDp)
             )
 
-            DragCueHandle(
-                currentValueDp = state.homeAppsYOffset,
-                minValueDp = Constants.MIN_HOME_APPS_Y_OFFSET,
-                maxValueDp = state.maxHomeAppsYOffset,
-                onValueChanged = callbacks.onAppsYOffsetDrag,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .offset(y = state.homeAppsYOffset.dp)
-            )
 
             val bottomWidgetHeightDp = with(density) { state.bottomWidgetHeightPx.toDp() }
             DragCueHandle(
@@ -4369,6 +4363,7 @@ data class HomeUiRenderState(
     val bottomWidgetMargin: Int,
     val topWidgetMargin: Int,
     val pageIndicatorVisible: Boolean,
+    val pageIndicatorAlignment: Int = 1,
     val pageIndicatorColor: Int,
     val pageIndicatorDotSize: Float = 12f,
     val appPadding: Int,
