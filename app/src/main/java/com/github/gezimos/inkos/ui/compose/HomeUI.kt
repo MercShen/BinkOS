@@ -362,12 +362,11 @@ fun HomeUI(
             )
 
             if (showEditMode) {
-                // 放在区域右上角，避免挡住 App 行的点击（行是整宽的）
                 HomeAppsMoveHandle(
                     onDrag = { dx, dy -> callbacks.onAppsAreaDrag(dx, dy) },
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .offset(x = (-4).dp, y = 4.dp)
+                        .align(Alignment.Center)
+                        .offset(y = state.homeAppsYOffset.dp)
                 )
             }
         }
@@ -583,7 +582,7 @@ private fun HomeAppsMoveHandle(
     val color = Theme.colors.text.copy(alpha = 0.35f)
     Canvas(
         modifier = modifier
-            .size(56.dp)
+            .size(36.dp)
             .pointerInput(Unit) {
                 detectDragGestures { change, dragAmount ->
                     change.consume()
