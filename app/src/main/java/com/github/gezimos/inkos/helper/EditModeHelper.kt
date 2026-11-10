@@ -1079,18 +1079,15 @@ object EditModeHelper {
                             onUpdate()
                         }
 
-                        val pagerOptions = arrayOf("Hide", "Left", "Right")
-                        val pagerCurrent = when {
-                            !uiState.pageIndicatorVisible -> 0
-                            uiState.pageIndicatorAlignment == 0 -> 1
-                            else -> 2
-                        }
-                        CycleRow(label = "Page Indicator", options = pagerOptions, currentIndex = pagerCurrent) { nextIndex ->
-                            when (nextIndex) {
-                                0 -> vm.setPageIndicatorVisible(false)
-                                1 -> { vm.setPageIndicatorVisible(true); vm.setPageIndicatorAlignment(0) }
-                                2 -> { vm.setPageIndicatorVisible(true); vm.setPageIndicatorAlignment(1) }
-                            }
+                        // 显示/隐藏由原有的 "Enable Page Indicator" 开关控制，这里只管左右对齐
+                        val pagerOptions = arrayOf("Left", "Right")
+                        CycleRow(
+                            label = "Page Indicator",
+                            options = pagerOptions,
+                            currentIndex = uiState.pageIndicatorAlignment.coerceIn(0, 1),
+                            showAlignment = true
+                        ) { nextIndex ->
+                            vm.setPageIndicatorAlignment(nextIndex)
                             onUpdate()
                         }
 
