@@ -349,6 +349,8 @@ fun HomeUI(
                     top = state.homeAppsInsetTop.dp,
                     bottom = state.homeAppsInsetBottom.dp
                 )
+                // 边距定义的是 App 的「显示区域」，超出的行裁掉，方便做主题区域
+                .clipToBounds()
                 .align(Alignment.Center),
             contentAlignment = Alignment.Center
         ) {

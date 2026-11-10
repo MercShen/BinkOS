@@ -2171,8 +2171,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         var e = end0.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
         var t = top0.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
         var b = bottom0.coerceIn(0, Constants.MAX_HOME_APPS_INSET)
-        val maxWSum = (availW * 0.4f).toInt()
-        val maxHSum = (availH * 0.55f).toInt()
+        // 只保证「剩余区域」不小于可用区域，从而既能把内容推到边上，又不会完全消失
+        val minW = 96
+        val minH = 120
+        val maxWSum = (availW - minW).coerceAtLeast(0)
+        val maxHSum = (availH - minH).coerceAtLeast(0)
         if (s + e > maxWSum) {
             val f = maxWSum.toFloat() / (s + e).toFloat()
             s = (s * f).toInt()
@@ -2228,19 +2231,28 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      * 编辑模式拖动首页 App 区域：内容在剩余区域里居中，所以外边距变化量是位移的 2 倍。
      */
     fun dragHomeAppsInsets(dxPx: Float, dyPx: Float) {
-        val density = appContext.resources.displayMetrics.density.coerceAtLeast(1f)
-        val dx = (dxPx / density).roundToInt()
-        val dy = (dyPx / density).roundToInt()
-        if (dx == 0 && dy == 0) return
+        if (dxPx == 0f && dyPx == 0f) return
+        val dm = appContext.resources.displayMetrics
+        val density = dm.density.coerceAtLeast(1f)
+        val (wDp, hDp) = screenDp()
+        val availW = (wDp - 64).coerceAtLeast(120)
+        val availH = (hDp - 64).coerceAtLeast(120)
+        val minW = 96
+        val minH = 120
+        val maxShiftX = ((availW - minW) / 2f).coerceAtLeast(0f)
+        val maxShiftY = ((availH - minH) / 2f).coerceAtLeast(0f)
+
         val s = _homeUiState.value
-        var start = s.homeAppsInsetStart
-        var end = s.homeAppsInsetEnd
-        var top = s.homeAppsInsetTop
-        var bottom = s.homeAppsInsetBottom
-        if (dx > 0) start = (start + dx * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
-        else if (dx < 0) end = (end - dx * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
-        if (dy > 0) top = (top + dy * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
-        else if (dy < 0) bottom = (bottom - dy * 2).coerceAtMost(Constants.MAX_HOME_APPS_INSET)
+        // 用「中心偏移量」驱动：边距只是偏移量的换算结果，拖动可以左右上下对称回退
+        var shiftX = (s.homeAppsInsetStart - s.homeAppsInsetEnd) / 2f + dxPx / density
+        var shiftY = (s.homeAppsInsetTop - s.homeAppsInsetBottom) / 2f + dyPx / density
+        shiftX = shiftX.coerceIn(-maxShiftX, maxShiftX)
+        shiftY = shiftY.coerceIn(-maxShiftY, maxShiftY)
+
+        val start = (shiftX.coerceAtLeast(0f) * 2f).toInt()
+        val end = ((-shiftX).coerceAtLeast(0f) * 2f).toInt()
+        val top = (shiftY.coerceAtLeast(0f) * 2f).toInt()
+        val bottom = ((-shiftY).coerceAtLeast(0f) * 2f).toInt()
         applyHomeAppsInsets(top, bottom, start, end)
     }
 
