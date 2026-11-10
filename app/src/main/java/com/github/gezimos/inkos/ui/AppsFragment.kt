@@ -476,6 +476,7 @@ class AppsFragment : Fragment() {
                         } else {
                             buildList {
                                 val normalizedQuery = SearchHelper.normalizeString(query)
+
                                 val ctx = requireContext()
                                 val scored = ArrayList<Pair<AppListItem, Int>>()
 
@@ -484,7 +485,13 @@ class AppsFragment : Fragment() {
                                     val origScore = app.normalizedOriginalLabel?.let {
                                         SearchHelper.scorePreNormalized(it, normalizedQuery, 100, app.activityLabel)
                                     } ?: 0
-                                    return maxOf(aliasScore, origScore)
+                                    val nameScore = maxOf(aliasScore, origScore)
+                                    if (nameScore > 0) return nameScore
+                                    // 中文 App 额外支持拼音首字母（wx -> 微信）与全拼前缀
+                                    if (app.hasCjk && SearchHelper.isPinyinQuery(normalizedQuery)) {
+                                        return SearchHelper.scorePinyin(app.pinyinInitials, app.pinyinFull, normalizedQuery)
+                                    }
+                                    return 0
                                 }
 
                                 for (app in sortedApps) {

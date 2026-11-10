@@ -181,6 +181,24 @@ object SearchHelper {
     }
 
 
+    /** 查询串是否只由 ASCII 字母/数字组成（拼音查询的前提）。 */
+    fun isPinyinQuery(normalizedQuery: String): Boolean =
+        normalizedQuery.isNotEmpty() && normalizedQuery.all { it in 'A'..'Z' || it in '0'..'9' }
+
+    /**
+     * 拼音匹配打分：首字母缩写优先（wx → 微信），其次全拼前缀（weixin），
+     * 再次包含匹配。initials/full 需为 normalizeString() 同款的大写形式。
+     */
+    fun scorePinyin(initials: String, full: String, normalizedQuery: String, topScore: Int = 90): Int {
+        if (normalizedQuery.isEmpty()) return 0
+        if (initials.isEmpty() && full.isEmpty()) return 0
+        if (initials.startsWith(normalizedQuery)) return topScore
+        if (full.startsWith(normalizedQuery)) return (topScore * 0.95).toInt()
+        if (initials.contains(normalizedQuery)) return (topScore * 0.8).toInt()
+        if (full.contains(normalizedQuery)) return (topScore * 0.7).toInt()
+        return 0
+    }
+
     internal fun normalizeString(input: String): String {
         return input
             .uppercase(Locale.getDefault())
