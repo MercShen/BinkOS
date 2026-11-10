@@ -770,6 +770,13 @@ class SettingsFragment : Fragment() {
                     defaultState = uiState.einkRefreshHomeButtonOnly,
                     onCheckedChange = { viewModel.setEinkRefreshHomeButtonOnly(it) }
                 )
+                SettingsSwitch(
+                    text = "System Full Refresh (Bigme)",
+                    fontSize = titleFontSize,
+                    description = "Use the vendor GC16 full refresh instead of the blink overlay",
+                    defaultState = uiState.einkSystemFullRefresh,
+                    onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
+                )
             }
             SettingsSelect(
                 title = stringResource(R.string.eink_refresh_delay), option = "${uiState.einkRefreshDelay} ms", fontSize = titleFontSize,

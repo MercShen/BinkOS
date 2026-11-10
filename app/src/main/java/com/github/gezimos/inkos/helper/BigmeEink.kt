@@ -204,6 +204,8 @@ object BigmeEink {
     /** 系统全刷实测使用的波形（hwcomposer: handle delay clean,globalRefreshMode=b1）。 */
     const val MODE_HD = 177
     const val MODE_CLEAN = 176
+    /** GC16：实测唯一能产生可见全刷的波形 */
+    const val MODE_GC16 = 4
 
     private fun recentSwipe(): Direction? =
         lastSwipe?.takeIf { SystemClock.uptimeMillis() - lastSwipeAt <= SWIPE_WINDOW_MS }

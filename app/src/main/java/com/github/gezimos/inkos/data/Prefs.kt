@@ -111,6 +111,7 @@ private const val HOME_APPS_INSET_BOTTOM = "HOME_APPS_INSET_BOTTOM"
 private const val HOME_APPS_INSET_START = "HOME_APPS_INSET_START"
 private const val HOME_APPS_INSET_END = "HOME_APPS_INSET_END"
 private const val HOME_PAGER_ALIGN = "HOME_PAGER_ALIGN"
+private const val EINK_SYSTEM_FULL_REFRESH = "EINK_SYSTEM_FULL_REFRESH"
 private const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
 private const val HOME_ALIGNMENT = "HOME_ALIGNMENT"
 private const val TEXT_ISLANDS = "TEXT_ISLANDS"
@@ -1536,6 +1537,10 @@ class Prefs(val context: Context) {
     var homePagerAlign: Int
         get() = prefs.getInt(HOME_PAGER_ALIGN, 1)
         set(value) = prefs.edit { putInt(HOME_PAGER_ALIGN, value.coerceIn(0, 1)) }
+    /** 用大我系统的 GC16 全刷代替原来的整屏闪烁 */
+    var einkSystemFullRefresh: Boolean
+        get() = prefs.getBoolean(EINK_SYSTEM_FULL_REFRESH, false)
+        set(value) = prefs.edit { putBoolean(EINK_SYSTEM_FULL_REFRESH, value) }
 
 
     // --- App Drawer specific settings ---

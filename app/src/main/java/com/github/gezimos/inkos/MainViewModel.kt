@@ -132,6 +132,7 @@ data class HomeUiState(
     val einkRefreshEnabled: Boolean = false,
     val einkRefreshHomeButtonOnly: Boolean = false,
     val einkRefreshDelay: Int = 0,
+    val einkSystemFullRefresh: Boolean = false,
     val useVolumeKeysForPages: Boolean = false,
     val selectedAppShortcuts: Set<String>? = null, // null means all selected by default
     val einkHelperMode: Int = 0,
@@ -483,6 +484,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         einkRefreshEnabled = prefs.einkRefreshEnabled,
         einkRefreshHomeButtonOnly = prefs.einkRefreshHomeButtonOnly,
         einkRefreshDelay = prefs.einkRefreshDelay,
+        einkSystemFullRefresh = prefs.einkSystemFullRefresh,
         useVolumeKeysForPages = prefs.useVolumeKeysForPages,
         selectedAppShortcuts = prefs.selectedAppShortcuts.takeIf { it.isNotEmpty() },
         einkHelperMode = prefs.einkHelperMode,
@@ -2388,6 +2390,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             einkRefreshHomeButtonOnly = enabled,
             einkRefreshEnabled = prefs.einkRefreshEnabled
         )
+    }
+
+    fun setEinkSystemFullRefresh(enabled: Boolean) {
+        prefs.einkSystemFullRefresh = enabled
+        _homeUiState.value = _homeUiState.value.copy(einkSystemFullRefresh = enabled)
     }
 
     fun setEinkRefreshDelay(delay: Int) {
