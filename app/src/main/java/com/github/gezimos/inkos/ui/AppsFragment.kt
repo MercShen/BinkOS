@@ -1054,10 +1054,12 @@ class AppsFragment : Fragment() {
                                             }
                                         } catch (_: Exception) {}
                                     },
-                                    onLongSwipeDown = {
+                                    onLongSwipe = { direction ->
                                         try {
                                             if (state.draggingIndex != null) return@gestureHelper
-                                            if (state.currentPage == 0 && flag != Constants.AppDrawerFlag.EditFavorites && flag != Constants.AppDrawerFlag.EditHiddenApps) {
+                                            val closeDirection = com.github.gezimos.inkos.helper.GestureBindings
+                                                .closeDirection(Constants.Action.OpenAppDrawer, prefs)
+                                            if (direction == closeDirection && flag != Constants.AppDrawerFlag.EditFavorites && flag != Constants.AppDrawerFlag.EditHiddenApps) {
                                                 vibratePage()
                                                 findNavController().popBackStack()
                                             }

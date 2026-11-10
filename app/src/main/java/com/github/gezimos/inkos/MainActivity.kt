@@ -28,7 +28,9 @@ import com.github.gezimos.inkos.data.Migration
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.databinding.ActivityMainBinding
 import com.github.gezimos.inkos.helper.AudioWidgetHelper
+import com.github.gezimos.inkos.helper.BigmeEink
 import com.github.gezimos.inkos.helper.EditModeHelper
+import com.github.gezimos.inkos.helper.GestureBindings
 import com.github.gezimos.inkos.helper.hideNavigationBar
 import com.github.gezimos.inkos.helper.isTablet
 import com.github.gezimos.inkos.helper.showNavigationBar
@@ -49,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private var wasInBackground: Boolean = false
     var allowEdgeSwipeBack: Boolean = true
     private var backGesture: com.github.gezimos.inkos.helper.BackGesture? = null
+    private var lastDestinationId: Int = -1
 
     // --- Activity Result Launchers ---
 
@@ -395,6 +398,41 @@ class MainActivity : AppCompatActivity() {
         } catch (_: Exception) {}
     }
 
+    /** 首页长滑可绑定的界面 → 对应的 Action。 */
+    private fun gestureActionFor(destinationId: Int): Constants.Action? = when (destinationId) {
+        R.id.appListFragment, R.id.appDrawerListFragment, R.id.appsFragment -> Constants.Action.OpenAppDrawer
+        R.id.lettersFragment -> Constants.Action.OpenLettersScreen
+        R.id.recentsFragment -> Constants.Action.OpenRecentsScreen
+        R.id.simpleTrayFragment -> Constants.Action.OpenSimpleTray
+        R.id.hubFragment -> Constants.Action.OpenHub
+        R.id.settingsFragment -> Constants.Action.OpenSettings
+        else -> null
+    }
+
+    /** 当前界面的「打开方向」，关闭时取它的反向。 */
+    private var currentScreenOpenDirection: BigmeEink.Direction = BigmeEink.Direction.B2T
+
+    /**
+     * 打开 / 关闭「由首页长滑绑定」的界面时播放对应方向的大我动画：
+     * 打开用该功能绑定的手势方向，关闭用它的反向（也就是关闭手势的方向）。
+     * 其他界面（壁纸、引导等）不触发。
+     */
+    private fun handleScreenAnimation(currentId: Int, previousId: Int) {
+        val currentAction = gestureActionFor(currentId)
+        val previousAction = gestureActionFor(previousId)
+        when {
+            currentAction != null -> {
+                currentScreenOpenDirection = GestureBindings.openDirection(currentAction, prefs)
+                if (previousAction == null) {
+                    BigmeEink.onScreenOpened(this, currentScreenOpenDirection)
+                }
+            }
+            previousAction != null -> {
+                BigmeEink.onScreenClosed(this, GestureBindings.opposite(currentScreenOpenDirection))
+            }
+        }
+    }
+
     @RequiresPermission(anyOf = ["android.permission.READ_WALLPAPER_INTERNAL", Manifest.permission.MANAGE_EXTERNAL_STORAGE])
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -422,6 +460,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         prefs = Prefs(this)
+
+        // --- Bigme (大我) e-ink animation: resolve the vendor DisplayPolicyManager once ---
+        try {
+            BigmeEink.init(this)
+        } catch (_: Exception) {}
 
         try {
             VH.init(applicationContext, prefs)
@@ -544,6 +587,10 @@ class MainActivity : AppCompatActivity() {
             val skipIds = emptySet<Int>()
             navController.addOnDestinationChangedListener { _: NavController, destination: androidx.navigation.NavDestination, _: Bundle? ->
                 try {
+                    val previousId = lastDestinationId
+                    lastDestinationId = destination.id
+                    // 大我墨水屏动画：只在打开 / 关闭手势绑定界面时触发，且必须先于重绘
+                    handleScreenAnimation(destination.id, previousId)
                     if (destination.id in skipIds) return@addOnDestinationChangedListener
                     if (prefs.einkRefreshEnabled && !prefs.einkRefreshHomeButtonOnly) {
                         com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEink(

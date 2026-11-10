@@ -155,6 +155,10 @@ dependencies {
     implementation(libs.commons.text)
     implementation(libs.gson)
 
+    // Bigme (大我) e-ink page-turn animation: reflective access to the vendor
+    // DisplayPolicyManager needs the hidden-API exemptions this library applies.
+    implementation("org.lsposed.hiddenapibypass:hiddenapibypass:4.3")
+
     // Glance (AppWidgets)
     implementation(libs.glance.appwidget)
 

@@ -56,6 +56,9 @@ class BackGesture(
                         if (absX > flingThreshold && absX > absY) {
                             try {
                                 if (navController.currentDestination?.id != com.github.gezimos.inkos.R.id.mainFragment) {
+                                    BigmeEink.noteSwipe(
+                                        if (totalX > 0) BigmeEink.Direction.L2R else BigmeEink.Direction.R2L
+                                    )
                                     navController.popBackStack()
                                     VH.trigger(VH.Effect.PAGE)
                                     active = false

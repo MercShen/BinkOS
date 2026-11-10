@@ -1150,8 +1150,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setCurrentPage(page: Int) {
         val totalPages = _homeUiState.value.homePagesNum
+        val previousPage = _homeUiState.value.currentPage
         val clampedPage = page.coerceIn(0, maxOf(totalPages - 1, 0))
+        if (clampedPage == previousPage) return
         _homeUiState.value = _homeUiState.value.copy(currentPage = clampedPage)
+        // 大我墨水屏翻页动画：方向只看翻到了哪一页（下一页/上一页），不看手指方向
+        try {
+            com.github.gezimos.inkos.helper.BigmeEink.onHomePageTurn(
+                getApplication(),
+                forward = clampedPage > previousPage,
+            )
+        } catch (_: Exception) {}
     }
 
     fun nextPage() {

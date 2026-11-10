@@ -35,6 +35,7 @@ import com.github.gezimos.inkos.data.Constants.Action
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.initActionService
 import com.github.gezimos.inkos.data.repository.AppsRepository
+import com.github.gezimos.inkos.helper.BigmeEink
 import com.github.gezimos.inkos.helper.utils.AppReloader
 import com.github.gezimos.inkos.helper.utils.BrightnessHelper
 import com.github.gezimos.inkos.helper.utils.EinkRefreshHelper
@@ -346,6 +347,12 @@ fun Modifier.gestureHelper(
     onSwipeUp: (() -> Unit)? = null,
     onSwipeDown: (() -> Unit)? = null,
     onLongSwipeDown: (() -> Unit)? = null,
+    /**
+     * 任意方向的长滑回调。用于「按手势方向关闭当前界面」：把方向交给调用方，
+     * 由它决定这个方向是不是当前界面的关闭方向。
+     * 不会改变翻页语义（不进入 hasAnyLongSwipeCallbacks 判定）。
+     */
+    onLongSwipe: ((BigmeEink.Direction) -> Unit)? = null,
     onVerticalPageMove: ((deltaPages: Int) -> Unit)? = null,
     onAnyTouch: (() -> Unit)? = null,
     scrollPageMoveMultiplier: Float = 3.0f,
@@ -365,6 +372,7 @@ fun Modifier.gestureHelper(
     val currentOnSwipeUp = androidx.compose.runtime.rememberUpdatedState(onSwipeUp)
     val currentOnSwipeDown = androidx.compose.runtime.rememberUpdatedState(onSwipeDown)
     val currentOnLongSwipeDown = androidx.compose.runtime.rememberUpdatedState(onLongSwipeDown)
+    val currentOnLongSwipe = androidx.compose.runtime.rememberUpdatedState(onLongSwipe)
     val currentOnVerticalPageMove = androidx.compose.runtime.rememberUpdatedState(onVerticalPageMove)
     val currentUseShortSwipeForActions = androidx.compose.runtime.rememberUpdatedState(useShortSwipeForActions)
 
@@ -438,6 +446,19 @@ fun Modifier.gestureHelper(
                     val diffY = event2.y - event1.y
                     val diffX = event2.x - event1.x
 
+                    // 记录手指方向：大我的 App Drawer 动画要按手指方向播放
+                    if (abs(diffX) > abs(diffY)) {
+                        if (abs(diffX) > thresholdPx && abs(velocityX) > velocityThreshold) {
+                            BigmeEink.noteSwipe(
+                                if (diffX > 0) BigmeEink.Direction.L2R else BigmeEink.Direction.R2L
+                            )
+                        }
+                    } else if (abs(diffY) > thresholdPx && abs(velocityY) > velocityThreshold) {
+                        BigmeEink.noteSwipe(
+                            if (diffY < 0) BigmeEink.Direction.B2T else BigmeEink.Direction.T2B
+                        )
+                    }
+
                     // Directional locking from OnSwipeTouchListener
                     if (abs(diffX) > abs(diffY)) {
                         val exH = GestureHelper.exclusionHeight
@@ -446,6 +467,12 @@ fun Modifier.gestureHelper(
                         }
                         // Horizontal swipe dominates
                         if (abs(diffX) > thresholdPx && abs(velocityX) > velocityThreshold) {
+                            val longThresholdPx = (thresholdPx * longSwipeRatio).toInt().coerceAtLeast(thresholdPx)
+                            val longVelocityThreshold = (velocityThreshold * 1.8f).coerceAtLeast(velocityThreshold.toFloat())
+                            if (abs(diffX) > longThresholdPx && abs(velocityX) > longVelocityThreshold) {
+                                val direction = if (diffX > 0) BigmeEink.Direction.L2R else BigmeEink.Direction.R2L
+                                try { currentOnLongSwipe.value?.invoke(direction) } catch (_: Exception) {}
+                            }
                             if (diffX > 0) {
                                 try { currentOnSwipeRight.value?.invoke() } catch (_: Exception) {}
                             } else {
@@ -466,6 +493,8 @@ fun Modifier.gestureHelper(
                         val isLongSwipe = abs(diffY) > longSwipeThresholdPx && abs(velocityY) > longVelocityThreshold
 
                         if (isLongSwipe) {
+                            val direction = if (diffY < 0) BigmeEink.Direction.B2T else BigmeEink.Direction.T2B
+                            try { currentOnLongSwipe.value?.invoke(direction) } catch (_: Exception) {}
                             val handled = if (diffY < 0) {
                                 try {
                                     currentOnSwipeUp.value?.invoke()

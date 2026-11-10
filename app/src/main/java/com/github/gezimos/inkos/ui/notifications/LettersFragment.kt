@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import com.github.gezimos.inkos.ui.compose.inkOsSafeDrawingPadding
+import com.github.gezimos.inkos.ui.compose.gestureHelper
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -422,9 +423,21 @@ class LettersFragment : Fragment() {
         val actionBarBottomPadding = 0.dp
         val contentTopPadding = 0.dp
 
+        val lettersCloseDirection = remember(prefs) {
+            com.github.gezimos.inkos.helper.GestureBindings
+                .closeDirection(com.github.gezimos.inkos.data.Constants.Action.OpenLettersScreen, prefs)
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .gestureHelper(onLongSwipe = { direction ->
+                    try {
+                        if (direction == lettersCloseDirection) {
+                            vibratePaging()
+                            findNavController().popBackStack()
+                        }
+                    } catch (_: Exception) {}
+                })
                 .background(Theme.colors.background)
                 .inkOsSafeDrawingPadding()
         ) {

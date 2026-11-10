@@ -118,6 +118,8 @@ import androidx.core.content.ContextCompat
 import com.github.gezimos.common.showShortToast
 import com.github.gezimos.inkos.R
 import com.github.gezimos.inkos.data.Prefs
+import com.github.gezimos.inkos.data.Constants
+import com.github.gezimos.inkos.helper.GestureBindings
 import com.github.gezimos.inkos.helper.AudioWidgetHelper
 import com.github.gezimos.inkos.helper.IconShape
 import com.github.gezimos.inkos.helper.IconShapeUtility
@@ -597,9 +599,13 @@ fun HubScreen(
                     bottomNavEnabled = false
                 )
             }
-            .gestureHelper(onSwipeUp = {
-                try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
-                onNavigateBack()
+            .gestureHelper(onLongSwipe = { direction ->
+                try {
+                    if (direction == GestureBindings.closeDirection(Constants.Action.OpenHub, prefs)) {
+                        VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
+                        onNavigateBack()
+                    }
+                } catch (_: Exception) {}
             })
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
@@ -2016,9 +2022,13 @@ fun SimpleTrayScreen(
                     bottomNavEnabled = prefsLocal.enableBottomNav
                 )
             }
-            .gestureHelper(onSwipeUp = {
-                try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
-                onNavigateBack()
+            .gestureHelper(onLongSwipe = { direction ->
+                try {
+                    if (direction == GestureBindings.closeDirection(Constants.Action.OpenSimpleTray, prefs)) {
+                        VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
+                        onNavigateBack()
+                    }
+                } catch (_: Exception) {}
             })
             .then(
                 if (isEditMode) {
