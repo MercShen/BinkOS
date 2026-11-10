@@ -709,13 +709,41 @@ class Prefs(val context: Context) {
         val all: HashMap<String, Any?> = HashMap(prefs.all)
         all.remove(Constants.PrefKeys.EVENTS_CALENDAR_ID)
         all.remove(Constants.PrefKeys.EVENTS_CALENDAR_NAME)
-        return Gson().toJson(all)
+        // v1 信封格式；旧版本导出的裸 map 仍可导入（见 loadFromString）
+        val root = mapOf(
+            "type" to "inkos_full",
+            "version" to BACKUP_FORMAT_VERSION,
+            "app_version" to com.github.gezimos.inkos.BuildConfig.VERSION_NAME,
+            "prefs" to all
+        )
+        return Gson().toJson(root)
     }
 
     fun loadFromString(json: String) {
+        // 兼容两种备份格式：
+        //   v1+    {"type":"inkos_full","version":1,"prefs":{...}}
+        //   legacy 直接就是设置键值 map
+        val settingsJson: String = try {
+            val root = org.json.JSONObject(json)
+            if (root.has("prefs")) {
+                val version = root.optInt("version", 0)
+                if (version > BACKUP_FORMAT_VERSION) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "This backup was created by a newer inkOS (v" + version + "). Unsupported settings are ignored.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                root.getJSONObject("prefs").toString()
+            } else {
+                json
+            }
+        } catch (_: Exception) {
+            json
+        }
         prefs.edit {
             val all: HashMap<String, Any?> =
-                Gson().fromJson(json, object : TypeToken<HashMap<String, Any?>>() {}.type)
+                Gson().fromJson(settingsJson, object : TypeToken<HashMap<String, Any?>>() {}.type)
             val pm = context.packageManager
             for ((key, value) in all) {
                 if (key in deprecatedImportKeys) continue
@@ -1861,6 +1889,9 @@ class Prefs(val context: Context) {
         set(value) = prefs.edit { putInt(INKOS_WALLPAPER_RESOURCE_ID, value) }
 
     companion object {
+
+        /** 备份文件格式版本；导入更高版本时提示，但继续尽量导入 */
+        const val BACKUP_FORMAT_VERSION = 1
 
         private const val LETTERS_FONT = "letters_font"
         private const val LETTERS_TEXT_SIZE = "letters_text_size"
