@@ -770,14 +770,15 @@ class SettingsFragment : Fragment() {
                     defaultState = uiState.einkRefreshHomeButtonOnly,
                     onCheckedChange = { viewModel.setEinkRefreshHomeButtonOnly(it) }
                 )
-                SettingsSwitch(
-                    text = "System Full Refresh (Bigme)",
-                    fontSize = titleFontSize,
-                    description = "Use the vendor GC16 full refresh instead of the blink overlay",
-                    defaultState = uiState.einkSystemFullRefresh,
-                    onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
-                )
             }
+            // 与自动刷新开关独立：手势触发全刷（refreshEinkForced）同样走这里
+            SettingsSwitch(
+                text = "System Full Refresh (Bigme)",
+                fontSize = titleFontSize,
+                description = "Use the vendor GC16 full refresh for any refresh, including gesture-triggered ones",
+                defaultState = uiState.einkSystemFullRefresh,
+                onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
+            )
             SettingsSelect(
                 title = stringResource(R.string.eink_refresh_delay), option = "${uiState.einkRefreshDelay} ms", fontSize = titleFontSize,
                 description = stringResource(R.string.desc_eink_interval),
