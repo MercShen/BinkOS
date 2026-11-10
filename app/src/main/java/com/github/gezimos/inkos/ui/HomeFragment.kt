@@ -41,6 +41,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -270,6 +271,15 @@ class HomeFragmentCompose : Fragment() {
                     
                     // Observe edit mode state changes
                     val isEditMode by EditModeHelper.isEditModeFlow.collectAsState()
+
+    // 旋转/分屏后按新窗口尺寸校正首页 App 区域边距，避免内容跑出安全区
+    val windowConfiguration = LocalConfiguration.current
+    LaunchedEffect(windowConfiguration.screenWidthDp, windowConfiguration.screenHeightDp) {
+        try {
+            viewModel.updateScreenSize(windowConfiguration.screenWidthDp, windowConfiguration.screenHeightDp)
+            viewModel.normalizeHomeAppsInsets()
+        } catch (_: Exception) {}
+    }
 
                     // One-time edit mode tooltip — multi-step with Next button
                     val editTooltipKey = "tooltip_edit_mode_shown"

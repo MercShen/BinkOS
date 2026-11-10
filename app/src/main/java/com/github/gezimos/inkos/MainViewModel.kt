@@ -89,6 +89,7 @@ data class HomeUiState(
 
     val bottomWidgetHeightPx: Int = 0,
     val screenHeightDp: Int = 0,
+    val screenWidthDp: Int = 0,
     val topWidgetMargin: Int = 0,
     val bottomWidgetMargin: Int = 0,
     val hideHomeApps: Boolean = false,
@@ -424,6 +425,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         homeAppsInsetStart = prefs.homeAppsInsetStart,
         homeAppsInsetEnd = prefs.homeAppsInsetEnd,
         screenHeightDp = (appContext.resources.displayMetrics.heightPixels / appContext.resources.displayMetrics.density).toInt(),
+        screenWidthDp = (appContext.resources.displayMetrics.widthPixels / appContext.resources.displayMetrics.density).toInt(),
 
         topWidgetMargin = prefs.topWidgetMargin,
         bottomWidgetMargin = prefs.bottomWidgetMargin,
@@ -2164,6 +2166,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     /** 屏幕可用区域（dp），用于给首页边距做安全约束。 */
     private fun screenDp(): Pair<Int, Int> {
+        // 优先用当前窗口尺寸（旋转/分屏时 displayMetrics 可能滞后）
+        val s = _homeUiState.value
+        if (s.screenWidthDp > 0 && s.screenHeightDp > 0) return s.screenWidthDp to s.screenHeightDp
         val dm = appContext.resources.displayMetrics
         val d = dm.density.coerceAtLeast(1f)
         return (dm.widthPixels / d).toInt() to (dm.heightPixels / d).toInt()
@@ -2287,6 +2292,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val top = (shiftY.coerceAtLeast(0f) * 2f).toInt()
         val bottom = ((-shiftY).coerceAtLeast(0f) * 2f).toInt()
         applyHomeAppsInsets(top, bottom, start, end)
+    }
+
+    /** 旋转/分屏时更新窗口尺寸，并按新尺寸重新校正 App 区域边距。 */
+    fun updateScreenSize(widthDp: Int, heightDp: Int) {
+        if (widthDp <= 0 || heightDp <= 0) return
+        val s = _homeUiState.value
+        if (s.screenWidthDp != widthDp || s.screenHeightDp != heightDp) {
+            _homeUiState.value = s.copy(screenWidthDp = widthDp, screenHeightDp = heightDp)
+            normalizeHomeAppsInsets()
+        }
+    }
+
+    /** 用当前屏幕尺寸重新校正已有边距，避免换屏幕/旋转后内容跑到安全区外。 */
+    fun normalizeHomeAppsInsets() {
+        val s = _homeUiState.value
+        applyHomeAppsInsets(s.homeAppsInsetTop, s.homeAppsInsetBottom, s.homeAppsInsetStart, s.homeAppsInsetEnd)
     }
 
     fun updateScreenHeightDp(heightDp: Int) {
