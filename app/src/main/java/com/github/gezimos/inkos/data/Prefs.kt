@@ -771,6 +771,23 @@ class Prefs(val context: Context) {
                     putStringSet(key, filteredSet)
                     continue
                 }
+                // 应用重命名（别名）：新格式是 app_alias_<pkg>，随 prefs 全量备份；
+                // 兼容更老的写法 APP_ALIAS_<pkg> 以及 APP_ALIAS 里存 JSON map 的情况。
+                if (key == "APP_ALIAS" || key.startsWith("APP_ALIAS_")) {
+                    if (key == "APP_ALIAS" && value is String) {
+                        try {
+                            val map: Map<String, String>? = Gson().fromJson(
+                                value,
+                                object : TypeToken<Map<String, String>>() {}.type
+                            )
+                            map?.forEach { (pkg, alias) -> putString("app_alias_$pkg", alias) }
+                        } catch (_: Exception) {
+                        }
+                    } else if (value is String) {
+                        putString("app_alias_" + key.removePrefix("APP_ALIAS_"), value)
+                    }
+                    continue
+                }
                 if (key == "custom_font_paths") {
                     val set = when (value) {
                         is Collection<*> -> value.filterIsInstance<String>().toMutableSet()

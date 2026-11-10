@@ -13,6 +13,11 @@ class BackupCompatTestActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
+            intent.getStringExtra("alias")?.let { pkg ->
+                Prefs(applicationContext).setAppAlias(pkg, "测试别名")
+                Log.d("BackupTest", "alias=" + pkg)
+                return finish()
+            }
             if (intent.getBooleanExtra("checkwall", false)) {
                 val pr = Prefs(applicationContext)
                 val wp = pr.inkosWallpaperPath
@@ -22,7 +27,8 @@ class BackupCompatTestActivity : Activity() {
                 return finish()
             }
             if (intent.getBooleanExtra("dump", false)) {
-                Log.d("BackupTest", "dump=" + Prefs(applicationContext).saveToString().take(200))
+                val s = Prefs(applicationContext).saveToString()
+                Log.d("BackupTest", "dump=" + s.take(80) + " len=" + s.length + " aliasCount=" + Regex("app_alias_").findAll(s).count() + " hasSettingsAlias=" + s.contains("app_alias_com.android.settings") + " hasDialerAlias=" + s.contains("app_alias_com.android.dialer"))
                 return finish()
             }
             intent.getStringExtra("wallpaper")?.let { wp ->
