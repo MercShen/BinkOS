@@ -1347,7 +1347,7 @@ private fun HomeHeader(
                                                 color = roundTextColor.copy(alpha = 0.9f),
                                                 fontSize = roundSmallSize.sp,
                                                 fontFamily = dateFontFamily,
-                                                lineHeight = roundSmallSize.sp
+                                                lineHeight = (roundSmallSize * 1.3f).sp
                                             ),
                                             textAlign = TextAlign.Center,
                                             maxLines = 1
@@ -1567,7 +1567,7 @@ private fun HomeHeader(
                                     Box(modifier = Modifier.clickableNoRipple(onDateClick)) {
                                         Text(
                                             text = state.dateText,
-                                            style = TextStyle(color = splitColor, fontSize = splitSmallSize.sp, fontFamily = dateFontFamily, lineHeight = splitSmallSize.sp),
+                                            style = TextStyle(color = splitColor, fontSize = splitSmallSize.sp, fontFamily = dateFontFamily, lineHeight = (splitSmallSize * 1.3f).sp),
                                             maxLines = 1
                                         )
                                     }
@@ -1655,7 +1655,7 @@ private fun HomeHeader(
                                 Box(modifier = Modifier.clickableNoRipple(onDateClick)) {
                                     Text(
                                         text = state.dateText,
-                                        style = TextStyle(color = horizColor, fontSize = horizSmallSize.sp, fontFamily = dateFontFamily, lineHeight = horizSmallSize.sp),
+                                        style = TextStyle(color = horizColor, fontSize = horizSmallSize.sp, fontFamily = dateFontFamily, lineHeight = (horizSmallSize * 1.3f).sp),
                                         textAlign = horizDateTextAlign,
                                         maxLines = 1
                                     )
@@ -2071,7 +2071,7 @@ private fun HomeHeader(
                                     color = defaultTextColor,
                                     fontSize = amPmSize,
                                     fontFamily = clockFontFamily,
-                                    lineHeight = amPmSize
+                                    lineHeight = amPmSize * 1.25f
                                 ),
                                 maxLines = 1
                             )
@@ -2114,7 +2114,7 @@ private fun HomeHeader(
                                         color = defaultTextColor,
                                         fontSize = amPmSize,
                                         fontFamily = clockFontFamily,
-                                        lineHeight = amPmSize
+                                        lineHeight = amPmSize * 1.25f
                                     ),
                                     maxLines = 1
                                 )
