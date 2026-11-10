@@ -38,6 +38,7 @@ class BackupCompatTestActivity : Activity() {
             }
             if (intent.getBooleanExtra("dump", false)) {
                 val s = Prefs(applicationContext).saveToString()
+                File(filesDir, "dump.json").writeText(s)
                 Log.d("BackupTest", "dump=" + s.take(80) + " len=" + s.length + " aliasCount=" + Regex("app_alias_").findAll(s).count() + " hasSettingsAlias=" + s.contains("app_alias_com.android.settings") + " hasDialerAlias=" + s.contains("app_alias_com.android.dialer"))
                 return finish()
             }

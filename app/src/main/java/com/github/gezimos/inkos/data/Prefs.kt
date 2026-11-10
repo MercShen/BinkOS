@@ -709,6 +709,34 @@ class Prefs(val context: Context) {
         val all: HashMap<String, Any?> = HashMap(prefs.all)
         all.remove(Constants.PrefKeys.EVENTS_CALENDAR_ID)
         all.remove(Constants.PrefKeys.EVENTS_CALENDAR_NAME)
+        // 让备份自描述：这些键即使还是默认值（prefs 里没落盘）也显式写入，
+        // 便于换机/重装后核对与恢复，尤其是对齐、时钟、边距这类"小参数"。
+        all[Constants.PrefKeys.HOME_CLOCK_ALIGNMENT] = homeClockAlignment
+        all[Constants.PrefKeys.HOME_DATE_ALIGNMENT] = homeDateAlignment
+        all[Constants.PrefKeys.HOME_ALIGNMENT] = homeAlignment
+        all[Constants.PrefKeys.HOME_QUOTE_ALIGNMENT] = homeQuoteAlignment
+        all["DATE_FORMAT_STYLE"] = dateFormatStyle
+        all[CLOCK_STYLE] = clockStyle
+        all[CLOCK_SIZE_TEXT] = clockSize
+        all[APP_SIZE_TEXT] = appSize
+        all[TEXT_PADDING_SIZE] = textPaddingSize
+        all["top_widget_margin"] = topWidgetMargin
+        all["bottom_widget_margin"] = bottomWidgetMargin
+        all[HOME_APPS_INSET_TOP] = homeAppsInsetTop
+        all[HOME_APPS_INSET_BOTTOM] = homeAppsInsetBottom
+        all[HOME_APPS_INSET_START] = homeAppsInsetStart
+        all[HOME_APPS_INSET_END] = homeAppsInsetEnd
+        all[HOME_PAGES_PAGER] = homePager
+        all[HOME_PAGER_ALIGN] = homePagerAlign
+        all[LAUNCHER_FONT] = fontFamily.name
+        all[APPS_FONT] = appsFont.name
+        all[CLOCK_FONT] = clockFont.name
+        all["date_font"] = dateFont.name
+        all[QUOTE_FONT] = quoteFont.name
+        all["universal_font_enabled"] = universalFontEnabled
+        all["universal_font"] = universalFont.name
+        all["custom_font_path"] = customFontPath ?: ""
+        all["custom_font_path_map"] = gson.toJson(customFontPathMap)
         // v1 信封格式；旧版本导出的裸 map 仍可导入（见 loadFromString）
         val root = mapOf(
             "type" to "inkos_full",
