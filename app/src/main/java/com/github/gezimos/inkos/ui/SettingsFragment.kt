@@ -684,7 +684,7 @@ class SettingsFragment : Fragment() {
                 description = stringResource(R.string.desc_report_bugs),
                 titleFontSize = titleFontSize,
                 onClick = {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/MercShen/inkOS/issues".toUri())) } catch (_: Exception) {}
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/MercShen/BinkOS/issues".toUri())) } catch (_: Exception) {}
                 }
             )
             SettingsHomeItem(
