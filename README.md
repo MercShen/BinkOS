@@ -1,167 +1,78 @@
-<div style="text-align: center;">
-	<img src="docs/img/inkos.svg" alt="inkOS logo" height="48">
-	<h2>inkOS - Text based & E-ink friendly Android Launcher </h2>
-    <table>
-        <tr>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/0.png' height='300' alt=""></td>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/1.png' height='300' alt=""></td>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/2.png' height='300' alt=""></td>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/3.png' height='300' alt=""></td>
-        </tr>
-        <tr>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/4.png' height='300' alt=""></td>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/5.png' height='300' alt=""></td>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/6.png' height='300' alt=""></td>
-            <td><img src='fastlane/metadata/android/en-US/images/phoneScreenshots/7.png' height='300' alt=""></td>
-        </tr>
-    </table>
-
+<div align="center">
+  <img src="docs/img/inkos.svg" alt="Bink OS" height="56">
+  <h1>Bink OS</h1>
+  <p><b>A text-first, e-ink tuned Android launcher for the Bigme HiBreak.</b><br>
+  A personal fork of <a href="https://github.com/gezimos/inkOS">inkOS</a>, tuned so the HiBreak feels native.</p>
+  <p>
+    <a href="https://github.com/MercShen/BinkOS/releases">Download APK</a> ·
+    <a href="DOCUMENTATION.md">Documentation</a>
+  </p>
+  <table>
+    <tr>
+      <td><img src="docs/img/bink/short-swipe-zone.png" height="360" alt="Short swipe zone editor"></td>
+      <td><img src="docs/img/bink/extras.png" height="360" alt="E-ink extras"></td>
+    </tr>
+    <tr>
+      <td align="center"><sub>Short swipe zone — page turns only where you want them</sub></td>
+      <td align="center"><sub>Bigme refresh &amp; animation switches</sub></td>
+    </tr>
+  </table>
 </div>
 
-[Documentation](DOCUMENTATION.md) | [Video demo](https://www.youtube.com/watch?v=dAmHJ5aFLWA)
+Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub against e-ink hardware: gestures, refresh, typography and layout. It is not a general-purpose launcher — it is a launcher for reading, notes and light apps on an e-ink phone.
 
-# Tested on Android 10 to 16.
+## Unique features
 
-It works well with these minimal/dumbphone devices:
+### Bigme HiBreak integration
+- **Vendor GC16 full refresh** — force the vendor full refresh for every refresh, including gesture-triggered ones.
+- **Vendor page-turn animation** — play the Bigme e-ink page-turn effect when opening/closing screens.
+- **E-ink refresh control** — auto refresh, home-only refresh, configurable refresh delay.
+- **Front light** — control the HiBreak front light from the launcher.
 
-- Mudita Kompakt
-- LightPhone 3 (tested on emulator)
-- QIN F22
-- Cat S22 flip
+### Gestures that don't fight the system
+- **Short swipe zone** — restrict page-turn swipes to a configurable vertical band, so the system's edge gestures (home / back) still work. Edit mode gives a live overlay with side handles and dashed bounds; the zone counts from 30 dp so it never hides under the status bar.
+- **Reverse long swipe closes** — every surface (app drawer, recents, letters, hub, simple tray, settings) closes with the long swipe opposite to the one that opened it. Detected on the initial pointer pass, so inner scrolling pages can't swallow the gesture.
+- Bind 4 swipe directions, double tap, and clock/date/quote taps to 15+ actions.
 
+### Typography built for e-ink
+- Per-element fonts: clock, date, apps, quote, notifications and settings each get their own family and size.
+- Custom `.ttf` / `.otf` files, including pixel fonts that stay crisp at integer scale.
+- Text islands, all-caps / small-caps app labels, per-element alignment.
 
-# Downloading
+### Layout without digging through menus
+- **Edit mode** — tap any element on the home screen to configure it live.
+- Alignment, margins and offsets in one dialog, with drag handles and hold-to-repeat steppers whose ranges match what the layout can actually use.
 
+### Chinese first
+- Full zh-CN UI, per-app language picker, and localized inkOS internal shortcuts (drawer, letters, tray, hub, recents, settings) that follow the in-app language.
 
-You can download the apk directly on the Release section on the rightside of github, or you can use a manager like IzzyOnDroid. It might come on F-Droid in the future once I figure it out.
+### Backup & restore
+- ZIP backup containing layout, aliases, preferences and wallpaper, restorable from the settings screen.
 
-[<img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" alt="Get it on IzzyOnDroid" height='60' >](https://apt.izzysoft.de/fdroid/index/apk/app.inkos)
+## Optimizations
 
-# Forked with extra features
+- Gesture detection runs on the initial pointer pass, so long swipes are never eaten by scrollable content.
+- Short-swipe zone guards page turns against OEM edge-gesture collisions.
+- Full-refresh path reduces e-ink ghosting while keeping partial refresh fast.
+- CJK glyph clipping and pixel-snapping fixes for pixel fonts.
+- Pinyin search in the app drawer, A-Z index, hidden apps and private space support.
 
-### Features
+## Install
 
-**Home Screen**
-- Multi-page home screen support.
-- 9 clock styles: Default, Flip, Boxed, Round, Split, Horizontal, Box Outline, Analog, Stacked.
-- Dual clocks with configurable timezone offset.
-- Per-element alignment: clock, date, apps, and quote each align independently (left/center/right).
-- 7 bottom widget types: Quote, Calendar Events, Android Widget, Shortcuts, Total Usage, Page Dots, or Disabled.
-- Audio widget: appears on playback, persists when paused, dismissible.
-- Embed any native Android widget with adjustable height and margins.
-- Separators (empty space, em dash, dots) for visual grouping.
-- Edit Mode: tap any element to open its settings live on screen.
+Download the signed APK from [Releases](https://github.com/MercShen/BinkOS/releases) and install it over an existing Bink OS build — the signing key is stable, so upgrades keep your data.
 
-**App Drawer**
-- A-Z sidebar for quick alphabetical navigation.
-- Sort by A-Z, most used, or last used.
-- Multi-source search: apps, contacts, web, device settings, music, and files.
-- Auto-launch single search results. Auto-show keyboard option.
-- Long-press menu: uninstall, rename, hide, lock, app info.
-- Hide apps already on the home screen from the drawer.
-- App shortcuts and pinned shortcuts from third-party apps.
+Requires Android 10+. Best on the Bigme HiBreak; other e-ink phones work but the vendor-specific switches are HiBreak-only.
 
-**Fonts & Typography**
-- Per-element font: clock, date, apps, quote, notifications, settings each get their own font family and size.
-- Universal font mode: set one font for everything, then customize individual elements.
-- Custom .ttf/.otf files from device storage.
-- App name modes: normal, lowercase, UPPERCASE.
+## Build
 
-**Themes & Look**
-- 15 one-tap theme presets. Custom text and background colors for light and dark mode.
-- Light, Dark, and System theme modes with independent light/dark color settings.
-- Wallpaper support with background opacity slider.
-- 4 icon modes: Text letters, System adaptive, System tinted (monochrome), Icon Packs.
-- Icon shapes: pill, rounded, square.
-- Text islands: pill-shaped backgrounds behind text elements, with color inversion.
-- Theme export/import (JSON).
+```bash
+./gradlew assembleRelease
+```
 
-**Gestures**
-- 4 swipe directions + double tap + clock/date/quote tap, each assignable to 15+ actions.
-- Actions: open app, drawer, notifications, recents, simple tray, hub, settings, e-ink refresh, brightness toggle, lock screen, quick settings, power dialog, restart, exit inkOS, toggle private space, toggle work profile.
-- Configurable short/long swipe sensitivity thresholds.
-- Edge swipe back gesture.
-- Volume keys for page navigation (essential for E-ink/keypad devices).
-
-**Notifications**
-- Notification badges (*) next to app names with pending notifications.
-- Label notifications: actual message content below app names.
-- Media playing indicator with track name display.
-- Letters: full-screen notification reader with vertical paging and keyboard/DPAD shortcuts.
-- Simple Tray: paginated notification tray with per-page density and bottom navigation.
-- Hub: device status dashboard (battery, WiFi, Bluetooth, storage, brightness, DND).
-- Three independent per-app allowlists (home badges, letters, simple tray).
-- Chat options: toggle sender name, group name, message preview independently.
-
-**Recents**
-- Recent apps and usage statistics with time/money/coffee display modes.
-- Filter by today, this week, this month, or all time.
-
-**E-Ink & Hardware**
-- Auto screen refresh after exiting apps (configurable delay, home-only option).
-- 4 E-ink display modes: Disabled, Contrast, Clear, Reading (Mudita Kompakt).
-- T9, D-pad, and QWERTY keyboard navigation support.
-- UI scale modes: Auto, Tiny, Small, Medium, Normal, Big, Large, Extra Large.
-
-**Advanced**
-- Backup/restore all settings. Theme-only export/import.
-- Show/hide status bar and navigation bar independently.
-- Haptic feedback toggle.
-
-## Permissions
-
-> [!NOTE]
-> inkOS does not request internet access and does not collect or transmit any data.
-
-| Permission | Why |
-|---|---|
-| `QUERY_ALL_PACKAGES` | List all installed apps |
-| `REQUEST_DELETE_PACKAGES` | Uninstall apps (requires user confirmation) |
-| `EXPAND_STATUS_BAR` | Expand/collapse status bar via gestures |
-| `VIBRATE` | Haptic feedback |
-| `SET_WALLPAPER` | Set wallpapers |
-| `USE_BIOMETRIC` | PIN/fingerprint lock for apps and settings |
-| `WRITE_SETTINGS` | Brightness control (Simple Tray) |
-| `CAMERA` | Flashlight toggle (Simple Tray) |
-| `READ_PHONE_STATE` | Cellular signal display (Simple Tray) |
-| `MODIFY_AUDIO_SETTINGS` | Volume control (Simple Tray) |
-| `ACCESS_WIFI_STATE` | WiFi status (Simple Tray) |
-| `CHANGE_WIFI_STATE` | WiFi toggle (Simple Tray) |
-| `BLUETOOTH` | Bluetooth status (Hub, API 30 and below) |
-| `BLUETOOTH_ADMIN` | Bluetooth admin (Hub, API 30 and below) |
-| `BLUETOOTH_CONNECT` | Bluetooth device info (Hub) |
-| `PACKAGE_USAGE_STATS` | Recent/most-used apps (Recents screen) |
-| `READ_CONTACTS` | Contact search in app drawer |
-| `READ_CALENDAR` | Calendar events widget |
-| `READ_MEDIA_IMAGES` | Wallpaper selection |
-| `READ_MEDIA_AUDIO` | Music search in app drawer |
-| `READ_EXTERNAL_STORAGE` | Media access (Android 12 and below) |
-| `BIND_APPWIDGET` | Embed Android widgets on home screen |
-| `INSTALL_SHORTCUT` | Legacy shortcut pinning |
-| `ACCESS_HIDDEN_PROFILES` | Android 15+ Private Space |
-
-## Built With
-
-| Component | Details |
-|---|---|
-| **Language** | Kotlin 2.1.20 |
-| **UI** | Jetpack Compose 1.10.4, Material3 1.4.0 |
-| **Build** | AGP 8.10.1 |
-| **Target SDK** | API 26 - 36 (Android 8.0 - 16) |
-
-## License
-
-inkOS is open source under the GPLv3 license, giving you the freedom to use, study, modify, and
-distribute it. The Copyleft provision ensures these freedoms remain intact, so inkOS will always be
-fully open source and customizable by anyone.
+Needs Android SDK 36 and JDK 17. Release signing reads `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` from the environment.
 
 ## Credits
 
-Originally forked from [mLauncher](https://github.com/DroidWorksStudio/mLauncher), itself a fork of [Olauncher](https://github.com/tanujnotes/Olauncher). At this point inkOS is pretty much its own thing.
+Bink OS is a fork of [inkOS](https://github.com/gezimos/inkOS) by gezimos — all the original launcher design and most of the feature set come from there. inkOS itself descends from mLauncher / oLauncher.
 
-## Support the project
-
-<table><tr>
-<td><a href="https://buymeacoffee.com/gezimos"><img src="others/bmc-button.png" alt="Buy me a coffee" height="40" style="max-width:200px;"></a></td>
-<td valign="middle">inkOS is free, open source, and ad-free forever. If it's made your phone better, consider supporting development.</td>
-</tr></table>
+Licensed under GPL-3.0, same as upstream.
