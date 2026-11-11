@@ -51,7 +51,7 @@ class HandleGalleryActivity : AppCompatActivity() {
                                 ) {
                                     MoveHandleGlyph(
                                         style = style,
-                                        color = Color.Black.copy(alpha = 0.42f),
+                                        color = androidx.compose.ui.graphics.lerp(Color.White, Color.Black, 0.42f),
                                         modifier = Modifier.size(96.dp)
                                     )
                                     Spacer(Modifier.height(8.dp))

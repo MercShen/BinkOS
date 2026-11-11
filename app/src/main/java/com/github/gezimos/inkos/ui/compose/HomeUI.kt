@@ -581,9 +581,14 @@ private fun HomeAppsMoveHandle(
     onDrag: (Float, Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 用不透明混色代替半透明黑：半透明在文字上叠加会更黑，导致手柄"深浅不一"；
+    // 这里按背景色预混成固定灰度，任何内容上都一致。
+    val glyphColor = androidx.compose.ui.graphics.lerp(
+        Theme.colors.background, Theme.colors.text, 0.42f
+    )
     MoveHandleGlyph(
         style = style,
-        color = Theme.colors.text.copy(alpha = 0.42f),
+        color = glyphColor,
         modifier = modifier
             .size(36.dp)
             .pointerInput(Unit) {

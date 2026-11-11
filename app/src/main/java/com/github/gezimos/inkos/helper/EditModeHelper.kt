@@ -1100,8 +1100,12 @@ object EditModeHelper {
                             showDialog(context, prefs) {
                                 var topMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.topWidgetMargin) }
                                 var bottomMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.bottomWidgetMargin) }
-                                var xOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftX) }
-                                var yOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftY) }
+                                // 与 MainViewModel.setHomeAppsShiftX/Y 的 clamp 完全一致：超出这个范围预览不再移动
+                                val cfg = androidx.compose.ui.platform.LocalConfiguration.current
+                                val maxShiftX = (((cfg.screenWidthDp - 64).coerceAtLeast(120) - 96) / 2f).toInt().coerceAtLeast(0)
+                                val maxShiftY = (((cfg.screenHeightDp - 64).coerceAtLeast(120) - 120) / 2f).toInt().coerceAtLeast(0)
+                                var xOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftX.coerceIn(-maxShiftX, maxShiftX)) }
+                                var yOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftY.coerceIn(-maxShiftY, maxShiftY)) }
 
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Text(
@@ -1161,8 +1165,8 @@ object EditModeHelper {
                                             } catch (_: Exception) {}
                                             onUpdate()
                                         },
-                                        minValue = -400,
-                                        maxValue = 400
+                                        minValue = -maxShiftX,
+                                        maxValue = maxShiftX
                                     )
 
                                     Text(
@@ -1180,8 +1184,8 @@ object EditModeHelper {
                                             } catch (_: Exception) {}
                                             onUpdate()
                                         },
-                                        minValue = -400,
-                                        maxValue = 400
+                                        minValue = -maxShiftY,
+                                        maxValue = maxShiftY
                                     )
                                 }
                             }
