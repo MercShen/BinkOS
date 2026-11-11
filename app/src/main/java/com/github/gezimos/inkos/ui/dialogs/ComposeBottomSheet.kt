@@ -29,6 +29,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.size
@@ -132,6 +134,7 @@ import com.github.gezimos.inkos.style.Theme
 import com.github.gezimos.inkos.style.rememberScreenScale
 import com.github.gezimos.inkos.style.scaled
 import com.github.gezimos.inkos.ui.compose.SettingsComposable
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 class ComposeBottomSheetHost(private val activity: Activity) {
@@ -478,6 +481,40 @@ fun StepperSlider(
     val screenScale = rememberScreenScale()
     val valueFloat = value.toFloat()
 
+    // 长按 +/- 连续调节：按下立即 +1 步，按住约 380ms 后开始重复，
+    // 间隔从 260ms 逐渐缩短到约 45ms（ramp up），松手立即停。
+    val holdTarget = remember { mutableIntStateOf(value) }
+    LaunchedEffect(value) {
+        if (holdTarget.intValue != value) holdTarget.intValue = value
+    }
+
+    fun stepBy(delta: Int) {
+        val nv = (holdTarget.intValue + delta).coerceIn(minValue, maxValue)
+        if (nv != holdTarget.intValue) {
+            holdTarget.intValue = nv
+            onValueChange(nv)
+        }
+    }
+
+    fun holdPressModifier(delta: Int): Modifier = Modifier.pointerInput(enabled, minValue, maxValue, step) {
+        if (!enabled) return@pointerInput
+        awaitEachGesture {
+            val down = awaitFirstDown(requireUnconsumed = false)
+            down.consume()
+            stepBy(delta)
+            var interval = 380L
+            while (true) {
+                val event = withTimeoutOrNull(interval) { awaitPointerEvent() }
+                if (event == null) {
+                    stepBy(delta)
+                    interval = (interval * 0.72f).toLong().coerceAtLeast(45L)
+                } else if (event.changes.none { it.pressed }) {
+                    break
+                }
+            }
+        }
+    }
+
     val sliderInteraction = remember { MutableInteractionSource() }
     val sliderFocused = sliderInteraction.collectIsFocusedAsState().value
     Row(
@@ -505,10 +542,7 @@ fun StepperSlider(
         Box(
             modifier = Modifier
                 .size(32.dp.scaled(screenScale))
-                .clickable(enabled = enabled, indication = null, interactionSource = remember { MutableInteractionSource() }) {
-                    val nv = (value - step).coerceIn(minValue, maxValue)
-                    if (nv != value) onValueChange(nv)
-                },
+                .then(holdPressModifier(-step)),
             contentAlignment = Alignment.Center
         ) {
             Icon(imageVector = Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease), tint = Theme.colors.text, modifier = Modifier.size(20.dp.scaled(screenScale)))
@@ -566,10 +600,7 @@ fun StepperSlider(
         Box(
             modifier = Modifier
                 .size(32.dp.scaled(screenScale))
-                .clickable(enabled = enabled, indication = null, interactionSource = remember { MutableInteractionSource() }) {
-                    val nv = (value + step).coerceIn(minValue, maxValue)
-                    if (nv != value) onValueChange(nv)
-                },
+                .then(holdPressModifier(step)),
             contentAlignment = Alignment.Center
         ) {
             Icon(imageVector = Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase), tint = Theme.colors.text, modifier = Modifier.size(20.dp.scaled(screenScale)))
