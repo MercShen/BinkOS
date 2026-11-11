@@ -20,6 +20,10 @@
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:theme="@android:style/Theme.NoDisplay" />
+        <activity
+            android:name=".debug.HandleGalleryActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme" />
     </application>
 
 </manifest>

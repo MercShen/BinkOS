@@ -110,6 +110,7 @@ private const val HOME_APPS_INSET_TOP = "HOME_APPS_INSET_TOP"
 private const val HOME_APPS_INSET_BOTTOM = "HOME_APPS_INSET_BOTTOM"
 private const val HOME_APPS_INSET_START = "HOME_APPS_INSET_START"
 private const val HOME_APPS_INSET_END = "HOME_APPS_INSET_END"
+private const val HOME_HANDLE_STYLE = "HOME_HANDLE_STYLE"
 private const val SHORT_SWIPE_ZONE_TOP = "SHORT_SWIPE_ZONE_TOP"
 private const val SHORT_SWIPE_ZONE_BOTTOM = "SHORT_SWIPE_ZONE_BOTTOM"
 private const val HOME_PAGER_ALIGN = "HOME_PAGER_ALIGN"
@@ -1625,6 +1626,11 @@ class Prefs(val context: Context) {
         set(value) = prefs.edit { putBoolean(EINK_SYSTEM_FULL_REFRESH, value) }
 
     /** 短滑（翻页）生效区域：距屏幕上/下的 dp 边界，0 = 不限制 */
+    /** 编辑模式 App 区域拖动/十字手柄样式（见 HomeUI） */
+    var homeHandleStyle: Int
+        get() = prefs.getInt(HOME_HANDLE_STYLE, 0)
+        set(value) = prefs.edit { putInt(HOME_HANDLE_STYLE, value.coerceIn(0, 5)) }
+
     var shortSwipeZoneTop: Int
         get() = prefs.getInt(SHORT_SWIPE_ZONE_TOP, 0).coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)
         set(value) = prefs.edit { putInt(SHORT_SWIPE_ZONE_TOP, value.coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)) }
