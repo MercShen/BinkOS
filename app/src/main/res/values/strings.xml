@@ -946,7 +946,10 @@
 
     <!-- Short swipe zone -->
     <string name="edit_menu_short_swipe_area">Short swipe area</string>
-    <string name="edit_menu_short_swipe_top_fmt">Top limit: %1$d dp</string>
-    <string name="edit_menu_short_swipe_bottom_fmt">Bottom limit: %1$d dp</string>
-    <string name="edit_menu_short_swipe_area_hint">Short swipes (page turns) only work between these limits.</string>
+
+    <!-- Short swipe zone editor -->
+    <string name="short_swipe_zone_title">Short swipe area</string>
+    <string name="short_swipe_zone_values_fmt">Top %1$d dp · Bottom %2$d dp</string>
+    <string name="short_swipe_zone_hint">Drag the left handle for the top limit, the right handle for the bottom limit.</string>
+    <string name="short_swipe_zone_done">Done</string>
 </resources>
