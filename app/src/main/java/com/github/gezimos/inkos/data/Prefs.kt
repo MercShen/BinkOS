@@ -758,7 +758,7 @@ class Prefs(val context: Context) {
                 if (version > BACKUP_FORMAT_VERSION) {
                     android.widget.Toast.makeText(
                         context,
-                        "This backup was created by a newer inkOS (v" + version + "). Unsupported settings are ignored.",
+                        "This backup was created by a newer Bink OS (v" + version + "). Unsupported settings are ignored.",
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }

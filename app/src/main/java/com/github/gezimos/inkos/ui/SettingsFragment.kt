@@ -684,7 +684,7 @@ class SettingsFragment : Fragment() {
                 description = stringResource(R.string.desc_report_bugs),
                 titleFontSize = titleFontSize,
                 onClick = {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/gezimos/inkOS/issues".toUri())) } catch (_: Exception) {}
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/MercShen/inkOS/issues".toUri())) } catch (_: Exception) {}
                 }
             )
             SettingsHomeItem(
@@ -720,6 +720,15 @@ class SettingsFragment : Fragment() {
                 description = "mLauncher, oLauncher — ${stringResource(R.string.desc_open_source)}",
                 titleFontSize = titleFontSize,
                 onClick = {}
+            )
+            SettingsHomeItem(
+                title = "Fork of inkOS",
+                imageVector = Icons.Rounded.Favorite,
+                description = "Bink OS is a personal fork of inkOS by gezimos, with thanks to the original author.",
+                titleFontSize = titleFontSize,
+                onClick = {
+                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/gezimos/inkOS".toUri())) } catch (_: Exception) {}
+                }
             )
         }
     }
@@ -876,7 +885,7 @@ class SettingsFragment : Fragment() {
             )
             SettingsHomeItem(
                 title = stringResource(R.string.advanced_settings_restart_title),
-                description = "Restart inkOS without rebooting the device",
+                description = "Restart Bink OS without rebooting the device",
                 titleFontSize = titleFontSize,
                 onClick = { AppReloader.restartApp(requireContext()) }
             )
