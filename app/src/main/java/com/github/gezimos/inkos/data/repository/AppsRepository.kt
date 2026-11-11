@@ -393,17 +393,51 @@ class AppsRepository(application: Application) {
 
                 // Update State
                 if (!includeHiddenApps) {
-                    _appList.value = regularApps
-                    _privateSpaceApps.value = psApps
+                    val localized = localizeInternalShortcutLabels(regularApps)
+                    _appList.value = localized
+                    _privateSpaceApps.value = localizeInternalShortcutLabels(psApps)
                     _azLetters.value = azLetters
                 } else {
-                    _allAppsList.value = filteredApps
+                    _allAppsList.value = localizeInternalShortcutLabels(filteredApps)
                 }
             } catch (e: Exception) {
                 Log.e("AppsRepository", "Error refreshing app list", e)
             }
         }
     }
+    /** 内部快捷方式（设置/抽屉/通知/托盘/中枢/最近任务）名字跟随应用内语言，
+     *  在列表发出前统一覆盖，避免依赖 ShortcutManager 的系统语言缓存。 */
+    private fun localizeInternalShortcutLabels(items: List<AppListItem>): List<AppListItem> {
+        return items.map { item ->
+            val shortcutId = item.shortcutId
+            val pkg = item.activityPackage
+            val id = when {
+                pkg == appContext.packageName -> shortcutId
+                pkg == Constants.INKOS_SHORTCUT_APP_DRAWER ||
+                pkg == Constants.INKOS_SHORTCUT_NOTIFICATIONS ||
+                pkg == Constants.INKOS_SHORTCUT_SIMPLE_TRAY ||
+                pkg == Constants.INKOS_SHORTCUT_HUB ||
+                pkg == Constants.INKOS_SHORTCUT_RECENTS ||
+                pkg == Constants.INKOS_SHORTCUT_SETTINGS -> pkg
+                else -> null
+            } ?: return@map item
+            val label = try {
+                when (id) {
+                    Constants.INKOS_SHORTCUT_APP_DRAWER -> appContext.getString(R.string.app_drawer)
+                    Constants.INKOS_SHORTCUT_NOTIFICATIONS -> appContext.getString(R.string.shortcut_letters_short)
+                    Constants.INKOS_SHORTCUT_SIMPLE_TRAY -> appContext.getString(R.string.shortcut_simple_tray_short)
+                    Constants.INKOS_SHORTCUT_HUB -> appContext.getString(R.string.shortcut_hub_short)
+                    Constants.INKOS_SHORTCUT_RECENTS -> appContext.getString(R.string.shortcut_recents_short)
+                    Constants.INKOS_SHORTCUT_SETTINGS -> appContext.getString(R.string.inkos_settings)
+                    else -> return@map item
+                }
+            } catch (_: Exception) {
+                return@map item
+            }
+            item.copy(activityLabel = label)
+        }
+    }
+
     fun refreshHiddenApps() {
         coroutineScope.launch {
             try {

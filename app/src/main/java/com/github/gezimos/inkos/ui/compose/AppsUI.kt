@@ -744,8 +744,12 @@ fun AppItem(
     modifier: Modifier = Modifier
 ) {
     val screenScale = rememberScreenScale()
-    val displayText = remember(app.customLabel, app.label) {
-        if (app.customLabel.isNotEmpty()) app.customLabel else app.label
+    val labelContext = androidx.compose.ui.platform.LocalContext.current
+    val displayText = remember(app.customLabel, app.label, app.activityPackage, app.shortcutId) {
+        if (app.customLabel.isNotEmpty()) app.customLabel
+        else com.github.gezimos.inkos.helper.InternalShortcutNames.resolve(
+            labelContext, app.activityPackage, app.shortcutId
+        ) ?: app.label
     }
     val finalText = remember(displayText, uiState.allCapsApps, uiState.smallCapsApps) {
         when {
@@ -767,7 +771,10 @@ fun AppItem(
     }
     val modeIsFullBleed = remember(uiState.iconSourceMode) { IconShapeUtility.isFullBleedMode(uiState.iconSourceMode) }
 
-    val initialText = if (app.customLabel.isNotEmpty()) app.customLabel else app.label
+    val initialText = if (app.customLabel.isNotEmpty()) app.customLabel
+        else com.github.gezimos.inkos.helper.InternalShortcutNames.resolve(
+            labelContext, app.activityPackage, app.shortcutId
+        ) ?: app.label
     var renameText by remember(app.activityPackage, app.shortcutId, showRename) {
         mutableStateOf(
             TextFieldValue(
@@ -1421,7 +1428,10 @@ fun AppContextMenuSheet(
 
     val deleteOrUnpinIcon = if (appTypeFlags.isPinnedShortcut || appTypeFlags.isAppShortcut)
         Icons.Rounded.PushPin else Icons.Rounded.Delete
-    val displayName = if (app.customLabel.isNotEmpty()) app.customLabel else app.label
+    val displayName = if (app.customLabel.isNotEmpty()) app.customLabel
+        else com.github.gezimos.inkos.helper.InternalShortcutNames.resolve(
+            androidx.compose.ui.platform.LocalContext.current, app.activityPackage, app.shortcutId
+        ) ?: app.label
 
     val actions = buildList {
         if (menuItemsEnabled[0]) add(AppSheetAction(

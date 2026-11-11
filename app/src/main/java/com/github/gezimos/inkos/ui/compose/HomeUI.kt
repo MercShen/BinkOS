@@ -3707,7 +3707,15 @@ private fun HomeAppButton(
     val pulseAlpha = remember { androidx.compose.animation.core.Animatable(0f) }
     val placeholderLabel = stringResource(id = R.string.select_app)
     val isOtherProfile = app.user != null && app.user != android.os.Process.myUserHandle()
-    val rawLabel = (app.label.ifBlank { placeholderLabel }).let { if (isOtherProfile) "$it^" else it }
+    val internalLabelContext = androidx.compose.ui.platform.LocalContext.current
+    val internalLabel = remember(app.activityPackage, app.shortcutId, internalLabelContext) {
+        com.github.gezimos.inkos.helper.InternalShortcutNames.resolve(
+            internalLabelContext,
+            app.activityPackage,
+            app.shortcutId
+        )
+    }
+    val rawLabel = ((internalLabel ?: app.label).ifBlank { placeholderLabel }).let { if (isOtherProfile) "$it^" else it }
     val notificationInfo = state.notifications[app.activityPackage]
 
     // Use pre-computed badgeConfig from pager
