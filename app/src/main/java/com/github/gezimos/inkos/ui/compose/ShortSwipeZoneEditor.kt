@@ -120,12 +120,14 @@ private fun ShortSwipeZoneEditor(
     val density = LocalDensity.current
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val maxDp = Constants.MAX_SHORT_SWIPE_ZONE_DP
-    var top by remember { mutableIntStateOf(initialTop) }
+    // 顶部坐标从 30dp 起算：显示 0dp 对应屏幕顶部往下 30dp 的位置
+    val topBase = Constants.SHORT_SWIPE_ZONE_TOP_BASE_DP
+    var top by remember { mutableIntStateOf((initialTop - topBase).coerceAtLeast(0)) }
     var bottom by remember { mutableIntStateOf(initialBottom) }
 
     val textColor = Theme.colors.text
     val bgColor = Theme.colors.background
-    val topPx = with(density) { top.dp.toPx() }
+    val topPx = with(density) { (top + topBase).dp.toPx() }
     val bottomPx = with(density) { bottom.dp.toPx() }
     val screenHeightPx = with(density) { screenHeightDp.dp.toPx() }
     val bottomLinePx = screenHeightPx - bottomPx
@@ -180,10 +182,12 @@ private fun ShortSwipeZoneEditor(
             thumbYPx = topPx,
             trackColor = textColor,
             onDrag = { y ->
-                val value = (y / density.density).roundToInt().coerceIn(0, maxDp)
-                if (screenHeightDp - value - bottom >= 120) {
+                val raw = (y / density.density).roundToInt()
+                val value = (raw - topBase).coerceIn(0, maxDp)
+                val actualTop = value + topBase
+                if (screenHeightDp - actualTop - bottom >= 120) {
                     top = value
-                    onTopChange(value)
+                    onTopChange(actualTop)
                 }
             }
         )
