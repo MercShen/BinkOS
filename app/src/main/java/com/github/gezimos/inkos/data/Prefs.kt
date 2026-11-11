@@ -724,6 +724,7 @@ class Prefs(val context: Context) {
         all[APP_SIZE_TEXT] = appSize
         all[TEXT_PADDING_SIZE] = textPaddingSize
         all["top_widget_margin"] = topWidgetMargin
+        all[Constants.SIMPLE_TRAY_BRIGHTNESS_BAR] = simpleTrayBrightnessBarEnabled
         all["bottom_widget_margin"] = bottomWidgetMargin
         all[HOME_APPS_INSET_TOP] = homeAppsInsetTop
         all[HOME_APPS_INSET_BOTTOM] = homeAppsInsetBottom
@@ -1820,6 +1821,11 @@ class Prefs(val context: Context) {
     var homeAppCharLimit: Int
         get() = prefs.getInt("home_app_char_limit", 20) // default to 20
         set(value) = prefs.edit { putInt("home_app_char_limit", value) }
+
+    /** Simple Tray 顶部是否显示亮度调节条（默认关，需要在设置里启用） */
+    var simpleTrayBrightnessBarEnabled: Boolean
+        get() = prefs.getBoolean(Constants.SIMPLE_TRAY_BRIGHTNESS_BAR, false)
+        set(value) = prefs.edit { putBoolean(Constants.SIMPLE_TRAY_BRIGHTNESS_BAR, value) }
 
     var topWidgetMargin: Int
         get() = prefs.getInt("top_widget_margin", dimenDp(R.dimen.default_top_widget_margin))

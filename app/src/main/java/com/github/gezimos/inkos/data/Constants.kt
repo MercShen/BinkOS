@@ -52,6 +52,8 @@ object Constants {
     var MAX_HOME_PAGES = DEFAULT_MAX_HOME_PAGES
 
     const val MAX_SHORT_SWIPE_ZONE_DP = 800
+    /** 是否在 Simple Tray 顶部显示亮度调节条（需要在设置里启用） */
+    const val SIMPLE_TRAY_BRIGHTNESS_BAR = "SIMPLE_TRAY_BRIGHTNESS_BAR"
     /** 短滑区域顶部计数起点（dp）：编辑器里显示 0 时，实际边界在屏幕顶部 30dp 处，
      *  避开状态栏/挖孔区域，也让手柄初始位置不会贴到屏幕最上沿。 */
     const val SHORT_SWIPE_ZONE_TOP_BASE_DP = 30

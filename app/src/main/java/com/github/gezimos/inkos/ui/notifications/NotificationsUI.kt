@@ -1627,6 +1627,8 @@ fun SimpleTrayScreen(
     val vmLocal = simpleTrayViewModel
     val brightnessState = vmLocal?.brightnessLevel?.collectAsState() ?: remember { mutableIntStateOf(prefs.brightnessLevel.coerceIn(0, 255)) }
     val brightnessLevel by brightnessState
+    val brightnessBarEnabled by (simpleTrayViewModel?.brightnessBarEnabled?.collectAsState()
+        ?: remember { mutableStateOf(prefs.simpleTrayBrightnessBarEnabled) })
     val brightness = if (brightnessLevel == 0) 0f else kotlin.math.sqrt((brightnessLevel / 255f).coerceIn(0f, 1f))
 
     val sliderToSystem: (Float) -> Int = { s ->
@@ -2154,7 +2156,7 @@ fun SimpleTrayScreen(
                 onBrightnessLongPress = { openBrightnessSettings() }
             )
 
-            Box(modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)) {
+            if (brightnessBarEnabled) Box(modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)) {
                 BrightnessSlider(
                     prefs = prefs,
                     brightness = brightness,

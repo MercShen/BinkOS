@@ -955,4 +955,6 @@
     <string name="short_swipe_zone_top_fmt">顶部 %1$d dp</string>
     <string name="short_swipe_zone_bottom_fmt">底部 %1$d dp</string>
     <string name="short_swipe_zone_hint">拖动两侧手柄</string>
+    <!-- Simple tray brightness bar -->
+    <string name="enable_brightness_slider">亮度调节条</string>
 </resources>

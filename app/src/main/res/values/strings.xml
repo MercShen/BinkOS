@@ -955,4 +955,6 @@
     <string name="short_swipe_zone_top_fmt">Top %1$d dp</string>
     <string name="short_swipe_zone_bottom_fmt">Bottom %1$d dp</string>
     <string name="short_swipe_zone_hint">Drag the side handles</string>
+    <!-- Simple tray brightness bar -->
+    <string name="enable_brightness_slider">Brightness slider</string>
 </resources>

@@ -46,6 +46,9 @@ class SimpleTrayViewModel(application: Application) : AndroidViewModel(applicati
     private val appContext: Context = application.applicationContext
     private val prefs = Prefs(appContext)
 
+    private val _brightnessBarEnabled = MutableStateFlow(prefs.simpleTrayBrightnessBarEnabled)
+    val brightnessBarEnabled: StateFlow<Boolean> = _brightnessBarEnabled.asStateFlow()
+
     private val _wifiEnabled = MutableStateFlow(false)
     val wifiEnabled: StateFlow<Boolean> = _wifiEnabled.asStateFlow()
 
@@ -72,6 +75,13 @@ class SimpleTrayViewModel(application: Application) : AndroidViewModel(applicati
     private val cameraManager = appContext.getSystemService(CameraManager::class.java)
 
     init {
+        viewModelScope.launch {
+            prefs.preferenceChangeFlow.collect { key ->
+                if (key == com.github.gezimos.inkos.data.Constants.SIMPLE_TRAY_BRIGHTNESS_BAR) {
+                    _brightnessBarEnabled.value = prefs.simpleTrayBrightnessBarEnabled
+                }
+            }
+        }
         refreshStates()
         registerReceiversAndCallbacks()
     }

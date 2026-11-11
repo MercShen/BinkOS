@@ -2320,6 +2320,13 @@ object EditModeHelper {
                     vm.setEnableBottomNav(checked)
                     onUpdate()
                 }
+                ToggleRow(
+                    text = context.getString(R.string.enable_brightness_slider),
+                    checked = prefs.simpleTrayBrightnessBarEnabled
+                ) { checked ->
+                    prefs.simpleTrayBrightnessBarEnabled = checked
+                    onUpdate()
+                }
                 SettingRow(label = stringResource(R.string.edit_menu_all_notification_settings_upper), value = "") {
                     currentSheet?.dismiss()
                     try {
