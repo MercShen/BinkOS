@@ -9,22 +9,30 @@
   </p>
   <table>
     <tr>
-      <td><img src="docs/img/bink/home-gameboy.jpg" height="360" alt="Bink OS home screen"></td>
-      <td><img src="docs/img/bink/layout-editor.jpg" height="360" alt="Layout editor"></td>
+      <td align="center">
+        <img src="docs/img/bink/home-gameboy.jpg" height="360" alt="Bink OS home screen"><br>
+        <sub>Text-first home — pixel font, e-ink refresh</sub>
+      </td>
+      <td align="center">
+        <img src="docs/img/bink/layout-editor.jpg" height="360" alt="Layout editor"><br>
+        <sub>Live layout editor — margins, offsets, hold-to-repeat steppers</sub>
+      </td>
     </tr>
     <tr>
-      <td align="center"><sub>Text-first home — pixel font, e-ink refresh</sub></td>
-      <td align="center"><sub>Live layout editor — margins, offsets, hold-to-repeat steppers</sub></td>
+      <td align="center">
+        <img src="docs/img/bink/short-swipe-zone.png" height="300" alt="Short swipe zone editor"><br>
+        <sub>Short swipe zone — page turns only where you want them</sub>
+      </td>
+      <td align="center">
+        <img src="docs/img/bink/extras.png" height="300" alt="E-ink extras"><br>
+        <sub>Bigme refresh &amp; animation switches</sub>
+      </td>
     </tr>
     <tr>
-      <td><img src="docs/img/bink/short-swipe-zone.png" height="300" alt="Short swipe zone editor"></td>
-      <td><img src="docs/img/bink/extras.png" height="300" alt="E-ink extras"></td>
-      <td><img src="docs/img/bink/advanced-language.jpg" height="300" alt="Language picker"></td>
-    </tr>
-    <tr>
-      <td align="center"><sub>Short swipe zone — page turns only where you want them</sub></td>
-      <td align="center"><sub>Bigme refresh &amp; animation switches</sub></td>
-      <td align="center"><sub>Language picker — 简体中文</sub></td>
+      <td colspan="2" align="center">
+        <img src="docs/img/bink/advanced-language.jpg" height="320" alt="Language picker"><br>
+        <sub>Language picker — 简体中文 supported</sub>
+      </td>
     </tr>
   </table>
 </div>
@@ -52,8 +60,8 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 - **Edit mode** — tap any element on the home screen to configure it live.
 - Alignment, margins and offsets in one dialog, with drag handles and hold-to-repeat steppers whose ranges match what the layout can actually use.
 
-### Chinese first
-- Full zh-CN UI, per-app language picker, and localized inkOS internal shortcuts (drawer, letters, tray, hub, recents, settings) that follow the in-app language.
+### Localization ready
+- **Simplified Chinese is fully supported** — the whole UI is translated (zh-CN), the app has its own language picker, and inkOS internal shortcuts (drawer, letters, tray, hub, recents, settings) follow the in-app language instead of the system one.
 
 ### Backup & restore
 - ZIP backup containing layout, aliases, preferences and wallpaper, restorable from the settings screen.
