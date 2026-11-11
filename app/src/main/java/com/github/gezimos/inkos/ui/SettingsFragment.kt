@@ -2551,6 +2551,9 @@ class SettingsFragment : Fragment() {
             SettingsSwitch(text = stringResource(R.string.enable_bottom_navigation), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_bottom_nav),
                 defaultState = uiState.enableBottomNav, onCheckedChange = { viewModel.setEnableBottomNav(it) }, enabled = pushNotificationsEnabled)
+            SettingsSwitch(text = stringResource(R.string.enable_brightness_slider), fontSize = titleFontSize,
+                description = stringResource(R.string.desc_simple_tray_brightness),
+                defaultState = uiState.simpleTrayBrightnessBarEnabled, onCheckedChange = { viewModel.setSimpleTrayBrightnessBarEnabled(it) })
             var showSimpleTrayAllowlistDialog by remember { mutableStateOf(false) }
             SettingsSelect(title = stringResource(R.string.simple_tray_allowlist), option = uiState.allowedSimpleTrayApps.size.toString(),
                 fontSize = titleFontSize, description = stringResource(R.string.desc_simple_tray_filter), onClick = { showSimpleTrayAllowlistDialog = true }, enabled = pushNotificationsEnabled)

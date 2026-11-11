@@ -959,4 +959,5 @@
     <string name="enable_brightness_slider">Brightness slider</string>
     <string name="clear_all">Clear All</string>
     <string name="settings_label">Settings</string>
+    <string name="desc_simple_tray_brightness">Show the brightness bar at the top of Simple Tray</string>
 </resources>

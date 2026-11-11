@@ -128,6 +128,7 @@ data class HomeUiState(
     // SimpleTray Settings
     val notificationsPerPage: Int = 3,
     val enableBottomNav: Boolean = true,
+    val simpleTrayBrightnessBarEnabled: Boolean = false,
     // Extras Settings
     val einkRefreshEnabled: Boolean = false,
     val einkRefreshHomeButtonOnly: Boolean = false,
@@ -485,6 +486,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         // SimpleTray Settings
         notificationsPerPage = prefs.notificationsPerPage,
         enableBottomNav = prefs.enableBottomNav,
+        simpleTrayBrightnessBarEnabled = prefs.simpleTrayBrightnessBarEnabled,
         // Extras Settings
         einkRefreshEnabled = prefs.einkRefreshEnabled,
         einkRefreshHomeButtonOnly = prefs.einkRefreshHomeButtonOnly,
@@ -2895,6 +2897,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setEnableBottomNav(enabled: Boolean) {
         prefs.enableBottomNav = enabled
         _homeUiState.value = _homeUiState.value.copy(enableBottomNav = enabled)
+    }
+
+    fun setSimpleTrayBrightnessBarEnabled(enabled: Boolean) {
+        prefs.simpleTrayBrightnessBarEnabled = enabled
+        _homeUiState.value = _homeUiState.value.copy(simpleTrayBrightnessBarEnabled = enabled)
     }
 
 }
