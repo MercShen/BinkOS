@@ -267,13 +267,13 @@ fun HomeUI(
                 TooltipBubble(
                     title = when (tooltipStep) {
                         1 -> stringResource(R.string.settings_name)
-                        2 -> "Home Pages"
-                        else -> "App Drawer"
+                        2 -> stringResource(R.string.home_tooltip_pages_title)
+                        else -> stringResource(R.string.app_drawer)
                     },
                     lines = when (tooltipStep) {
                         1 -> listOf(stringResource(R.string.tooltip_pinch_settings))
-                        2 -> listOf("Swipe up/down to move between pages")
-                        else -> listOf("Long swipe up to open App Drawer")
+                        2 -> listOf(stringResource(R.string.home_tooltip_swipe_pages))
+                        else -> listOf(stringResource(R.string.home_tooltip_long_swipe_drawer))
                     },
                     icon = when (tooltipStep) {
                         2 -> Icons.Rounded.SwipeVertical
@@ -282,7 +282,7 @@ fun HomeUI(
                     },
                     animFrames = if (tooltipStep == 1) listOf(R.drawable.pinch1, R.drawable.pinch2) else emptyList(),
                     alignment = Alignment.Center,
-                    nextLabel = if (isLastStep) "Done" else "Next",
+                    nextLabel = if (isLastStep) stringResource(R.string.done) else stringResource(R.string.home_tooltip_next),
                     onNext = {
                         prefs.markTooltipShown(currentKey)
                         tooltipStep = when {
@@ -2718,7 +2718,7 @@ private fun EventsBlock(
                 else -> {
                     val event = state.eventsList.getOrNull(state.eventsIndex.coerceIn(0, state.eventsList.size - 1))
                         ?: state.eventsList.first()
-                    val dateStr = formatEventDate(event.beginTime)
+                    val dateStr = formatEventDate(LocalContext.current, event.beginTime)
                     val locationStr = event.location?.takeIf { it.isNotBlank() }
                     val titleLine = buildString {
                         append(dateStr)
@@ -2760,15 +2760,15 @@ private fun EventsBlock(
     }
 }
 
-private fun formatEventDate(beginTime: Long): String {
+private fun formatEventDate(context: android.content.Context, beginTime: Long): String {
     val cal = java.util.Calendar.getInstance()
     cal.timeInMillis = beginTime
     val today = java.util.Calendar.getInstance()
     val isToday = cal.get(java.util.Calendar.YEAR) == today.get(java.util.Calendar.YEAR) &&
             cal.get(java.util.Calendar.DAY_OF_YEAR) == today.get(java.util.Calendar.DAY_OF_YEAR)
     return if (isToday) {
-        java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(beginTime))
-            .let { "Today $it" }
+        val timeStr = java.text.SimpleDateFormat("HH:mm", Locale.getDefault()).format(java.util.Date(beginTime))
+        context.getString(R.string.home_events_today_fmt, timeStr)
     } else {
         java.text.SimpleDateFormat("MMM d, HH:mm", Locale.getDefault()).format(java.util.Date(beginTime))
     }
@@ -3398,7 +3398,7 @@ private fun HomeAndroidWidget(
                         Text(stringResource(R.string.loading_widget), color = Theme.colors.text.copy(alpha = 0.5f), fontSize = 14.sp)
                     }
                 } else {
-                    Text("Tap to choose widget", color = Theme.colors.text.copy(alpha = 0.5f), fontSize = 14.sp)
+                    Text(stringResource(R.string.home_tap_to_choose_widget), color = Theme.colors.text.copy(alpha = 0.5f), fontSize = 14.sp)
                 }
 
                 if (isEditMode) {

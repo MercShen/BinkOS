@@ -56,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.core.os.LocaleListCompat
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
@@ -163,8 +164,8 @@ sealed interface SettingsRoute {
         Fonts -> context.getString(R.string.fonts_settings_title)
         Notifications -> context.getString(R.string.notification_section)
         Advanced -> context.getString(R.string.advanced_settings_title)
-        Support -> "Support"
-        Extras -> "Extras"
+        Support -> context.getString(R.string.settings_support_title)
+        Extras -> context.getString(R.string.settings_extras_title)
     }
 }
 
@@ -205,15 +206,15 @@ class SettingsFragment : Fragment() {
                     e.printStackTrace()
                     dialogBuilder.showErrorDialog(
                         requireContext(),
-                        title = "Invalid Font File",
-                        message = "The selected file could not be loaded as a font. Please choose a valid font file."
+                        title = getString(R.string.settings_invalid_font_title),
+                        message = getString(R.string.settings_invalid_font_message)
                     )
                 }
             } else {
                 dialogBuilder.showErrorDialog(
                     requireContext(),
-                    title = "File Error",
-                    message = "Could not copy the selected file. Please try again."
+                    title = getString(R.string.settings_file_error_title),
+                    message = getString(R.string.settings_file_error_message)
                 )
             }
         }
@@ -613,7 +614,7 @@ class SettingsFragment : Fragment() {
             if (privateSpaceManager.hasWorkProfile()) {
                 SettingsHomeItem(
                     title = stringResource(R.string.work_profile) +
-                            if (privateSpaceManager.isWorkProfilePaused()) " (paused)" else "",
+                            if (privateSpaceManager.isWorkProfilePaused()) stringResource(R.string.settings_paused_suffix) else "",
                     imageVector = Icons.Rounded.Star,
                     description = stringResource(R.string.desc_work_profile),
                     titleFontSize = titleFontSize,
@@ -701,7 +702,7 @@ class SettingsFragment : Fragment() {
             )
             SettingsTitle(text = stringResource(R.string.about), fontSize = titleFontSize)
             SettingsHomeItem(
-                title = "${stringResource(R.string.app_version)} v${BuildConfig.VERSION_NAME}",
+                title = stringResource(R.string.settings_app_version_title_fmt, stringResource(R.string.app_version), BuildConfig.VERSION_NAME),
                 imageVector = Icons.Rounded.Info,
                 description = stringResource(R.string.desc_app_version),
                 titleFontSize = titleFontSize,
@@ -717,14 +718,14 @@ class SettingsFragment : Fragment() {
             SettingsHomeItem(
                 title = stringResource(R.string.credits),
                 imageVector = Icons.Rounded.Code,
-                description = "mLauncher, oLauncher — ${stringResource(R.string.desc_open_source)}",
+                description = stringResource(R.string.settings_credits_description_fmt, stringResource(R.string.desc_open_source)),
                 titleFontSize = titleFontSize,
                 onClick = {}
             )
             SettingsHomeItem(
-                title = "Fork of inkOS",
+                title = stringResource(R.string.settings_fork_title),
                 imageVector = Icons.Rounded.Favorite,
-                description = "Bink OS is a personal fork of inkOS by gezimos, with thanks to the original author.",
+                description = stringResource(R.string.settings_fork_description),
                 titleFontSize = titleFontSize,
                 onClick = {
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/gezimos/inkOS".toUri())) } catch (_: Exception) {}
@@ -774,9 +775,9 @@ class SettingsFragment : Fragment() {
             }
             // 与自动刷新开关独立：手势触发全刷（refreshEinkForced）同样走这里
             SettingsSwitch(
-                text = "System Full Refresh (Bigme)",
+                text = stringResource(R.string.settings_system_full_refresh),
                 fontSize = titleFontSize,
-                description = "Use the vendor GC16 full refresh for any refresh, including gesture-triggered ones",
+                description = stringResource(R.string.settings_desc_system_full_refresh),
                 defaultState = uiState.einkSystemFullRefresh,
                 onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
             )
@@ -796,9 +797,9 @@ class SettingsFragment : Fragment() {
                 )
             }
             SettingsSwitch(
-                text = "Page Turn Animation (Bigme)",
+                text = stringResource(R.string.settings_page_turn_animation),
                 fontSize = titleFontSize,
-                description = "Play the vendor e-ink page-turn animation when opening/closing screens",
+                description = stringResource(R.string.settings_desc_page_turn_animation),
                 defaultState = uiState.einkPageTurnAnimation,
                 onCheckedChange = { viewModel.setEinkPageTurnAnimation(it) }
             )
@@ -825,6 +826,45 @@ class SettingsFragment : Fragment() {
         }
         val uiState by viewModel.homeUiState.collectAsState()
         Column(modifier = Modifier.fillMaxWidth()) {
+            // ---- Language (per-app locale) ----
+            val languageOptions = listOf(
+                stringResource(R.string.language_system),
+                stringResource(R.string.language_english),
+                stringResource(R.string.language_chinese)
+            )
+            val currentLanguageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+            val languageIndex = when {
+                currentLanguageTag.startsWith("zh") -> 2
+                currentLanguageTag.startsWith("en") -> 1
+                else -> 0
+            }
+            SettingsSelect(
+                title = stringResource(R.string.language),
+                option = languageOptions[languageIndex],
+                fontSize = titleFontSize,
+                description = stringResource(R.string.desc_language),
+                onClick = {
+                    dialogBuilder.showSingleChoiceDialog(
+                        context = requireContext(),
+                        options = languageOptions.toTypedArray(),
+                        titleResId = R.string.language,
+                        selectedIndex = languageIndex,
+                        onItemSelected = { selected ->
+                            val idx = languageOptions.indexOf(selected)
+                            val tag = when (idx) {
+                                0 -> ""
+                                1 -> "en"
+                                else -> "zh-CN"
+                            }
+                            AppCompatDelegate.setApplicationLocales(
+                                if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                                else LocaleListCompat.forLanguageTags(tag)
+                            )
+                            requireActivity().recreate()
+                        }
+                    )
+                }
+            )
             SettingsSwitch(
                 text = stringResource(R.string.lock_home_apps), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_lock_home_apps),
@@ -862,13 +902,13 @@ class SettingsFragment : Fragment() {
             )
             SettingsHomeItem(
                 title = stringResource(changeLauncherText) + if (!isinkosDefault(requireContext())) "*" else "",
-                description = "Choose which launcher to use as your home screen",
+                description = stringResource(R.string.settings_desc_choose_launcher),
                 titleFontSize = titleFontSize,
                 onClick = { requireContext().startActivity(Intent(android.provider.Settings.ACTION_HOME_SETTINGS)) }
             )
             SettingsHomeItem(
                 title = stringResource(R.string.onboarding),
-                description = "View the setup wizard again",
+                description = stringResource(R.string.settings_desc_view_onboarding),
                 titleFontSize = titleFontSize,
                 onClick = {
                     prefs.commitFirstOpen(true)
@@ -879,19 +919,19 @@ class SettingsFragment : Fragment() {
             )
             SettingsHomeItem(
                 title = stringResource(R.string.guide),
-                description = "Learn gestures and interactions",
+                description = stringResource(R.string.settings_desc_guide),
                 titleFontSize = titleFontSize,
                 onClick = { findNavController().navigate(R.id.guideFragment) }
             )
             SettingsHomeItem(
                 title = stringResource(R.string.advanced_settings_restart_title),
-                description = "Restart Bink OS without rebooting the device",
+                description = stringResource(R.string.settings_desc_restart_launcher),
                 titleFontSize = titleFontSize,
                 onClick = { AppReloader.restartApp(requireContext()) }
             )
             SettingsHomeItem(
                 title = stringResource(R.string.settings_exit_inkos_title),
-                description = "Switch to a different launcher",
+                description = stringResource(R.string.settings_desc_exit_launcher),
                 titleFontSize = titleFontSize,
                 onClick = { exitLauncher() }
             )
@@ -903,7 +943,7 @@ class SettingsFragment : Fragment() {
             addCategory(Intent.CATEGORY_HOME)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
-        startActivity(Intent.createChooser(intent, "Choose your launcher"))
+        startActivity(Intent.createChooser(intent, getString(R.string.settings_choose_launcher)))
     }
 
     // ==================================================================
@@ -934,44 +974,44 @@ class SettingsFragment : Fragment() {
                 }
             )
             SettingsSelect(
-                title = "Home apps X offset",
+                title = stringResource(R.string.settings_home_apps_x_offset),
                 option = ((homeUiState.homeAppsInsetStart - homeUiState.homeAppsInsetEnd) / 2).toString(),
                 fontSize = titleFontSize,
-                description = "Horizontal offset, synced with the edit-mode drag",
+                description = stringResource(R.string.settings_desc_home_apps_x_offset),
                 onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Home apps X offset",
+                    dialogBuilder.showSliderDialog(requireContext(), getString(R.string.settings_home_apps_x_offset),
                         -400, 400, (homeUiState.homeAppsInsetStart - homeUiState.homeAppsInsetEnd) / 2) { viewModel.setHomeAppsShiftX(it) }
                 }
             )
             SettingsSelect(
-                title = "Home apps Y offset",
+                title = stringResource(R.string.settings_home_apps_y_offset),
                 option = ((homeUiState.homeAppsInsetTop - homeUiState.homeAppsInsetBottom) / 2).toString(),
                 fontSize = titleFontSize,
-                description = "Vertical offset, synced with the edit-mode drag",
+                description = stringResource(R.string.settings_desc_home_apps_y_offset),
                 onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Home apps Y offset",
+                    dialogBuilder.showSliderDialog(requireContext(), getString(R.string.settings_home_apps_y_offset),
                         -400, 400, (homeUiState.homeAppsInsetTop - homeUiState.homeAppsInsetBottom) / 2) { viewModel.setHomeAppsShiftY(it) }
                 }
             )
 
             SettingsSelect(
-                title = "Reset home apps offset", option = "", fontSize = titleFontSize,
-                description = "Restore the home apps offset to 0",
+                title = stringResource(R.string.settings_reset_home_apps_offset), option = "", fontSize = titleFontSize,
+                description = stringResource(R.string.settings_desc_reset_home_apps_offset),
                 onClick = { viewModel.resetHomeAppsInsets() }
             )
             SettingsSelect(
-                title = "Top Widget Offset", option = homeUiState.topWidgetMargin.toString(), fontSize = titleFontSize,
-                description = "Space above the clock/date",
+                title = stringResource(R.string.settings_top_widget_offset), option = homeUiState.topWidgetMargin.toString(), fontSize = titleFontSize,
+                description = stringResource(R.string.desc_top_widget_margin),
                 onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Top Widget Offset",
+                    dialogBuilder.showSliderDialog(requireContext(), getString(R.string.settings_top_widget_offset),
                         0, Constants.MAX_TOP_WIDGET_MARGIN, homeUiState.topWidgetMargin) { viewModel.setTopWidgetMargin(it) }
                 }
             )
             SettingsSelect(
-                title = "Bottom Widget Offset", option = homeUiState.bottomWidgetMargin.toString(), fontSize = titleFontSize,
-                description = "Space below the bottom widget",
+                title = stringResource(R.string.settings_bottom_widget_offset), option = homeUiState.bottomWidgetMargin.toString(), fontSize = titleFontSize,
+                description = stringResource(R.string.settings_desc_bottom_widget_margin),
                 onClick = {
-                    dialogBuilder.showSliderDialog(requireContext(), "Bottom Widget Offset",
+                    dialogBuilder.showSliderDialog(requireContext(), getString(R.string.settings_bottom_widget_offset),
                         0, Constants.MAX_BOTTOM_WIDGET_MARGIN, homeUiState.bottomWidgetMargin) { viewModel.setBottomWidgetMargin(it) }
                 }
             )
@@ -1090,7 +1130,7 @@ class SettingsFragment : Fragment() {
             if (homeUiState.showNotificationCount) {
                 val countSourceLabels = arrayOf(stringResource(R.string.option_simple_tray), stringResource(R.string.option_letters), stringResource(R.string.option_hub))
                 SettingsSelect(title = stringResource(R.string.desc_notification_style),
-                    option = countSourceLabels.getOrElse(homeUiState.notificationCountSource) { "SimpleTray" },
+                    option = countSourceLabels.getOrElse(homeUiState.notificationCountSource) { stringResource(R.string.option_simple_tray) },
                     description = stringResource(R.string.desc_notification_style),
                     fontSize = titleFontSize, onClick = { viewModel.setNotificationCountSource((homeUiState.notificationCountSource + 1) % 3) })
             }
@@ -1257,7 +1297,7 @@ class SettingsFragment : Fragment() {
             if (homeUiState.bottomWidgetType == Constants.BottomWidgetType.AndroidWidget.value) {
                 val widgetLabel = remember(homeUiState.androidWidgetId) {
                     com.github.gezimos.inkos.helper.AppWidgetHelper.getInstance(requireContext())
-                        .getCurrentWidgetLabel() ?: "None"
+                        .getCurrentWidgetLabel() ?: getString(R.string.text_none)
                 }
                 SettingsSelect(
                     title = stringResource(R.string.choose_android_widget), option = widgetLabel, fontSize = titleFontSize,
@@ -1266,7 +1306,7 @@ class SettingsFragment : Fragment() {
                         val appWidgetHelper = com.github.gezimos.inkos.helper.AppWidgetHelper.getInstance(requireContext())
                         val widgetApps = appWidgetHelper.getInstalledWidgetsByApp()
                         if (widgetApps.isEmpty()) {
-                            android.widget.Toast.makeText(requireContext(), "No widgets available", android.widget.Toast.LENGTH_SHORT).show()
+                            android.widget.Toast.makeText(requireContext(), getString(R.string.toast_no_widgets_available), android.widget.Toast.LENGTH_SHORT).show()
                             return@SettingsSelect
                         }
                         val ctx = requireContext()
@@ -1366,14 +1406,14 @@ class SettingsFragment : Fragment() {
         Column {
             SettingsSelect(
                 title = stringResource(R.string.app_drawer),
-                option = if (drawerState.appList.isEmpty()) "None" else "${drawerState.appList.size} apps",
+                option = if (drawerState.appList.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.settings_apps_count_fmt, drawerState.appList.size),
                 fontSize = titleFontSize,
                 description = stringResource(R.string.desc_all_apps),
                 onClick = { navController.navigate(R.id.appsFragment, bundleOf("flag" to AppDrawerFlag.LaunchApp.toString())) }
             )
             SettingsSelect(
                 title = stringResource(R.string.settings_hidden_apps_title),
-                option = if (drawerState.hiddenApps.isEmpty()) "None" else "${drawerState.hiddenApps.size} hidden",
+                option = if (drawerState.hiddenApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.hidden_count_fmt, drawerState.hiddenApps.size),
                 fontSize = titleFontSize,
                 description = stringResource(R.string.desc_hidden_apps),
                 onClick = {
@@ -1394,15 +1434,15 @@ class SettingsFragment : Fragment() {
                     } else {
                         selectedRaw.filter { validKeys.contains(it) }.toSet()
                     }
-                    if (allShortcuts.isEmpty()) "None"
-                    else if (effectiveSelection.isEmpty()) "None"
-                    else "${effectiveSelection.size} selected"
+                    if (allShortcuts.isEmpty()) stringResource(R.string.text_none)
+                    else if (effectiveSelection.isEmpty()) stringResource(R.string.text_none)
+                    else stringResource(R.string.selected_count_fmt, effectiveSelection.size)
                 },
                 fontSize = titleFontSize,
                 onClick = {
                     val allShortcuts = com.github.gezimos.inkos.helper.getAllAppShortcuts(requireContext())
                     if (allShortcuts.isEmpty()) {
-                        android.widget.Toast.makeText(requireContext(), "No app shortcuts available", android.widget.Toast.LENGTH_SHORT).show()
+                        android.widget.Toast.makeText(requireContext(), getString(R.string.no_app_shortcuts), android.widget.Toast.LENGTH_SHORT).show()
                         return@SettingsSelect
                     }
                     val inkosShortcuts = allShortcuts.filter { it.packageName == BuildConfig.APPLICATION_ID && it.shortcutId.startsWith("inkos_") }
@@ -1462,7 +1502,7 @@ class SettingsFragment : Fragment() {
                 defaultState = uiState.appDrawerAzFilter, onCheckedChange = { viewModel.setAppDrawerAzFilter(it) })
             val sortOrderLabels = listOf(stringResource(R.string.option_az), stringResource(R.string.option_most_used), stringResource(R.string.option_last_used))
             SettingsSelect(title = stringResource(R.string.sort_order),
-                option = sortOrderLabels.getOrElse(drawerState.appDrawerSortOrder.coerceIn(0, 2)) { "A-Z" },
+                option = sortOrderLabels.getOrElse(drawerState.appDrawerSortOrder.coerceIn(0, 2)) { stringResource(R.string.option_az) },
                 description = stringResource(R.string.desc_drawer_sort),
                 fontSize = titleFontSize, onClick = { viewModel.setAppDrawerSortOrder((drawerState.appDrawerSortOrder + 1) % 3) })
             SettingsSwitch(text = stringResource(R.string.hide_home_apps), fontSize = titleFontSize,
@@ -1499,7 +1539,7 @@ class SettingsFragment : Fragment() {
                 val accounts = remember { com.github.gezimos.inkos.helper.ContactsHelper.getAvailableAccounts(requireContext()) }
                 if (accounts.size > 1) {
                     val selectedAccounts = uiState.appDrawerSearchContactAccounts
-                    val displayOption = if (selectedAccounts == null) "All" else "${selectedAccounts.size}/${accounts.size}"
+                    val displayOption = if (selectedAccounts == null) stringResource(R.string.option_all) else "${selectedAccounts.size}/${accounts.size}"
                     SettingsSelect(
                         title = stringResource(R.string.contacts_to_show),
                         option = displayOption,
@@ -1567,7 +1607,7 @@ class SettingsFragment : Fragment() {
                 }
                 SettingsSelect(
                     title = stringResource(R.string.search_folders),
-                    option = if (folderCount == 0) "Add" else folderCount.toString(),
+                    option = if (folderCount == 0) stringResource(R.string.search_folders_add) else folderCount.toString(),
                     fontSize = titleFontSize,
                     description = stringResource(R.string.desc_search_folders),
                     onClick = {
@@ -1599,7 +1639,7 @@ class SettingsFragment : Fragment() {
                 val currentScaleMode = remember { mutableStateOf(prefs.uiScaleMode) }
                 val activeMode = com.github.gezimos.inkos.style.UiScaleMode.fromId(currentScaleMode.value)
                 val allModes = com.github.gezimos.inkos.style.UiScaleMode.entries.filter { it != com.github.gezimos.inkos.style.UiScaleMode.AUTO }
-                val displayLabel = if (activeMode == com.github.gezimos.inkos.style.UiScaleMode.AUTO) "${detected.label} (Auto)" else activeMode.label
+                val displayLabel = if (activeMode == com.github.gezimos.inkos.style.UiScaleMode.AUTO) stringResource(R.string.settings_ui_scale_auto_fmt, detected.label) else activeMode.label
                 val selectedIdx = if (activeMode == com.github.gezimos.inkos.style.UiScaleMode.AUTO) {
                     allModes.indexOf(detected)
                 } else {
@@ -1607,13 +1647,13 @@ class SettingsFragment : Fragment() {
                 }
                 SettingsSelect(
                     title = stringResource(R.string.ui_scale), option = displayLabel, fontSize = titleFontSize,
-                    description = "All in one UI Scaling",
+                    description = stringResource(R.string.settings_desc_ui_scale),
                     onClick = {
                         dialogBuilder.showSheet {
                             val baseSettingsSize = 16f
-                            SheetTitle("UI Scale")
+                            SheetTitle(stringResource(R.string.ui_scale))
                             allModes.forEachIndexed { index, mode ->
-                                val label = if (mode == detected) "${mode.label} (Auto)" else mode.label
+                                val label = if (mode == detected) stringResource(R.string.settings_ui_scale_auto_fmt, mode.label) else mode.label
                                 val interactionSource = remember { MutableInteractionSource() }
                                 val isFocused = interactionSource.collectIsFocusedAsState().value
                                 val prefTextColor = Theme.colors.text
@@ -1681,7 +1721,7 @@ class SettingsFragment : Fragment() {
                 )
                 SettingsSelect(
                     title = stringResource(id = R.string.theme_mode),
-                    option = when (uiState.appTheme) { Dark -> "Dark"; Constants.Theme.Light -> "Light"; Constants.Theme.System -> "System" },
+                    option = when (uiState.appTheme) { Dark -> stringResource(R.string.dark); Constants.Theme.Light -> stringResource(R.string.light); Constants.Theme.System -> stringResource(R.string.system_default) },
                     fontSize = titleFontSize,
                     description = stringResource(R.string.desc_theme_mode),
                     onClick = {
@@ -1717,16 +1757,16 @@ class SettingsFragment : Fragment() {
                 SettingsSelect(title = stringResource(R.string.wallpaper_visibility), option = "$wallpaperVisibility%", fontSize = titleFontSize,
                     description = stringResource(R.string.desc_wallpaper_opacity),
                     onClick = {
-                        dialogBuilder.showSliderDialog(requireContext(), "Wallpaper Visibility", 0, 100, wallpaperVisibility) { value ->
+                        dialogBuilder.showSliderDialog(requireContext(), getString(R.string.wallpaper_visibility), 0, 100, wallpaperVisibility) { value ->
                             viewModel.setBackgroundOpacity(255 - (value * 255 / 100))
                         }
                     })
                 SettingsTitle(text = stringResource(R.string.icons_buttons), fontSize = titleFontSize)
                 SettingsSwitch(text = stringResource(R.string.show_icons), fontSize = titleFontSize, description = stringResource(R.string.desc_show_icons), defaultState = uiState.showIcons, onCheckedChange = { viewModel.setShowIcons(it) })
                 val currentStyleName = when (uiState.iconSourceMode) {
-                    0 -> "Letters"; 2 -> "System"
-                    3 -> { val packs = IconPackUtility.getInstalledIconPacks(requireContext()); packs.firstOrNull { it.first == uiState.selectedIconPackPackage }?.second ?: "Icon Pack" }
-                    4 -> stringResource(R.string.icon_inkos); 5 -> stringResource(R.string.icon_minimal); 6 -> stringResource(R.string.icon_filled); else -> "Letters"
+                    0 -> stringResource(R.string.icon_letters); 2 -> stringResource(R.string.icon_system)
+                    3 -> { val packs = IconPackUtility.getInstalledIconPacks(requireContext()); packs.firstOrNull { it.first == uiState.selectedIconPackPackage }?.second ?: stringResource(R.string.settings_icon_pack_fallback) }
+                    4 -> stringResource(R.string.icon_inkos); 5 -> stringResource(R.string.icon_minimal); 6 -> stringResource(R.string.icon_filled); else -> stringResource(R.string.icon_letters)
                 }
                 SettingsSelect(title = stringResource(R.string.icon_style), option = currentStyleName, fontSize = titleFontSize,
                     description = stringResource(R.string.desc_icon_pack),
@@ -1759,7 +1799,7 @@ class SettingsFragment : Fragment() {
                         )
                     })
                 val iconShapeLabels = listOf(stringResource(R.string.option_pill), stringResource(R.string.option_rounded), stringResource(R.string.option_square))
-                SettingsSelect(title = stringResource(R.string.icon_shape), option = iconShapeLabels.getOrElse(uiState.iconShape) { "Pill" },
+                SettingsSelect(title = stringResource(R.string.icon_shape), option = iconShapeLabels.getOrElse(uiState.iconShape) { stringResource(R.string.option_pill) },
                     description = stringResource(R.string.desc_icon_shape),
                     fontSize = titleFontSize, onClick = { viewModel.setIconShape((uiState.iconShape + 1) % 3) })
                 if (uiState.iconSourceMode == 4) {
@@ -1779,7 +1819,7 @@ class SettingsFragment : Fragment() {
                         }
                     )
                 }
-                SettingsSelect(title = stringResource(R.string.button_corners), option = iconShapeLabels.getOrElse(uiState.textIslandsShape) { "Pill" },
+                SettingsSelect(title = stringResource(R.string.button_corners), option = iconShapeLabels.getOrElse(uiState.textIslandsShape) { stringResource(R.string.option_pill) },
                     description = stringResource(R.string.desc_button_corners),
                     fontSize = titleFontSize, onClick = { viewModel.setTextIslandsShape((uiState.textIslandsShape + 1) % 3) })
                 SettingsTitle(text = stringResource(R.string.text_islands_section), fontSize = titleFontSize)
@@ -2043,10 +2083,10 @@ class SettingsFragment : Fragment() {
                 }
             )
             SettingsSelect(
-                title = "Gesture vs page conflict",
-                option = "Read more",
+                title = stringResource(R.string.gesture_vs_page_conflict_title),
+                option = stringResource(R.string.settings_read_more),
                 fontSize = titleFontSize,
-                description = "How short vs long swipes work with home pages",
+                description = stringResource(R.string.gesture_vs_page_conflict_desc),
                 onClick = { dialogBuilder.showGestureVsPageConflictSheet() }
             )
             SettingsSelect(
@@ -2463,7 +2503,7 @@ class SettingsFragment : Fragment() {
             if (showBadgeDialog) {
                 LaunchedEffect(Unit) {
                     showBadgeDialog = false
-                    showAppAllowlistDialog("Label Notification Apps", uiState.allowedBadgeNotificationApps) { viewModel.setAllowedBadgeNotificationApps(it) }
+                    showAppAllowlistDialog(getString(R.string.settings_label_notification_apps), uiState.allowedBadgeNotificationApps) { viewModel.setAllowedBadgeNotificationApps(it) }
                 }
             }
             SettingsTitle(text = stringResource(R.string.chat_notifications_section), fontSize = titleFontSize)
@@ -2511,7 +2551,7 @@ class SettingsFragment : Fragment() {
             if (showSimpleTrayAllowlistDialog) {
                 LaunchedEffect(Unit) {
                     showSimpleTrayAllowlistDialog = false
-                    showAppAllowlistDialog("Simple Tray Apps", uiState.allowedSimpleTrayApps) { viewModel.setAllowedSimpleTrayApps(it) }
+                    showAppAllowlistDialog(getString(R.string.simple_tray_apps), uiState.allowedSimpleTrayApps) { viewModel.setAllowedSimpleTrayApps(it) }
                 }
             }
         }

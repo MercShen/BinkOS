@@ -702,7 +702,7 @@ object EditModeHelper {
                                         }
                                     )
                                 }
-                                ToggleRow("Hide Chevrons & Icon", prefs.eventsHideControls) { checked ->
+                                ToggleRow(stringResource(R.string.edit_menu_events_hide_controls), prefs.eventsHideControls) { checked ->
                                     vm.setEventsHideControls(checked)
                                     onUpdate()
                                 }
@@ -811,55 +811,55 @@ object EditModeHelper {
                     1 -> {
                         when (uiState.bottomWidgetType) {
                             Constants.BottomWidgetType.Quote.value -> {
-                                SettingRow(label = "Quote Size", value = "${uiState.quoteSize}") {
+                                SettingRow(label = stringResource(R.string.edit_menu_quote_size), value = "${uiState.quoteSize}") {
                                     currentSheet?.dismiss()
-                                    dialogManager.showSliderDialog(context = context, title = "Quote Size", minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
+                                    dialogManager.showSliderDialog(context = context, title = context.getString(R.string.edit_menu_quote_size), minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
                                         vm.setQuoteSize(it)
                                         onUpdate()
                                     }
                                 }
-                                SettingRow(label = "Quote Font", value = getFontDisplayName(prefs, uiState.quoteFont, "quote")) {
+                                SettingRow(label = stringResource(R.string.edit_menu_quote_font_label), value = getFontDisplayName(prefs, uiState.quoteFont, "quote")) {
                                     currentSheet?.dismiss()
                                     showFontPickerDialog(context = context, dialogManager = dialogManager, vm = vm, prefs = prefs, titleResId = R.string.quote_font, fontContextKey = "quote", getCurrentFont = { prefs.quoteFont }, setFont = { vm.setQuoteFont(it) }, onUpdate = onUpdate)
                                 }
                             }
                             Constants.BottomWidgetType.Events.value -> {
-                                SettingRow(label = "Quote Size", value = "${uiState.quoteSize}") {
+                                SettingRow(label = stringResource(R.string.edit_menu_quote_size), value = "${uiState.quoteSize}") {
                                     currentSheet?.dismiss()
-                                    dialogManager.showSliderDialog(context = context, title = "Quote Size", minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
+                                    dialogManager.showSliderDialog(context = context, title = context.getString(R.string.edit_menu_quote_size), minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
                                         vm.setQuoteSize(it)
                                         onUpdate()
                                     }
                                 }
-                                SettingRow(label = "Quote Font", value = getFontDisplayName(prefs, uiState.quoteFont, "quote")) {
+                                SettingRow(label = stringResource(R.string.edit_menu_quote_font_label), value = getFontDisplayName(prefs, uiState.quoteFont, "quote")) {
                                     currentSheet?.dismiss()
                                     showFontPickerDialog(context = context, dialogManager = dialogManager, vm = vm, prefs = prefs, titleResId = R.string.quote_font, fontContextKey = "quote", getCurrentFont = { prefs.quoteFont }, setFont = { vm.setQuoteFont(it) }, onUpdate = onUpdate)
                                 }
                             }
                             Constants.BottomWidgetType.Shortcuts.value -> {
-                                SettingRow(label = "Icon Size", value = "${uiState.quoteSize}") {
+                                SettingRow(label = stringResource(R.string.icon_size), value = "${uiState.quoteSize}") {
                                     currentSheet?.dismiss()
-                                    dialogManager.showSliderDialog(context = context, title = "Icon Size", minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
+                                    dialogManager.showSliderDialog(context = context, title = context.getString(R.string.icon_size), minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
                                         vm.setQuoteSize(it)
                                         onUpdate()
                                     }
                                 }
                             }
                             Constants.BottomWidgetType.TotalUsage.value -> {
-                                SettingRow(label = "Text Size", value = "${uiState.quoteSize}") {
+                                SettingRow(label = stringResource(R.string.edit_menu_text_size), value = "${uiState.quoteSize}") {
                                     currentSheet?.dismiss()
-                                    dialogManager.showSliderDialog(context = context, title = "Text Size", minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
+                                    dialogManager.showSliderDialog(context = context, title = context.getString(R.string.edit_menu_text_size), minValue = 10, maxValue = 100, currentValue = uiState.quoteSize, liveUpdate = true) {
                                         vm.setQuoteSize(it)
                                         onUpdate()
                                     }
                                 }
-                                SettingRow(label = "Font", value = getFontDisplayName(prefs, uiState.quoteFont, "quote")) {
+                                SettingRow(label = stringResource(R.string.edit_menu_font), value = getFontDisplayName(prefs, uiState.quoteFont, "quote")) {
                                     currentSheet?.dismiss()
                                     showFontPickerDialog(context = context, dialogManager = dialogManager, vm = vm, prefs = prefs, titleResId = R.string.quote_font, fontContextKey = "quote", getCurrentFont = { prefs.quoteFont }, setFont = { vm.setQuoteFont(it) }, onUpdate = onUpdate)
                                 }
                             }
                             Constants.BottomWidgetType.AndroidWidget.value -> {
-                                SettingRow(label = "Widget Size", value = "${uiState.androidWidgetHeight}dp / ${uiState.androidWidgetMarginStart}% / ${uiState.androidWidgetMarginEnd}%") {
+                                SettingRow(label = stringResource(R.string.widget_size), value = "${uiState.androidWidgetHeight}dp / ${uiState.androidWidgetMarginStart}% / ${uiState.androidWidgetMarginEnd}%") {
                                     currentSheet?.dismiss()
                                     showDialog(context, prefs) {
                                         var height by remember { androidx.compose.runtime.mutableIntStateOf(prefs.androidWidgetHeight) }
@@ -867,7 +867,7 @@ object EditModeHelper {
                                         var rightMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.androidWidgetMarginEnd) }
 
                                         Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                            Text("Widget height: ${height}dp", style = SettingsTheme.typography.item, color = Theme.colors.text)
+                                            Text(stringResource(R.string.widget_height_fmt, height), style = SettingsTheme.typography.item, color = Theme.colors.text)
                                             com.github.gezimos.inkos.ui.dialogs.StepperSlider(
                                                 value = height,
                                                 onValueChange = { value ->
@@ -879,7 +879,7 @@ object EditModeHelper {
                                                 maxValue = Constants.MAX_ANDROID_WIDGET_HEIGHT
                                             )
 
-                                            Text("Left margin: ${leftMargin}%", style = SettingsTheme.typography.item, color = Theme.colors.text)
+                                            Text(stringResource(R.string.left_margin_fmt, leftMargin), style = SettingsTheme.typography.item, color = Theme.colors.text)
                                             com.github.gezimos.inkos.ui.dialogs.StepperSlider(
                                                 value = leftMargin,
                                                 onValueChange = { value ->
@@ -891,7 +891,7 @@ object EditModeHelper {
                                                 maxValue = Constants.MAX_ANDROID_WIDGET_MARGIN
                                             )
 
-                                            Text("Right margin: ${rightMargin}%", style = SettingsTheme.typography.item, color = Theme.colors.text)
+                                            Text(stringResource(R.string.right_margin_fmt, rightMargin), style = SettingsTheme.typography.item, color = Theme.colors.text)
                                             com.github.gezimos.inkos.ui.dialogs.StepperSlider(
                                                 value = rightMargin,
                                                 onValueChange = { value ->
@@ -928,7 +928,7 @@ object EditModeHelper {
                                     Constants.Action.OpenAppDrawer -> context.getString(R.string.app_drawer)
                                     else -> uiState.quoteAction.getString(context)
                                 }
-                                SettingRow(label = "Click Quote Action", value = quoteDisplay) {
+                                SettingRow(label = stringResource(R.string.edit_menu_quote_click_action), value = quoteDisplay) {
                                     currentSheet?.dismiss()
                                     dialogManager.showGestureActionPicker(
                                         context = context,
@@ -971,16 +971,16 @@ object EditModeHelper {
             val selectedTabIndex = remember { mutableStateOf(0) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
-            val bgTitle = when (selectedTabIndex.value) { 0 -> "Theme"; 1 -> "Alignment"; 2 -> "Islands/Corners"; else -> "Gestures" }
+            val bgTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_theme); 1 -> stringResource(R.string.tab_alignment); 2 -> stringResource(R.string.tab_islands_corners); else -> stringResource(R.string.tab_gestures) }
             SheetTitle(bgTitle)
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
                     tabs = listOf(
-                        { Icon(imageVector = Icons.Rounded.Palette, contentDescription = "Theme", ) },
-                        { Icon(imageVector = Icons.AutoMirrored.Rounded.FormatAlignLeft, contentDescription = "Alignment", ) },
-                        { Icon(imageVector = Icons.AutoMirrored.Rounded.ViewList, contentDescription = "Islands/Corners", ) },
-                        { Icon(imageVector = Icons.Rounded.TouchApp, contentDescription = "Gestures", ) }
+                        { Icon(imageVector = Icons.Rounded.Palette, contentDescription = stringResource(R.string.tab_theme), ) },
+                        { Icon(imageVector = Icons.AutoMirrored.Rounded.FormatAlignLeft, contentDescription = stringResource(R.string.tab_alignment), ) },
+                        { Icon(imageVector = Icons.AutoMirrored.Rounded.ViewList, contentDescription = stringResource(R.string.tab_islands_corners), ) },
+                        { Icon(imageVector = Icons.Rounded.TouchApp, contentDescription = stringResource(R.string.tab_gestures), ) }
                     ),
                     onTabSelected = { selectedTabIndex.value = it }
                 )
@@ -989,7 +989,7 @@ object EditModeHelper {
                     0 -> {
                         // Theme tab
 
-                        SettingRow(label = "Theme Mode", value = when (uiState.appTheme) {
+                        SettingRow(label = stringResource(R.string.edit_menu_theme_mode), value = when (uiState.appTheme) {
                             Constants.Theme.Dark -> Constants.Theme.Dark.getString(context)
                             Constants.Theme.Light -> Constants.Theme.Light.getString(context)
                             else -> Constants.Theme.System.getString(context)
@@ -1018,13 +1018,13 @@ object EditModeHelper {
                             )
                         }
 
-                        SettingRow(label = "Chosen Theme", value = com.github.gezimos.inkos.ui.compose.getChosenThemeDisplayName(context)) {
+                        SettingRow(label = stringResource(R.string.edit_menu_chosen_theme), value = com.github.gezimos.inkos.ui.compose.getChosenThemeDisplayName(context)) {
                             currentSheet?.dismiss()
                             fragment.findNavController().navigate(R.id.themePresetsFragment)
                         }
 
                         ColorSettingRow(
-                            label = "Colors",
+                            label = stringResource(R.string.element_colors),
                             color1 = Color(uiState.backgroundColor),
                             color2 = Color(uiState.textColor),
                         ) {
@@ -1033,11 +1033,11 @@ object EditModeHelper {
                         }
 
                         val wallpaperVis = 100 - (uiState.backgroundOpacity.coerceIn(0, 255) * 100 / 255)
-                        SettingRow(label = "Wallpaper Visibility", value = "$wallpaperVis%") {
+                        SettingRow(label = stringResource(R.string.wallpaper_visibility), value = "$wallpaperVis%") {
                             currentSheet?.dismiss()
                             dialogManager.showSliderDialog(
                                 context = context,
-                                title = "Wallpaper Visibility",
+                                title = context.getString(R.string.wallpaper_visibility),
                                 minValue = 0,
                                 maxValue = 100,
                                 currentValue = wallpaperVis,
@@ -1049,7 +1049,7 @@ object EditModeHelper {
                             )
                         }
 
-                        SettingRow(label = "Wallpaper", value = "Set") {
+                        SettingRow(label = stringResource(R.string.wallpaper), value = stringResource(R.string.edit_menu_value_set)) {
                             currentSheet?.dismiss()
                             fragment.findNavController().navigate(R.id.wallpaperFragment)
                         }
@@ -1057,7 +1057,7 @@ object EditModeHelper {
                     1 -> {
                         // Alignment tab
 
-                        val alignmentOptions = arrayOf("Left", "Center", "Right")
+                        val alignmentOptions = arrayOf(stringResource(R.string.left), stringResource(R.string.center), stringResource(R.string.right))
 
                         CycleRow(label = context.getString(R.string.home_clock_alignment), options = alignmentOptions, currentIndex = uiState.clockAlignment.coerceIn(0, 2), showAlignment = true) { nextIndex ->
                             vm.setHomeClockAlignment(nextIndex)
@@ -1069,7 +1069,7 @@ object EditModeHelper {
                             onUpdate()
                         }
 
-                        CycleRow(label = "Apps Alignment", options = alignmentOptions, currentIndex = uiState.homeAlignment.coerceIn(0, 2), showAlignment = true) { nextIndex ->
+                        CycleRow(label = stringResource(R.string.edit_menu_apps_alignment), options = alignmentOptions, currentIndex = uiState.homeAlignment.coerceIn(0, 2), showAlignment = true) { nextIndex ->
                             vm.setHomeAlignment(nextIndex)
                             onUpdate()
                         }
@@ -1080,9 +1080,9 @@ object EditModeHelper {
                         }
 
                         // 显示/隐藏由原有的 "Enable Page Indicator" 开关控制，这里只管左右对齐
-                        val pagerOptions = arrayOf("Left", "Right")
+                        val pagerOptions = arrayOf(stringResource(R.string.left), stringResource(R.string.right))
                         CycleRow(
-                            label = "Page Indicator",
+                            label = stringResource(R.string.edit_menu_page_indicator),
                             options = pagerOptions,
                             currentIndex = uiState.pageIndicatorAlignment.coerceIn(0, 1),
                             showAlignment = true,
@@ -1095,7 +1095,7 @@ object EditModeHelper {
 
                         val shiftX = (uiState.homeAppsInsetStart - uiState.homeAppsInsetEnd) / 2
                         val shiftY = (uiState.homeAppsInsetTop - uiState.homeAppsInsetBottom) / 2
-                        SettingRow(label = "Margin/Offset", value = "Set") {
+                        SettingRow(label = stringResource(R.string.margin_offset), value = stringResource(R.string.edit_menu_value_set)) {
                             currentSheet?.dismiss()
                             showDialog(context, prefs) {
                                 var topMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.topWidgetMargin) }
@@ -1105,7 +1105,7 @@ object EditModeHelper {
 
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Text(
-                                        "Top widget offset: $topMargin",
+                                        stringResource(R.string.edit_menu_top_widget_offset_fmt, topMargin),
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
@@ -1126,7 +1126,7 @@ object EditModeHelper {
                                     )
 
                                     Text(
-                                        "Bottom widget offset: $bottomMargin",
+                                        stringResource(R.string.edit_menu_bottom_widget_offset_fmt, bottomMargin),
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
@@ -1147,7 +1147,7 @@ object EditModeHelper {
                                     )
 
                                     Text(
-                                        "Home apps X-offset: $xOffset",
+                                        stringResource(R.string.edit_menu_home_apps_x_offset_fmt, xOffset),
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
@@ -1166,7 +1166,7 @@ object EditModeHelper {
                                     )
 
                                     Text(
-                                        "Home apps Y-offset: $yOffset",
+                                        stringResource(R.string.edit_menu_home_apps_y_offset_fmt, yOffset),
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
@@ -1190,19 +1190,19 @@ object EditModeHelper {
                     2 -> {
                         // Islands/Corners tab
 
-                        ToggleRow("Enable Text Islands", uiState.textIslands) { checked ->
+                        ToggleRow(stringResource(R.string.text_islands), uiState.textIslands) { checked ->
                             vm.setTextIslands(checked)
                             onUpdate()
                         }
 
-                        ToggleRow("Invert Islands", uiState.textIslandsInverted) { checked ->
+                        ToggleRow(stringResource(R.string.invert_islands), uiState.textIslandsInverted) { checked ->
                             vm.setTextIslandsInverted(checked)
                             onUpdate()
                         }
 
-                        val shapeOptions = arrayOf("Pill", "Rounded", "Square")
+                        val shapeOptions = arrayOf(stringResource(R.string.option_pill), stringResource(R.string.option_rounded), stringResource(R.string.option_square))
                         CycleRow(
-                            label = "Corners",
+                            label = stringResource(R.string.edit_menu_corners),
                             options = shapeOptions,
                             currentIndex = uiState.textIslandsShape,
                         ) { next ->
@@ -1218,7 +1218,7 @@ object EditModeHelper {
                             Constants.Action.OpenAppDrawer -> context.getString(R.string.app_drawer)
                             else -> uiState.doubleTapAction.getString(context)
                         }
-                        SettingRow(label = "Double Tap Action", value = doubleTapDisplay) {
+                        SettingRow(label = stringResource(R.string.edit_menu_double_tap_action), value = doubleTapDisplay) {
                             currentSheet?.dismiss()
                             dialogManager.showGestureActionPicker(
                                 context = context,
@@ -1256,7 +1256,7 @@ object EditModeHelper {
     ) {
         val widgetApps = appWidgetHelper.getInstalledWidgetsByApp()
         if (widgetApps.isEmpty()) {
-            android.widget.Toast.makeText(context, "No widgets available", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.toast_no_widgets_available), android.widget.Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -1299,7 +1299,7 @@ object EditModeHelper {
                                         homeFragment.widgetConfigureLauncher.launch(configIntent)
                                     } catch (e: SecurityException) {
                                         android.util.Log.e("EditModeHelper", "Widget configure activity not exported", e)
-                                        context.showLongToast("Widget configuration not available")
+                                        context.showLongToast(context.getString(R.string.toast_widget_config_unavailable))
                                     }
                                 }
                             }
@@ -1319,16 +1319,16 @@ object EditModeHelper {
         showDialog(context, prefs) {
         val selectedTabIndex = remember { mutableStateOf(initialTabIndex.coerceIn(0, 3)) }
         val uiState by vm.homeUiState.collectAsState()
-        val appTitle = when (selectedTabIndex.value) { 0 -> "Style"; 1 -> "Icons"; 2 -> "Function"; else -> "Notifications" }
+        val appTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); 1 -> stringResource(R.string.tab_icons); 2 -> stringResource(R.string.tab_function); else -> stringResource(R.string.tab_notifications) }
         SheetTitle(appTitle)
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
                     tabs = listOf(
-                        { Icon(imageVector = Icons.Rounded.TextFields, contentDescription = "Style", ) },
-                        { Icon(imageVector = Icons.Rounded.Stars, contentDescription = "Icons", ) },
-                        { Icon(imageVector = Icons.Rounded.Checklist, contentDescription = "Function", ) },
-                        { Icon(imageVector = Icons.Rounded.EditNotifications, contentDescription = "Notifications", ) }
+                        { Icon(imageVector = Icons.Rounded.TextFields, contentDescription = stringResource(R.string.tab_style), ) },
+                        { Icon(imageVector = Icons.Rounded.Stars, contentDescription = stringResource(R.string.tab_icons), ) },
+                        { Icon(imageVector = Icons.Rounded.Checklist, contentDescription = stringResource(R.string.tab_function), ) },
+                        { Icon(imageVector = Icons.Rounded.EditNotifications, contentDescription = stringResource(R.string.tab_notifications), ) }
                     ),
                     onTabSelected = { selectedTabIndex.value = it }
                 )
@@ -1354,7 +1354,7 @@ object EditModeHelper {
                         )
                     }
 
-                    SettingRow(label = "App Size/Gap", value = "${uiState.appSize}/${uiState.textPaddingSize}") {
+                    SettingRow(label = stringResource(R.string.app_size_gap), value = "${uiState.appSize}/${uiState.textPaddingSize}") {
                         currentSheet?.dismiss()
                         showDialog(context, prefs) {
                             var appSize by remember { androidx.compose.runtime.mutableIntStateOf(prefs.appSize) }
@@ -1362,7 +1362,7 @@ object EditModeHelper {
 
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Text(
-                                    "App text size: $appSize",
+                                    stringResource(R.string.app_text_size_fmt, appSize),
                                     style = SettingsTheme.typography.item,
                                     color = Theme.colors.text
                                 )
@@ -1378,7 +1378,7 @@ object EditModeHelper {
                                 )
 
                                 Text(
-                                    "App gap: $appGap",
+                                    stringResource(R.string.app_gap_fmt, appGap),
                                     style = SettingsTheme.typography.item,
                                     color = Theme.colors.text
                                 )
@@ -1408,7 +1408,7 @@ object EditModeHelper {
                         uiState.smallCapsApps -> 2
                         else -> 0
                     }
-                    CycleRow(label = "App Name Type", options = appNameOptions, currentIndex = appNameCurrent) { nextIndex ->
+                    CycleRow(label = stringResource(R.string.app_name_mode), options = appNameOptions, currentIndex = appNameCurrent) { nextIndex ->
                         when (nextIndex) {
                             0 -> { vm.setAllCapsApps(false); vm.setSmallCapsApps(false) }
                             1 -> { vm.setAllCapsApps(true); vm.setSmallCapsApps(false) }
@@ -1475,7 +1475,7 @@ object EditModeHelper {
                 2 -> {
                     // Function tab
 
-                    SettingRow(label = "Nr of Apps/Pages", value = "${uiState.homeAppsNum}/${uiState.homePagesNum}") {
+                    SettingRow(label = stringResource(R.string.nr_apps_pages), value = "${uiState.homeAppsNum}/${uiState.homePagesNum}") {
                         currentSheet?.dismiss()
                         showDialog(context, prefs) {
                             var homeApps by remember { androidx.compose.runtime.mutableIntStateOf(prefs.homeAppsNum) }
@@ -1483,7 +1483,7 @@ object EditModeHelper {
 
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Text(
-                                    "Number of home apps: $homeApps",
+                                    stringResource(R.string.num_home_apps_fmt, homeApps),
                                     style = SettingsTheme.typography.item,
                                     color = Theme.colors.text
                                 )
@@ -1500,7 +1500,7 @@ object EditModeHelper {
                                 )
 
                                 Text(
-                                    "Number of pages: $homePages",
+                                    stringResource(R.string.num_pages_fmt, homePages),
                                     style = SettingsTheme.typography.item,
                                     color = Theme.colors.text
                                 )
@@ -1519,7 +1519,7 @@ object EditModeHelper {
                         }
                     }
 
-                    ToggleRow("Page Indicators", uiState.pageIndicatorVisible) { checked ->
+                    ToggleRow(stringResource(R.string.edit_menu_page_indicators), uiState.pageIndicatorVisible) { checked ->
                         vm.setPageIndicatorVisible(checked)
                         onUpdate()
                     }
@@ -1538,7 +1538,7 @@ object EditModeHelper {
                 3 -> {
                     // Notifications tab
 
-                    ToggleRow("Notification Badge", uiState.showNotificationBadge) { checked ->
+                    ToggleRow(stringResource(R.string.edit_menu_notification_badge), uiState.showNotificationBadge) { checked ->
                         vm.setShowNotificationBadge(checked)
                         onUpdate()
                     }
@@ -1547,7 +1547,7 @@ object EditModeHelper {
                         val indicators = com.github.gezimos.inkos.data.Constants.NotificationIndicator.entries
                         val currentIdx = uiState.notificationIndicatorStyle.coerceIn(0, indicators.lastIndex)
                         val current = indicators[currentIdx]
-                        SettingRow(label = "Badge Indicator", value = current.symbol) {
+                        SettingRow(label = stringResource(R.string.badge_indicator), value = current.symbol) {
                             currentSheet?.dismiss()
                             dialogManager.showBadgeIndicatorPicker(
                                 currentIndicator = current,
@@ -1559,27 +1559,27 @@ object EditModeHelper {
                         }
                     }
 
-                    ToggleRow("Label Notifications", uiState.showNotificationText) { checked ->
+                    ToggleRow(stringResource(R.string.label_notifications), uiState.showNotificationText) { checked ->
                         vm.setShowNotificationText(checked)
                         onUpdate()
                     }
 
-                    ToggleRow("Media Playing Badge", uiState.showMediaIndicator) { checked ->
+                    ToggleRow(stringResource(R.string.edit_menu_media_playing_badge), uiState.showMediaIndicator) { checked ->
                         vm.setShowMediaIndicator(checked)
                         onUpdate()
                     }
 
-                    ToggleRow("Media Playing Name", uiState.showMediaName) { checked ->
+                    ToggleRow(stringResource(R.string.show_media_playing_name), uiState.showMediaName) { checked ->
                         vm.setShowMediaName(checked)
                         onUpdate()
                     }
 
                     // Move Character Limit above the Audio Widget
-                    SettingRow(label = "Character Limit", value = "${uiState.homeAppCharLimit}") {
+                    SettingRow(label = stringResource(R.string.badge_character_limit), value = "${uiState.homeAppCharLimit}") {
                         currentSheet?.dismiss()
                         dialogManager.showSliderDialog(
                             context = context,
-                            title = "Character Limit",
+                            title = context.getString(R.string.badge_character_limit),
                             minValue = 1,
                             maxValue = 50,
                             currentValue = uiState.homeAppCharLimit,
@@ -1591,13 +1591,13 @@ object EditModeHelper {
                         )
                     }
 
-                    ToggleRow("Enable Audio Widget", uiState.showAudioWidget) { checked ->
+                    ToggleRow(stringResource(R.string.edit_menu_enable_audio_widget), uiState.showAudioWidget) { checked ->
                         vm.setShowAudioWidget(checked)
                         onUpdate()
                     }
 
                     // Link to full notification settings fragment
-                    SettingRow(label = "All Notification settings >", value = "") {
+                    SettingRow(label = stringResource(R.string.edit_menu_all_notification_settings), value = "") {
                         currentSheet?.dismiss()
                         try {
                             fragment.findNavController().navigate(
@@ -1624,7 +1624,7 @@ object EditModeHelper {
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Home apps slider
                 Text(
-                    "Number of home apps: $homeApps",
+                    stringResource(R.string.num_home_apps_fmt, homeApps),
                     style = SettingsTheme.typography.item,
                     color = Theme.colors.text
                 )
@@ -1642,7 +1642,7 @@ object EditModeHelper {
 
                 // Pages slider
                 Text(
-                    "Number of pages: $homePages",
+                    stringResource(R.string.num_pages_fmt, homePages),
                     style = SettingsTheme.typography.item,
                     color = Theme.colors.text
                 )
@@ -1670,22 +1670,22 @@ object EditModeHelper {
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
             val drawerState by vm.appsDrawerUiState.collectAsState()
-            val drawerTitle = when (selectedTabIndex.value) { 0 -> "Style"; 1 -> "Search"; else -> "Filtering" }
+            val drawerTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); 1 -> stringResource(R.string.tab_search); else -> stringResource(R.string.tab_filtering) }
             SheetTitle(drawerTitle)
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
                     tabs = listOf(
-                        { Icon(imageVector = Icons.Rounded.TextFields, contentDescription = "Style", ) },
-                        { Icon(imageVector = Icons.Rounded.Search, contentDescription = "Search", ) },
-                        { Icon(imageVector = Icons.Rounded.FilterList, contentDescription = "Filtering", ) }
+                        { Icon(imageVector = Icons.Rounded.TextFields, contentDescription = stringResource(R.string.tab_style), ) },
+                        { Icon(imageVector = Icons.Rounded.Search, contentDescription = stringResource(R.string.tab_search), ) },
+                        { Icon(imageVector = Icons.Rounded.FilterList, contentDescription = stringResource(R.string.tab_filtering), ) }
                     ),
                     onTabSelected = { selectedTabIndex.value = it }
                 )
                 Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
                 when (selectedTabIndex.value) {
                     0 -> {
-                        SettingRow(label = "App Size/Gap", value = "${uiState.appDrawerSize}/${uiState.appDrawerGap}") {
+                        SettingRow(label = stringResource(R.string.app_size_gap), value = "${uiState.appDrawerSize}/${uiState.appDrawerGap}") {
                             currentSheet?.dismiss()
                             showDialog(context, prefs) {
                                 var drawerSize by remember { androidx.compose.runtime.mutableIntStateOf(uiState.appDrawerSize) }
@@ -1693,7 +1693,7 @@ object EditModeHelper {
 
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Text(
-                                        "App size: $drawerSize",
+                                        stringResource(R.string.drawer_size_fmt, drawerSize),
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
@@ -1709,7 +1709,7 @@ object EditModeHelper {
                                     )
 
                                     Text(
-                                        "App gap: $drawerGap",
+                                        stringResource(R.string.drawer_gap_fmt, drawerGap),
                                         style = SettingsTheme.typography.item,
                                         color = Theme.colors.text
                                     )
@@ -1740,22 +1740,22 @@ object EditModeHelper {
                             vm.setAppDrawerAlignment(nextIndex)
                             onUpdate()
                         }
-                        ToggleRow("Enable Icons", drawerState.drawerShowIcons) { checked ->
+                        ToggleRow(stringResource(R.string.edit_menu_enable_icons), drawerState.drawerShowIcons) { checked ->
                             vm.setDrawerShowIcons(checked)
                             onUpdate()
                         }
                     }
                     1 -> {
-                        ToggleRow("Enable Search", uiState.appDrawerSearchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.edit_menu_enable_search), uiState.appDrawerSearchEnabled) { checked ->
                             vm.setAppDrawerSearchEnabled(checked)
                             onUpdate()
                         }
                         val searchEnabled = uiState.appDrawerSearchEnabled
-                        ToggleRow("Auto Show Keyboard", uiState.appDrawerAutoShowKeyboard, enabled = searchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.auto_show_keyboard), uiState.appDrawerAutoShowKeyboard, enabled = searchEnabled) { checked ->
                             vm.setAppDrawerAutoShowKeyboard(checked)
                             onUpdate()
                         }
-                        ToggleRow("Auto-launch result", uiState.appDrawerAutoLaunch, enabled = searchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.auto_launch_result), uiState.appDrawerAutoLaunch, enabled = searchEnabled) { checked ->
                             vm.setAppDrawerAutoLaunch(checked)
                             onUpdate()
                         }
@@ -1763,7 +1763,7 @@ object EditModeHelper {
                             vm.setAppDrawerSearchHiddenAppsEnabled(checked)
                             onUpdate()
                         }
-                        ToggleRow("Search Contacts", uiState.appDrawerSearchContactsEnabled, enabled = searchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.edit_menu_search_contacts), uiState.appDrawerSearchContactsEnabled, enabled = searchEnabled) { checked ->
                             vm.setAppDrawerSearchContactsEnabled(checked)
                             onUpdate()
                         }
@@ -1771,8 +1771,8 @@ object EditModeHelper {
                             val accounts = remember { ContactsHelper.getAvailableAccounts(context) }
                             if (accounts.size > 1) {
                                 val selectedAccounts = uiState.appDrawerSearchContactAccounts
-                                val displayOption = if (selectedAccounts == null) "All" else "${selectedAccounts.size}/${accounts.size}"
-                                SettingRow(label = "Contacts to show", value = displayOption) {
+                                val displayOption = if (selectedAccounts == null) stringResource(R.string.option_all) else "${selectedAccounts.size}/${accounts.size}"
+                                SettingRow(label = stringResource(R.string.contacts_to_show), value = displayOption) {
                                     currentSheet?.dismiss()
                                     val items = accounts.map { it.second }.toTypedArray()
                                     val initialChecked = BooleanArray(accounts.size) { idx ->
@@ -1780,7 +1780,7 @@ object EditModeHelper {
                                     }
                                     dialogManager.showMultiChoiceDialog(
                                         context = context,
-                                        title = "Contacts to show",
+                                        title = context.getString(R.string.contacts_to_show),
                                         items = items,
                                         initialChecked = initialChecked,
                                         onConfirm = { selectedIndices ->
@@ -1794,19 +1794,19 @@ object EditModeHelper {
                                 }
                             }
                         }
-                        ToggleRow("Search Web", uiState.appDrawerSearchWebEnabled, enabled = searchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.edit_menu_search_web), uiState.appDrawerSearchWebEnabled, enabled = searchEnabled) { checked ->
                             vm.setAppDrawerSearchWebEnabled(checked)
                             onUpdate()
                         }
-                        ToggleRow("Search Settings", uiState.appDrawerSearchSettingsEnabled, enabled = searchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.edit_menu_search_settings), uiState.appDrawerSearchSettingsEnabled, enabled = searchEnabled) { checked ->
                             vm.setAppDrawerSearchSettingsEnabled(checked)
                             onUpdate()
                         }
-                        ToggleRow("Search Music", uiState.appDrawerSearchMusicEnabled, enabled = searchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.edit_menu_search_music), uiState.appDrawerSearchMusicEnabled, enabled = searchEnabled) { checked ->
                             vm.setAppDrawerSearchMusicEnabled(checked)
                             onUpdate()
                         }
-                        ToggleRow("Search Files", uiState.appDrawerSearchFilesEnabled, enabled = searchEnabled) { checked ->
+                        ToggleRow(stringResource(R.string.edit_menu_search_files), uiState.appDrawerSearchFilesEnabled, enabled = searchEnabled) { checked ->
                             vm.setAppDrawerSearchFilesEnabled(checked)
                             onUpdate()
                             if (checked && folderPickerLauncher != null && FileSearchHelper.getPersistedFolders(context).isEmpty()) {
@@ -1818,7 +1818,7 @@ object EditModeHelper {
                             val folderCount = remember {
                                 FileSearchHelper.getPersistedFolders(context).size
                             }
-                            SettingRow(label = "Search Folders", value = if (folderCount == 0) "Add" else folderCount.toString()) {
+                            SettingRow(label = stringResource(R.string.search_folders), value = if (folderCount == 0) stringResource(R.string.search_folders_add) else folderCount.toString()) {
                                 currentSheet?.dismiss()
                                 dialogManager.showSheet {
                                     com.github.gezimos.inkos.ui.dialogs.SearchFoldersSheet(
@@ -1842,22 +1842,22 @@ object EditModeHelper {
                             vm.setAppDrawerAzFilter(checked)
                             onUpdate()
                         }
-                        val sortOrderOptions = arrayOf("A-Z", "Most Used", "Last Used")
+                        val sortOrderOptions = arrayOf(stringResource(R.string.option_az), stringResource(R.string.option_most_used), stringResource(R.string.option_last_used))
                         CycleRow(
-                            label = "Sort Order",
+                            label = stringResource(R.string.sort_order),
                             options = sortOrderOptions,
                             currentIndex = drawerState.appDrawerSortOrder.coerceIn(0, 2),
                         ) { nextIndex ->
                             vm.setAppDrawerSortOrder(nextIndex)
                             onUpdate()
                         }
-                        ToggleRow("Hide Home Apps", uiState.hideHomeApps) { checked ->
+                        ToggleRow(stringResource(R.string.hide_home_apps), uiState.hideHomeApps) { checked ->
                             vm.setHideHomeApps(checked)
                             onUpdate()
                         }
                         SettingRow(
                             label = context.getString(R.string.settings_hidden_apps_title),
-                            value = if (prefs.hiddenApps.isEmpty()) "None" else "${prefs.hiddenApps.size} hidden",
+                            value = if (prefs.hiddenApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.hidden_count_fmt, prefs.hiddenApps.size),
                         ) {
                             currentSheet?.dismiss()
                             vm.getHiddenApps()
@@ -1881,9 +1881,9 @@ object EditModeHelper {
                                 selectedRaw.filter { validKeys.contains(it) }.toSet() +
                                     inkosKeys.filter { validKeys.contains(it) }
                             }
-                            if (allShortcuts.isEmpty()) "None"
-                            else if (effectiveSelection.isEmpty()) "None"
-                            else "${effectiveSelection.size} selected"
+                            if (allShortcuts.isEmpty()) stringResource(R.string.text_none)
+                            else if (effectiveSelection.isEmpty()) stringResource(R.string.text_none)
+                            else stringResource(R.string.selected_count_fmt, effectiveSelection.size)
                         }
                         SettingRow(
                             label = context.getString(R.string.app_shortcuts),
@@ -1892,7 +1892,7 @@ object EditModeHelper {
                             currentSheet?.dismiss()
                             val allShortcuts = getAllAppShortcuts(context)
                             if (allShortcuts.isEmpty()) {
-                                android.widget.Toast.makeText(context, "No app shortcuts available", android.widget.Toast.LENGTH_SHORT).show()
+                                android.widget.Toast.makeText(context, context.getString(R.string.no_app_shortcuts), android.widget.Toast.LENGTH_SHORT).show()
                                 return@SettingRow
                             }
                             val inkosShortcuts = allShortcuts.filter {
@@ -1951,14 +1951,14 @@ object EditModeHelper {
             val selectedTabIndex = remember { mutableStateOf(0) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
-            val notifTitle = when (selectedTabIndex.value) { 0 -> "Style"; else -> "Function" }
+            val notifTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); else -> stringResource(R.string.tab_function) }
             SheetTitle(notifTitle)
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
                     tabs = listOf(
-                        { Icon(imageVector = Icons.Rounded.TextFields, contentDescription = "Style", ) },
-                        { Icon(imageVector = Icons.Rounded.Checklist, contentDescription = "Function", ) }
+                        { Icon(imageVector = Icons.Rounded.TextFields, contentDescription = stringResource(R.string.tab_style), ) },
+                        { Icon(imageVector = Icons.Rounded.Checklist, contentDescription = stringResource(R.string.tab_function), ) }
                     ),
                     onTabSelected = { selectedTabIndex.value = it }
                 )
@@ -2067,13 +2067,13 @@ object EditModeHelper {
                             onUpdate()
                         }
                         ToggleRow(
-                            "Clear conversation on app open",
+                            stringResource(R.string.edit_menu_clear_conversation),
                             uiState.clearConversationOnAppOpen
                         ) { checked ->
                             vm.setClearConversationOnAppOpen(checked)
                             onUpdate()
                         }
-                        SettingRow(label = "All Notification settings >", value = "") {
+                        SettingRow(label = stringResource(R.string.edit_menu_all_notification_settings), value = "") {
                             currentSheet?.dismiss()
                             try {
                                 fragment.findNavController().navigate(R.id.settingsFragment)
@@ -2081,7 +2081,7 @@ object EditModeHelper {
                         }
                         SettingRow(
                             label = context.getString(R.string.letters_allowlist),
-                            value = if (uiState.allowedNotificationApps.isEmpty()) "None" else "${uiState.allowedNotificationApps.size} selected",
+                            value = if (uiState.allowedNotificationApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.selected_count_fmt, uiState.allowedNotificationApps.size),
                         ) {
                             currentSheet?.dismiss()
                             fragment.viewLifecycleOwner.lifecycleScope.launch {
@@ -2147,7 +2147,7 @@ object EditModeHelper {
         showDialog(context, prefs) {
             val uiState by vm.homeUiState.collectAsState()
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Title(text = "Simple Tray")
+                Title(text = stringResource(R.string.simple_tray_title))
                 SettingRow(
                     label = context.getString(R.string.notifications_per_page),
                     value = uiState.notificationsPerPage.toString(),
@@ -2157,8 +2157,8 @@ object EditModeHelper {
                     onUpdate()
                 }
                 SettingRow(
-                    label = "Simple Tray Allowlist",
-                    value = if (uiState.allowedSimpleTrayApps.isEmpty()) "None" else "${uiState.allowedSimpleTrayApps.size} selected",
+                    label = stringResource(R.string.simple_tray_allowlist),
+                    value = if (uiState.allowedSimpleTrayApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.selected_count_fmt, uiState.allowedSimpleTrayApps.size),
                 ) {
                     currentSheet?.dismiss()
                     fragment.viewLifecycleOwner.lifecycleScope.launch {
@@ -2193,7 +2193,7 @@ object EditModeHelper {
                             }.toBooleanArray()
                             dialogManager.showMultiChoiceDialog(
                                 context = context,
-                                title = "Simple Tray Apps",
+                                title = context.getString(R.string.simple_tray_apps),
                                 items = appLabels.toTypedArray(),
                                 initialChecked = checkedItems,
                                 maxHeightRatio = 0.60f,
@@ -2211,7 +2211,7 @@ object EditModeHelper {
                         }
                     }
                 }
-                SettingRow(label = "All Notification Settings >", value = "") {
+                SettingRow(label = stringResource(R.string.edit_menu_all_notification_settings_upper), value = "") {
                     currentSheet?.dismiss()
                     try {
                         fragment.findNavController().navigate(R.id.settingsFragment)
@@ -2228,10 +2228,10 @@ object EditModeHelper {
         showDialog(context, prefs) {
             val uiState by vm.homeUiState.collectAsState()
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Title(text = "Hub")
+                Title(text = stringResource(R.string.option_hub))
                 SettingRow(
-                    label = "Hub Allowlist",
-                    value = if (uiState.allowedSimpleTrayApps.isEmpty()) "None" else "${uiState.allowedSimpleTrayApps.size} selected",
+                    label = stringResource(R.string.hub_allowlist),
+                    value = if (uiState.allowedSimpleTrayApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.selected_count_fmt, uiState.allowedSimpleTrayApps.size),
                 ) {
                     currentSheet?.dismiss()
                     fragment.viewLifecycleOwner.lifecycleScope.launch {
@@ -2266,7 +2266,7 @@ object EditModeHelper {
                             }.toBooleanArray()
                             dialogManager.showMultiChoiceDialog(
                                 context = context,
-                                title = "Hub Apps",
+                                title = context.getString(R.string.hub_apps),
                                 items = appLabels.toTypedArray(),
                                 initialChecked = checkedItems,
                                 maxHeightRatio = 0.60f,
@@ -2284,7 +2284,7 @@ object EditModeHelper {
                         }
                     }
                 }
-                SettingRow(label = "All Notification Settings >", value = "") {
+                SettingRow(label = stringResource(R.string.edit_menu_all_notification_settings_upper), value = "") {
                     currentSheet?.dismiss()
                     try {
                         fragment.findNavController().navigate(R.id.settingsFragment)
@@ -2300,7 +2300,7 @@ object EditModeHelper {
         showDialog(context, prefs) {
             val uiState by vm.homeUiState.collectAsState()
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Title(text = "Simple Tray")
+                Title(text = stringResource(R.string.simple_tray_title))
                 ToggleRow(
                     text = context.getString(R.string.enable_bottom_navigation),
                     checked = uiState.enableBottomNav
@@ -2308,7 +2308,7 @@ object EditModeHelper {
                     vm.setEnableBottomNav(checked)
                     onUpdate()
                 }
-                SettingRow(label = "All Notification Settings >", value = "") {
+                SettingRow(label = stringResource(R.string.edit_menu_all_notification_settings_upper), value = "") {
                     currentSheet?.dismiss()
                     try {
                         fragment.findNavController().navigate(R.id.settingsFragment)
@@ -2325,32 +2325,32 @@ object EditModeHelper {
         showDialog(context, prefs) {
             val uiState by vm.appsDrawerUiState.collectAsState()
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Title(text = "Recents")
+                Title(text = stringResource(R.string.option_recents))
 
-                val viewOptions = arrayOf("Recents", "Most Used")
-                CycleRow("Default View", viewOptions, uiState.recentsDefaultView) { next ->
+                val viewOptions = arrayOf(stringResource(R.string.option_recents), stringResource(R.string.option_most_used))
+                CycleRow(stringResource(R.string.default_view), viewOptions, uiState.recentsDefaultView) { next ->
                     vm.setRecentsDefaultView(next)
                     onUpdate()
                 }
 
-                val filterOptions = arrayOf("Today", "This Week", "This Month", "All Time")
-                CycleRow("Usage Period", filterOptions, uiState.recentsUsageFilter) { next ->
+                val filterOptions = arrayOf(stringResource(R.string.option_today), stringResource(R.string.option_this_week), stringResource(R.string.option_this_month), stringResource(R.string.option_all_time))
+                CycleRow(stringResource(R.string.usage_period), filterOptions, uiState.recentsUsageFilter) { next ->
                     vm.setRecentsUsageFilter(next)
                     onUpdate()
                 }
 
-                val unitOptions = arrayOf("Time", "Money", "Coffee")
-                CycleRow("Most Used Unit", unitOptions, uiState.recentsUsageUnit) { next ->
+                val unitOptions = arrayOf(stringResource(R.string.option_time), stringResource(R.string.option_money), stringResource(R.string.option_coffee))
+                CycleRow(stringResource(R.string.most_used_unit), unitOptions, uiState.recentsUsageUnit) { next ->
                     vm.setRecentsUsageUnit(next)
                     onUpdate()
                 }
 
                 if (uiState.recentsUsageUnit == 1) { // Money
-                    SettingRow("Currency Symbol", uiState.recentsUnitCurrencyChar) {
+                    SettingRow(stringResource(R.string.currency_symbol), uiState.recentsUnitCurrencyChar) {
                         currentSheet?.dismiss()
                         dialogManager.showInputDialog(
                             context = context,
-                            title = "Currency Symbol",
+                            title = context.getString(R.string.currency_symbol),
                             initialValue = uiState.recentsUnitCurrencyChar
                         ) { input ->
                             val char = input.trim().take(1).ifEmpty { "$" }
@@ -2358,11 +2358,11 @@ object EditModeHelper {
                             onUpdate()
                         }
                     }
-                    SettingRow("Hourly Rate", uiState.recentsUnitCost.toString()) {
+                    SettingRow(stringResource(R.string.hourly_rate), uiState.recentsUnitCost.toString()) {
                         currentSheet?.dismiss()
                         dialogManager.showInputDialog(
                             context = context,
-                            title = "Hourly Rate (whole number)",
+                            title = context.getString(R.string.hourly_rate_hint),
                             initialValue = uiState.recentsUnitCost.toString()
                         ) { input ->
                             val cost = input.filter { it.isDigit() }.toIntOrNull()?.coerceIn(1, 99999)
@@ -2372,11 +2372,11 @@ object EditModeHelper {
                         }
                     }
                 } else if (uiState.recentsUsageUnit == 2) { // Coffee
-                    SettingRow("Unit Emoji", uiState.recentsUnitEmojiChar) {
+                    SettingRow(stringResource(R.string.unit_emoji), uiState.recentsUnitEmojiChar) {
                         currentSheet?.dismiss()
                         dialogManager.showInputDialog(
                             context = context,
-                            title = "Unit Emoji",
+                            title = context.getString(R.string.unit_emoji),
                             initialValue = uiState.recentsUnitEmojiChar
                         ) { input ->
                             val emoji = input.trim().ifEmpty { "☕" }
@@ -2384,11 +2384,11 @@ object EditModeHelper {
                             onUpdate()
                         }
                     }
-                    SettingRow("Coffee Price", uiState.recentsUnitCoffeePrice.toString()) {
+                    SettingRow(stringResource(R.string.coffee_price), uiState.recentsUnitCoffeePrice.toString()) {
                         currentSheet?.dismiss()
                         dialogManager.showInputDialog(
                             context = context,
-                            title = "Price per coffee (whole number)",
+                            title = context.getString(R.string.coffee_price_hint),
                             initialValue = uiState.recentsUnitCoffeePrice.toString()
                         ) { input ->
                             val price = input.filter { it.isDigit() }.toIntOrNull()?.coerceIn(1, 99999)
@@ -2397,11 +2397,11 @@ object EditModeHelper {
                             onUpdate()
                         }
                     }
-                    SettingRow("Hourly Rate", uiState.recentsUnitCost.toString()) {
+                    SettingRow(stringResource(R.string.hourly_rate), uiState.recentsUnitCost.toString()) {
                         currentSheet?.dismiss()
                         dialogManager.showInputDialog(
                             context = context,
-                            title = "Hourly Rate (whole number)",
+                            title = context.getString(R.string.hourly_rate_hint),
                             initialValue = uiState.recentsUnitCost.toString()
                         ) { input ->
                             val cost = input.filter { it.isDigit() }.toIntOrNull()?.coerceIn(1, 99999)
@@ -2412,7 +2412,7 @@ object EditModeHelper {
                     }
                 }
 
-                SettingRow("Usage Permission", "") {
+                SettingRow(stringResource(R.string.usage_permission), "") {
                     currentSheet?.dismiss()
                     try {
                         context.startActivity(android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS))
@@ -2656,7 +2656,7 @@ internal fun WidgetAppListContent(
 ) {
     val pm = context.packageManager
     Text(
-        text = "CHOOSE APP",
+        text = stringResource(R.string.choose_app),
         style = SettingsTheme.typography.header,
         fontWeight = FontWeight.Bold,
         color = Theme.colors.text,
@@ -2723,7 +2723,7 @@ internal fun WidgetAppListContent(
     }
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.End) {
         androidx.compose.material3.TextButton(onClick = onClose) {
-            Text("Close", color = Theme.colors.text)
+            Text(stringResource(R.string.close), color = Theme.colors.text)
         }
     }
 }
@@ -2740,7 +2740,7 @@ internal fun WidgetListContent(
         verticalAlignment = Alignment.CenterVertically
     ) {
         androidx.compose.material3.TextButton(onClick = onBack) {
-            Text("← Back", color = Theme.colors.text)
+            Text(stringResource(R.string.btn_back_arrow), color = Theme.colors.text)
         }
         Text(
             text = app.appLabel.uppercase(),
@@ -2820,7 +2820,7 @@ internal fun WidgetListContent(
     }
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.End) {
         androidx.compose.material3.TextButton(onClick = onBack) {
-            Text("Back", color = Theme.colors.text)
+            Text(stringResource(R.string.btn_back), color = Theme.colors.text)
         }
     }
 }

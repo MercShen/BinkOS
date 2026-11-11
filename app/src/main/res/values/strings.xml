@@ -818,4 +818,129 @@
     <string name="write_settings_permission_title">Modify System Settings</string>
     <string name="write_settings_permission_message">Brightness control requires permission to modify system settings. You will be taken to settings to grant this permission.</string>
 
+    <!-- Shared value labels -->
+    <string name="text_none">None</string>
+    <string name="close">Close</string>
+
+    <!-- Edit mode sheets (EditModeHelper) -->
+    <string name="edit_menu_events_hide_controls">Hide Chevrons &amp; Icon</string>
+    <string name="edit_menu_quote_size">Quote Size</string>
+    <string name="edit_menu_quote_font_label">Quote Font</string>
+    <string name="edit_menu_text_size">Text Size</string>
+    <string name="edit_menu_font">Font</string>
+    <string name="edit_menu_quote_click_action">Click Quote Action</string>
+    <string name="edit_menu_theme_mode">Theme Mode</string>
+    <string name="edit_menu_chosen_theme">Chosen Theme</string>
+    <string name="edit_menu_value_set">Set</string>
+    <string name="edit_menu_apps_alignment">Apps Alignment</string>
+    <string name="edit_menu_page_indicator">Page Indicator</string>
+    <string name="edit_menu_top_widget_offset_fmt">Top widget offset: %1$d</string>
+    <string name="edit_menu_bottom_widget_offset_fmt">Bottom widget offset: %1$d</string>
+    <string name="edit_menu_home_apps_x_offset_fmt">Home apps X-offset: %1$d</string>
+    <string name="edit_menu_home_apps_y_offset_fmt">Home apps Y-offset: %1$d</string>
+    <string name="edit_menu_corners">Corners</string>
+    <string name="edit_menu_double_tap_action">Double Tap Action</string>
+    <string name="edit_menu_enable_icons">Enable Icons</string>
+    <string name="edit_menu_enable_search">Enable Search</string>
+    <string name="edit_menu_search_contacts">Search Contacts</string>
+    <string name="edit_menu_search_web">Search Web</string>
+    <string name="edit_menu_search_settings">Search Settings</string>
+    <string name="edit_menu_search_music">Search Music</string>
+    <string name="edit_menu_search_files">Search Files</string>
+    <string name="edit_menu_page_indicators">Page Indicators</string>
+    <string name="edit_menu_notification_badge">Notification Badge</string>
+    <string name="edit_menu_media_playing_badge">Media Playing Badge</string>
+    <string name="edit_menu_enable_audio_widget">Enable Audio Widget</string>
+    <string name="edit_menu_all_notification_settings">All Notification settings &gt;</string>
+    <string name="edit_menu_all_notification_settings_upper">All Notification Settings &gt;</string>
+    <string name="edit_menu_clear_conversation">Clear conversation on app open</string>
+
+    <!-- Settings screens (SettingsFragment) -->
+    <string name="settings_support_title">Support</string>
+    <string name="settings_extras_title">Extras</string>
+    <string name="settings_invalid_font_title">Invalid Font File</string>
+    <string name="settings_invalid_font_message">The selected file could not be loaded as a font. Please choose a valid font file.</string>
+    <string name="settings_file_error_title">File Error</string>
+    <string name="settings_file_error_message">Could not copy the selected file. Please try again.</string>
+    <string name="settings_paused_suffix">" (paused)"</string>
+    <string name="settings_app_version_title_fmt">%1$s v%2$s</string>
+    <string name="settings_credits_description_fmt">mLauncher, oLauncher — %1$s</string>
+    <string name="settings_fork_title">Fork of inkOS</string>
+    <string name="settings_fork_description">Bink OS is a personal fork of inkOS by gezimos, with thanks to the original author.</string>
+    <string name="settings_system_full_refresh">System Full Refresh (Bigme)</string>
+    <string name="settings_desc_system_full_refresh">Use the vendor GC16 full refresh for any refresh, including gesture-triggered ones</string>
+    <string name="settings_page_turn_animation">Page Turn Animation (Bigme)</string>
+    <string name="settings_desc_page_turn_animation">Play the vendor e-ink page-turn animation when opening/closing screens</string>
+    <string name="settings_desc_choose_launcher">Choose which launcher to use as your home screen</string>
+    <string name="settings_desc_view_onboarding">View the setup wizard again</string>
+    <string name="settings_desc_guide">Learn gestures and interactions</string>
+    <string name="settings_desc_restart_launcher">Restart Bink OS without rebooting the device</string>
+    <string name="settings_desc_exit_launcher">Switch to a different launcher</string>
+    <string name="settings_choose_launcher">Choose your launcher</string>
+    <string name="settings_home_apps_x_offset">Home apps X offset</string>
+    <string name="settings_desc_home_apps_x_offset">Horizontal offset, synced with the edit-mode drag</string>
+    <string name="settings_home_apps_y_offset">Home apps Y offset</string>
+    <string name="settings_desc_home_apps_y_offset">Vertical offset, synced with the edit-mode drag</string>
+    <string name="settings_reset_home_apps_offset">Reset home apps offset</string>
+    <string name="settings_desc_reset_home_apps_offset">Restore the home apps offset to 0</string>
+    <string name="settings_top_widget_offset">Top Widget Offset</string>
+    <string name="settings_bottom_widget_offset">Bottom Widget Offset</string>
+    <string name="settings_desc_bottom_widget_margin">Space below the bottom widget</string>
+    <string name="settings_apps_count_fmt">%1$d apps</string>
+    <string name="settings_desc_ui_scale">All in one UI Scaling</string>
+    <string name="settings_ui_scale_auto_fmt">%1$s (Auto)</string>
+    <string name="settings_icon_pack_fallback">Icon Pack</string>
+    <string name="settings_read_more">Read more</string>
+    <string name="settings_label_notification_apps">Label Notification Apps</string>
+    <string name="gesture_vs_page_conflict_title">Gesture vs page conflict</string>
+    <string name="gesture_vs_page_conflict_desc">How short vs long swipes work with home pages</string>
+    <string name="gesture_vs_page_conflict_line1">By default if you have multiple pages of apps in home, the swipe up/down will require long swipes.</string>
+    <string name="gesture_vs_page_conflict_line2">If you have only one page of apps, it will require short swipes.</string>
+    <string name="gesture_vs_page_conflict_line3">So you can choose either way, also below you can adjust the swiping thresholds.</string>
+
+    <!-- Home tooltips and widgets (HomeUI) -->
+    <string name="home_tooltip_pages_title">Home Pages</string>
+    <string name="home_tooltip_swipe_pages">Swipe up/down to move between pages</string>
+    <string name="home_tooltip_long_swipe_drawer">Long swipe up to open App Drawer</string>
+    <string name="home_tooltip_next">Next</string>
+    <string name="home_tap_to_choose_widget">Tap to choose widget</string>
+    <string name="home_events_today_fmt">Today %1$s</string>
+
+    <!-- Bottom sheets (ComposeBottomSheet) -->
+    <string name="gesture_tab_android">Android</string>
+    <string name="icon_style_header">ICON STYLE</string>
+    <string name="theme_config_header">THEME CONFIG</string>
+    <string name="search_folders_add_folder">+ Add folder</string>
+
+    <!-- Search helpers -->
+    <string name="search_contact_action">Contact Action</string>
+    <string name="contact_account_phone">Phone</string>
+    <string name="contact_account_google">Google</string>
+    <string name="contact_account_sim">SIM</string>
+    <string name="contact_account_sdn">SDN</string>
+    <string name="contact_account_exchange">Exchange</string>
+    <string name="toast_no_music_player">No music player found</string>
+    <string name="toast_no_app_to_open_file">No app found to open this file</string>
+
+
+    <!-- Language / locale -->
+    <string name="language">Language</string>
+    <string name="language_system">System default</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">简体中文</string>
+    <string name="desc_language">App display language. System default follows your device.</string>
+
+    <!-- Onboarding & guide -->
+    <string name="onboarding_desc_0">A distraction-free interface for clarity and focus. Optimized for e-ink devices, QWERTY and T9 phones.</string>
+    <string name="onboarding_desc_1">Bink OS does not collect, store, or share any data. There are no server connections and no tracking. Everything stays on your device.</string>
+    <string name="onboarding_desc_2">To get the most out of Bink OS, grant notification permissions so Bink OS can forward you Android notifications in Home, Letters or Simple Tray.</string>
+    <string name="onboarding_desc_3">To make Bink OS your new app home, set it as a default launcher. You can change this later in Settings.</string>
+    <string name="onboarding_desc_4">To access settings, Pinch (zoom out) in home (empty areas) to open the quick settings. That will allow you to access All Settings or enable Edit Mode for the front-end editor.</string>
+    <string name="onboarding_desc_5">Choose a color preset for your launcher, or skip to keep your current theme and start from scratch.</string>
+    <string name="onboarding_desc_6">Select your home shortcuts and order them using Edit Favorites. You can still longpress on single apps in home to replace them individually like before.</string>
+    <string name="onboarding_confirm_read">I CONFIRM THAT I\'VE READ</string>
+    <string name="guide_title">GUIDE</string>
+    <string name="guide_back">BACK</string>
+    <string name="guide_home">HOME</string>
+    <string name="page_counter_fmt">%1$d/%2$d</string>
 </resources>

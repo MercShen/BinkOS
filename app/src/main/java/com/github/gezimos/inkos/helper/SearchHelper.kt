@@ -17,6 +17,7 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.core.content.ContextCompat
+import com.github.gezimos.inkos.R
 import com.github.gezimos.inkos.data.AppListItem
 import com.github.gezimos.inkos.data.Constants
 import java.text.Normalizer
@@ -390,7 +391,7 @@ object ContactsHelper {
                     val name = cursor.getString(nameCol)
                     val key = type ?: LOCAL_ACCOUNT_KEY
                     if (seen.add(key)) {
-                        result.add(key to accountLabel(type, name))
+                        result.add(key to accountLabel(context, type, name))
                     }
                 }
             }
@@ -411,14 +412,14 @@ object ContactsHelper {
     }
 
     /** Human-readable label for an account type. */
-    private fun accountLabel(accountType: String?, accountName: String?): String = when (accountType) {
-        null -> "Phone"
-        "com.google" -> "Google" + (if (!accountName.isNullOrBlank()) " ($accountName)" else "")
+    private fun accountLabel(context: Context, accountType: String?, accountName: String?): String = when (accountType) {
+        null -> context.getString(R.string.contact_account_phone)
+        "com.google" -> context.getString(R.string.contact_account_google) + (if (!accountName.isNullOrBlank()) " ($accountName)" else "")
         else -> when {
-            accountType.contains("sim", ignoreCase = true) -> "SIM" + (if (!accountName.isNullOrBlank() && accountName.contains("2")) " 2" else "")
-            accountType.contains("sdn", ignoreCase = true) -> "SDN"
-            accountType.contains("phone", ignoreCase = true) -> "Phone"
-            accountType.contains("exchange", ignoreCase = true) -> "Exchange" + (if (!accountName.isNullOrBlank()) " ($accountName)" else "")
+            accountType.contains("sim", ignoreCase = true) -> context.getString(R.string.contact_account_sim) + (if (!accountName.isNullOrBlank() && accountName.contains("2")) " 2" else "")
+            accountType.contains("sdn", ignoreCase = true) -> context.getString(R.string.contact_account_sdn)
+            accountType.contains("phone", ignoreCase = true) -> context.getString(R.string.contact_account_phone)
+            accountType.contains("exchange", ignoreCase = true) -> context.getString(R.string.contact_account_exchange) + (if (!accountName.isNullOrBlank()) " ($accountName)" else "")
             else -> accountType.substringAfterLast(".").replaceFirstChar { it.uppercase() }
         }
     }
@@ -640,7 +641,7 @@ object ContactsHelper {
         }
 
         if (intents.isNotEmpty()) {
-            val chooserIntent = Intent.createChooser(intents.removeAt(0), "Contact Action")
+            val chooserIntent = Intent.createChooser(intents.removeAt(0), context.getString(R.string.search_contact_action))
             if (intents.isNotEmpty()) {
                 chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, intents.toTypedArray())
             }
@@ -725,7 +726,7 @@ object MusicSearchHelper {
             }
             context.startActivity(intent)
         } catch (_: Exception) {
-            android.widget.Toast.makeText(context, "No music player found", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.toast_no_music_player), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 }
@@ -847,7 +848,7 @@ object FileSearchHelper {
             }
             context.startActivity(intent)
         } catch (_: Exception) {
-            android.widget.Toast.makeText(context, "No app found to open this file", android.widget.Toast.LENGTH_SHORT).show()
+            android.widget.Toast.makeText(context, context.getString(R.string.toast_no_app_to_open_file), android.widget.Toast.LENGTH_SHORT).show()
         }
     }
 

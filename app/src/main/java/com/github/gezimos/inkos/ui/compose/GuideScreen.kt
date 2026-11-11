@@ -66,6 +66,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -157,7 +158,7 @@ object GuideScreen {
                 ) {
                     // Big title — same for all pages
                     Text(
-                        text = "GUIDE",
+                        text = stringResource(R.string.guide_title),
                         style = SettingsTheme.typography.title,
                         fontSize = bigTitleSize,
                         fontWeight = FontWeight.Black,
@@ -257,7 +258,7 @@ object GuideScreen {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "BACK",
+                                text = stringResource(R.string.guide_back),
                                 style = SettingsTheme.typography.title,
                                 fontSize = titleFontSize,
                                 fontWeight = FontWeight.Bold,
@@ -277,7 +278,7 @@ object GuideScreen {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "1/1",
+                                text = stringResource(R.string.page_counter_fmt, 1, 1),
                                 style = SettingsTheme.typography.body,
                                 fontSize = (titleFontSize.value * 0.7f).sp,
                                 color = textColor
@@ -305,7 +306,7 @@ object GuideScreen {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "HOME",
+                                text = stringResource(R.string.guide_home),
                                 style = SettingsTheme.typography.title,
                                 fontSize = titleFontSize,
                                 fontWeight = FontWeight.Bold,
@@ -333,7 +334,7 @@ object GuideScreen {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "BACK",
+                                text = stringResource(R.string.guide_back),
                                 style = SettingsTheme.typography.title,
                                 fontSize = titleFontSize,
                                 fontWeight = FontWeight.Bold,
@@ -355,7 +356,7 @@ object GuideScreen {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "${page + 1}/$totalPages",
+                                text = stringResource(R.string.page_counter_fmt, page + 1, totalPages),
                                 style = SettingsTheme.typography.body,
                                 fontSize = (titleFontSize.value * 0.7f).sp,
                                 color = textColor

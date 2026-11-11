@@ -340,13 +340,13 @@ object OnboardingScreen {
                         Spacer(modifier = Modifier.height(24.dp.scaled(screenScale)))
                         Text(
                             text = when (page) {
-                                0 -> "A distraction-free interface for clarity and focus. Optimized for e-ink devices, QWERTY and T9 phones."
-                                1 -> "Bink OS does not collect, store, or share any data. There are no server connections and no tracking. Everything stays on your device."
-                                2 -> "To get the most out of Bink OS, grant notification permissions so Bink OS can forward you Android notifications in Home, Letters or Simple Tray."
-                                3 -> "To make Bink OS your new app home, set it as a default launcher. You can change this later in Settings."
-                                4 -> "To access settings, Pinch (zoom out) in home (empty areas) to open the quick settings. That will allow you to access All Settings or enable Edit Mode for the front-end editor."
-                                5 -> "Choose a color preset for your launcher, or skip to keep your current theme and start from scratch."
-                                6 -> "Select your home shortcuts and order them using Edit Favorites. You can still longpress on single apps in home to replace them individually like before."
+                                0 -> stringResource(R.string.onboarding_desc_0)
+                                1 -> stringResource(R.string.onboarding_desc_1)
+                                2 -> stringResource(R.string.onboarding_desc_2)
+                                3 -> stringResource(R.string.onboarding_desc_3)
+                                4 -> stringResource(R.string.onboarding_desc_4)
+                                5 -> stringResource(R.string.onboarding_desc_5)
+                                6 -> stringResource(R.string.onboarding_desc_6)
                                 else -> ""
                             },
                             style = SettingsTheme.typography.body,
@@ -413,7 +413,7 @@ object OnboardingScreen {
                                     )
                                 }
                                 Text(
-                                    text = "I CONFIRM THAT I'VE READ",
+                                    text = stringResource(R.string.onboarding_confirm_read),
                                     style = SettingsTheme.typography.title,
                                     fontSize = (titleFontSize.value * 0.7f).sp,
                                     fontWeight = FontWeight.Bold,
