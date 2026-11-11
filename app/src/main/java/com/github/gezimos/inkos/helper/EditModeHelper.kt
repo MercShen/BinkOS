@@ -1218,6 +1218,54 @@ object EditModeHelper {
                             Constants.Action.OpenAppDrawer -> context.getString(R.string.app_drawer)
                             else -> uiState.doubleTapAction.getString(context)
                         }
+                        SettingRow(
+                            label = stringResource(R.string.edit_menu_short_swipe_area),
+                            value = stringResource(R.string.edit_menu_value_set)
+                        ) {
+                            currentSheet?.dismiss()
+                            showDialog(context, prefs) {
+                                var zoneTop by remember { androidx.compose.runtime.mutableIntStateOf(prefs.shortSwipeZoneTop) }
+                                var zoneBottom by remember { androidx.compose.runtime.mutableIntStateOf(prefs.shortSwipeZoneBottom) }
+                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    Text(
+                                        stringResource(R.string.edit_menu_short_swipe_top_fmt, zoneTop),
+                                        style = SettingsTheme.typography.item,
+                                        color = Theme.colors.text
+                                    )
+                                    com.github.gezimos.inkos.ui.dialogs.StepperSlider(
+                                        value = zoneTop,
+                                        onValueChange = { value ->
+                                            zoneTop = value
+                                            prefs.shortSwipeZoneTop = value
+                                            onUpdate()
+                                        },
+                                        minValue = 0,
+                                        maxValue = Constants.MAX_SHORT_SWIPE_ZONE_DP
+                                    )
+                                    Text(
+                                        stringResource(R.string.edit_menu_short_swipe_bottom_fmt, zoneBottom),
+                                        style = SettingsTheme.typography.item,
+                                        color = Theme.colors.text
+                                    )
+                                    com.github.gezimos.inkos.ui.dialogs.StepperSlider(
+                                        value = zoneBottom,
+                                        onValueChange = { value ->
+                                            zoneBottom = value
+                                            prefs.shortSwipeZoneBottom = value
+                                            onUpdate()
+                                        },
+                                        minValue = 0,
+                                        maxValue = Constants.MAX_SHORT_SWIPE_ZONE_DP
+                                    )
+                                    Text(
+                                        stringResource(R.string.edit_menu_short_swipe_area_hint),
+                                        style = SettingsTheme.typography.item,
+                                        color = Theme.colors.text.copy(alpha = 0.7f)
+                                    )
+                                }
+                            }
+                        }
+
                         SettingRow(label = stringResource(R.string.edit_menu_double_tap_action), value = doubleTapDisplay) {
                             currentSheet?.dismiss()
                             dialogManager.showGestureActionPicker(

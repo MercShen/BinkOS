@@ -428,6 +428,8 @@ class HomeFragmentCompose : Fragment() {
                         .gestureHelper(
                             shortSwipeRatio = prefs.shortSwipeThresholdRatio,
                             longSwipeRatio = prefs.longSwipeThresholdRatio,
+                            shortSwipeZoneTop = prefs.shortSwipeZoneTop.dp,
+                            shortSwipeZoneBottom = prefs.shortSwipeZoneBottom.dp,
                             onDoubleTap = {
                                 try { dpadMode.value = false } catch (_: Exception) {}
                                 try { handleDoubleTapAction() } catch (_: Exception) {}

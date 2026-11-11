@@ -943,4 +943,10 @@
     <string name="guide_back">返回</string>
     <string name="guide_home">主屏</string>
     <string name="page_counter_fmt">%1$d/%2$d</string>
+
+    <!-- Short swipe zone -->
+    <string name="edit_menu_short_swipe_area">短滑区域</string>
+    <string name="edit_menu_short_swipe_top_fmt">顶部边界：%1$d dp</string>
+    <string name="edit_menu_short_swipe_bottom_fmt">底部边界：%1$d dp</string>
+    <string name="edit_menu_short_swipe_area_hint">只有在这个范围内的短滑（翻页）才会生效。</string>
 </resources>

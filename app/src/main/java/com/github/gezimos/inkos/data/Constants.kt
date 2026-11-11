@@ -51,6 +51,7 @@ object Constants {
     const val DEFAULT_MAX_HOME_PAGES = 10
     var MAX_HOME_PAGES = DEFAULT_MAX_HOME_PAGES
 
+    const val MAX_SHORT_SWIPE_ZONE_DP = 800
     const val DEFAULT_SHORT_SWIPE_RATIO = 0.25f
     const val DEFAULT_LONG_SWIPE_RATIO = 2.5f
     const val MIN_SHORT_SWIPE_RATIO = 0.01f

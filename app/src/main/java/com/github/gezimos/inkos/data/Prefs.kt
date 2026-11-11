@@ -110,6 +110,8 @@ private const val HOME_APPS_INSET_TOP = "HOME_APPS_INSET_TOP"
 private const val HOME_APPS_INSET_BOTTOM = "HOME_APPS_INSET_BOTTOM"
 private const val HOME_APPS_INSET_START = "HOME_APPS_INSET_START"
 private const val HOME_APPS_INSET_END = "HOME_APPS_INSET_END"
+private const val SHORT_SWIPE_ZONE_TOP = "SHORT_SWIPE_ZONE_TOP"
+private const val SHORT_SWIPE_ZONE_BOTTOM = "SHORT_SWIPE_ZONE_BOTTOM"
 private const val HOME_PAGER_ALIGN = "HOME_PAGER_ALIGN"
 private const val EINK_SYSTEM_FULL_REFRESH = "EINK_SYSTEM_FULL_REFRESH"
 private const val EINK_PAGE_TURN_ANIMATION = "EINK_PAGE_TURN_ANIMATION"
@@ -728,6 +730,8 @@ class Prefs(val context: Context) {
         all[HOME_APPS_INSET_END] = homeAppsInsetEnd
         all[HOME_PAGES_PAGER] = homePager
         all[HOME_PAGER_ALIGN] = homePagerAlign
+        all[SHORT_SWIPE_ZONE_TOP] = shortSwipeZoneTop
+        all[SHORT_SWIPE_ZONE_BOTTOM] = shortSwipeZoneBottom
         all[LAUNCHER_FONT] = fontFamily.name
         all[APPS_FONT] = appsFont.name
         all[CLOCK_FONT] = clockFont.name
@@ -1619,6 +1623,15 @@ class Prefs(val context: Context) {
     var einkSystemFullRefresh: Boolean
         get() = prefs.getBoolean(EINK_SYSTEM_FULL_REFRESH, false)
         set(value) = prefs.edit { putBoolean(EINK_SYSTEM_FULL_REFRESH, value) }
+
+    /** 短滑（翻页）生效区域：距屏幕上/下的 dp 边界，0 = 不限制 */
+    var shortSwipeZoneTop: Int
+        get() = prefs.getInt(SHORT_SWIPE_ZONE_TOP, 0).coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)
+        set(value) = prefs.edit { putInt(SHORT_SWIPE_ZONE_TOP, value.coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)) }
+
+    var shortSwipeZoneBottom: Int
+        get() = prefs.getInt(SHORT_SWIPE_ZONE_BOTTOM, 0).coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)
+        set(value) = prefs.edit { putInt(SHORT_SWIPE_ZONE_BOTTOM, value.coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)) }
 
 
     // --- App Drawer specific settings ---

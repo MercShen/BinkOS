@@ -356,7 +356,9 @@ fun Modifier.gestureHelper(
     onVerticalPageMove: ((deltaPages: Int) -> Unit)? = null,
     onAnyTouch: (() -> Unit)? = null,
     scrollPageMoveMultiplier: Float = 3.0f,
-    useShortSwipeForActions: Boolean = false
+    useShortSwipeForActions: Boolean = false,
+    shortSwipeZoneTop: Dp = 0.dp,
+    shortSwipeZoneBottom: Dp = 0.dp
 ): Modifier {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -364,6 +366,12 @@ fun Modifier.gestureHelper(
     val velocityThreshold = 80 // Reduced from 100 for faster detection
     
     val lastPageMove = remember { androidx.compose.runtime.mutableStateOf(0L) }
+    val screenHeightPx = with(density) { androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp.toPx() }
+    val shortSwipeTopPx = with(density) { shortSwipeZoneTop.toPx() }
+    val shortSwipeBottomPx = with(density) { shortSwipeZoneBottom.toPx() }
+    val currentShortSwipeTopPx = androidx.compose.runtime.rememberUpdatedState(shortSwipeTopPx)
+    val currentShortSwipeBottomPx = androidx.compose.runtime.rememberUpdatedState(shortSwipeBottomPx)
+    val currentScreenHeightPx = androidx.compose.runtime.rememberUpdatedState(screenHeightPx)
     
     val currentOnAnyTouch = androidx.compose.runtime.rememberUpdatedState(onAnyTouch)
     val currentOnDoubleTap = androidx.compose.runtime.rememberUpdatedState(onDoubleTap)
@@ -384,10 +392,20 @@ fun Modifier.gestureHelper(
         GestureDetector(context, object : GestureDetector.SimpleOnGestureListener() {
             var lastPageMoveY = 0f
             var scrollPageMoveTriggered = false
+            var downInShortSwipeZone = true
 
             override fun onDown(e: MotionEvent): Boolean {
                 lastPageMoveY = e.y
                 scrollPageMoveTriggered = false
+                downInShortSwipeZone = run {
+                    val top = currentShortSwipeTopPx.value
+                    val bottom = currentShortSwipeBottomPx.value
+                    if (top <= 0f && bottom <= 0f) return@run true
+                    val zoneBottom = currentScreenHeightPx.value - bottom
+                    // 区域被压得太小（<120dp）时视为不限制，避免误锁死翻页
+                    if (zoneBottom - top < 120f * density.density) return@run true
+                    e.y >= top && e.y <= zoneBottom
+                }
                 try { currentOnAnyTouch.value?.invoke() } catch (_: Exception) {}
                 return true
             }
@@ -400,6 +418,7 @@ fun Modifier.gestureHelper(
             ): Boolean {
                 if (e1 == null) return false
                 val callback = currentOnVerticalPageMove.value ?: return false
+                if (!downInShortSwipeZone) return false
 
                 if (currentOnSwipeUp.value != null || currentOnSwipeDown.value != null) return false
 
@@ -514,7 +533,7 @@ fun Modifier.gestureHelper(
                             if (handled) return true
                         }
 
-                        if (!scrollPageMoveTriggered) {
+                        if (!scrollPageMoveTriggered && downInShortSwipeZone) {
                             // Fallback for fast flicks not caught by onScroll
                             val pageMoveThresholdPx = if (hasAnyLongSwipeCallbacks) {
                                 (thresholdPx * shortSwipeRatio * 0.7f).toInt().coerceAtLeast(8)
