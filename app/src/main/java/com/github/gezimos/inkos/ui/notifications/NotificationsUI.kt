@@ -2762,7 +2762,7 @@ private fun SimpleTrayClearAllRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "Clear All",
+            text = stringResource(R.string.clear_all),
             color = textColor,
             fontSize = prefs.notificationsTextSize.sp.scaled(screenScale),
             fontWeight = FontWeight.Bold,

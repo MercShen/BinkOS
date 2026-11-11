@@ -957,4 +957,6 @@
     <string name="short_swipe_zone_hint">拖动两侧手柄</string>
     <!-- Simple tray brightness bar -->
     <string name="enable_brightness_slider">亮度调节条</string>
+    <string name="clear_all">全部清除</string>
+    <string name="settings_label">设置</string>
 </resources>

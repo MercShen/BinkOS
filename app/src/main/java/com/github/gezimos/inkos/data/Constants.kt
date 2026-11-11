@@ -311,10 +311,10 @@ object Constants {
                 ToggleWorkProfile -> context.getString(R.string.work_profile)
                 RestartApp -> context.getString(R.string.restart_launcher)
                 OpenLettersScreen -> context.getString(R.string.letters_screen_title)
-                OpenRecentsScreen -> "Recents"
+                OpenRecentsScreen -> context.getString(R.string.shortcut_recents_short)
                 OpenSimpleTray -> context.getString(R.string.simple_tray_title)
                 OpenHub -> context.getString(R.string.shortcut_hub_short)
-                OpenSettings -> "Settings"
+                OpenSettings -> context.getString(R.string.settings_label)
                 OpenAppDrawer -> context.getString(R.string.app_drawer)
                 EinkRefresh -> context.getString(R.string.eink_refresh)
                 ExitLauncher -> context.getString(R.string.settings_exit_inkos_title)
@@ -322,8 +322,8 @@ object Constants {
                 ShowRecents -> context.getString(R.string.show_recents)
                 OpenQuickSettings -> context.getString(R.string.quick_settings)
                 OpenPowerDialog -> context.getString(R.string.power_dialog)
-                Brightness -> "Brightness" // Temporary string, add to strings.xml later
-                Search -> "Search"
+                Brightness -> context.getString(R.string.brightness)
+                Search -> context.getString(R.string.search)
                 Disabled -> context.getString(R.string.disabled)
             }
         }
@@ -336,10 +336,10 @@ object Constants {
                 ToggleWorkProfile -> stringResource(R.string.work_profile)
                 RestartApp -> stringResource(R.string.restart_launcher)
                 OpenLettersScreen -> stringResource(R.string.letters_screen_title)
-                OpenRecentsScreen -> "Recents"
+                OpenRecentsScreen -> stringResource(R.string.shortcut_recents_short)
                 OpenSimpleTray -> stringResource(R.string.simple_tray_title)
                 OpenHub -> stringResource(R.string.shortcut_hub_short)
-                OpenSettings -> "Settings"
+                OpenSettings -> stringResource(R.string.settings_label)
                 OpenAppDrawer -> stringResource(R.string.app_drawer)
                 EinkRefresh -> stringResource(R.string.eink_refresh)
                 ExitLauncher -> stringResource(R.string.settings_exit_inkos_title)
@@ -347,8 +347,8 @@ object Constants {
                 ShowRecents -> stringResource(R.string.show_recents)
                 OpenQuickSettings -> stringResource(R.string.quick_settings)
                 OpenPowerDialog -> stringResource(R.string.power_dialog)
-                Brightness -> "Brightness" // Temporary string, add to strings.xml later
-                Search -> "Search"
+                Brightness -> stringResource(R.string.brightness)
+                Search -> stringResource(R.string.search)
                 Disabled -> stringResource(R.string.disabled)
             }
         }
