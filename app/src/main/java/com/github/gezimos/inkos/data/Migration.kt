@@ -250,7 +250,10 @@ class Migration(val context: Context) {
             }
         } catch (_: Exception) {}
 
-        if (savedVersionCode in 1..101004) {
+        // 只在「从旧版本升级」时触发 onboarding；不能每启动一次都触发，
+        // 否则 app 换了新的 versionCode 体系（如 Bink OS 从 1 开始）后，
+        // 任何 activity.recreate()（换字体/换主题）都会重新弹出 onboarding。
+        if (savedVersionCode in 1..101004 && savedVersionCode < currentVersionCode) {
             prefs.commitFirstOpen(true)
             prefs.commitThemePickerShown(true) // Skip auto theme picker, it's embedded in onboarding
         }
