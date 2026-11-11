@@ -47,40 +47,63 @@ import kotlin.math.roundToInt
  * 用虚线 + 半透明遮罩实时预览真正会响应短滑的区域，避免底部弹窗遮挡画面。
  */
 fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Unit) {
-    val activity = context as? android.app.Activity ?: return
-    val dialog = android.app.Dialog(activity, android.R.style.Theme_Translucent_NoTitleBar_Fullscreen)
-    val view = ComposeView(activity).apply {
+    val activity = context as? androidx.fragment.app.FragmentActivity
+        ?: (context as? android.app.Activity)
+        ?: return
+    val root = activity.window?.decorView?.findViewById<android.view.ViewGroup>(android.R.id.content)
+        ?: return
+    val lifecycleOwner = activity as androidx.lifecycle.LifecycleOwner
+
+    // 直接挂到 activity 的 content root（和 ComposeBottomSheetHost 相同的做法），
+    // 这样 ViewTreeLifecycleOwner 能从 activity 继承，不会像 Dialog 那样崩溃。
+    val overlay = ComposeView(activity).apply {
         setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-        setContent {
-            SettingsTheme(isDark = prefs.getResolvedTheme() == Constants.Theme.Dark) {
-                ShortSwipeZoneEditor(
-                    initialTop = prefs.shortSwipeZoneTop,
-                    initialBottom = prefs.shortSwipeZoneBottom,
-                    onTopChange = {
-                        prefs.shortSwipeZoneTop = it
-                        onUpdate()
-                    },
-                    onBottomChange = {
-                        prefs.shortSwipeZoneBottom = it
-                        onUpdate()
-                    },
-                    onDone = { dialog.dismiss() }
-                )
-            }
+    }
+
+    var backCallback: androidx.activity.OnBackPressedCallback? = null
+    fun close() {
+        try { backCallback?.remove() } catch (_: Exception) {}
+        backCallback = null
+        try { root.removeView(overlay) } catch (_: Exception) {}
+        try { overlay.disposeComposition() } catch (_: Exception) {}
+    }
+
+    overlay.setContent {
+        SettingsTheme(isDark = prefs.getResolvedTheme() == Constants.Theme.Dark) {
+            ShortSwipeZoneEditor(
+                initialTop = prefs.shortSwipeZoneTop,
+                initialBottom = prefs.shortSwipeZoneBottom,
+                onTopChange = {
+                    prefs.shortSwipeZoneTop = it
+                    onUpdate()
+                },
+                onBottomChange = {
+                    prefs.shortSwipeZoneBottom = it
+                    onUpdate()
+                },
+                onDone = { close() }
+            )
         }
     }
-    dialog.setContentView(view)
-    dialog.window?.let { window ->
-        window.setLayout(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT
+
+    root.addView(
+        overlay,
+        android.view.ViewGroup.LayoutParams(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT
         )
-        window.setBackgroundDrawable(
-            android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT)
-        )
-        window.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+    )
+
+    // 返回键也能退出编辑
+    try {
+        val dispatcher = (activity as? androidx.activity.ComponentActivity)?.onBackPressedDispatcher
+        if (dispatcher != null) {
+            backCallback = object : androidx.activity.OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() { close() }
+            }.also { dispatcher.addCallback(lifecycleOwner, it) }
+        }
+    } catch (_: Exception) {
     }
-    dialog.show()
 }
 
 @Composable
