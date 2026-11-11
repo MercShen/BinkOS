@@ -949,7 +949,10 @@
 
     <!-- Short swipe zone editor -->
     <string name="short_swipe_zone_title">短滑区域</string>
-    <string name="short_swipe_zone_values_fmt">顶部 %1$d dp · 底部 %2$d dp</string>
-    <string name="short_swipe_zone_hint">拖动左侧手柄调整顶部边界，右侧手柄调整底部边界。</string>
     <string name="short_swipe_zone_done">完成</string>
+
+    <!-- Short swipe zone editor -->
+    <string name="short_swipe_zone_top_fmt">顶部 %1$d dp</string>
+    <string name="short_swipe_zone_bottom_fmt">底部 %1$d dp</string>
+    <string name="short_swipe_zone_hint">拖动两侧手柄</string>
 </resources>

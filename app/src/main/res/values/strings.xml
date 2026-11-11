@@ -949,7 +949,10 @@
 
     <!-- Short swipe zone editor -->
     <string name="short_swipe_zone_title">Short swipe area</string>
-    <string name="short_swipe_zone_values_fmt">Top %1$d dp · Bottom %2$d dp</string>
-    <string name="short_swipe_zone_hint">Drag the left handle for the top limit, the right handle for the bottom limit.</string>
     <string name="short_swipe_zone_done">Done</string>
+
+    <!-- Short swipe zone editor -->
+    <string name="short_swipe_zone_top_fmt">Top %1$d dp</string>
+    <string name="short_swipe_zone_bottom_fmt">Bottom %1$d dp</string>
+    <string name="short_swipe_zone_hint">Drag the side handles</string>
 </resources>

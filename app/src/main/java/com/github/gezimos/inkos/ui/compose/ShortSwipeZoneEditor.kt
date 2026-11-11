@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.WindowManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Box
@@ -125,26 +126,49 @@ private fun ShortSwipeZoneEditor(
     val topPx = with(density) { top.dp.toPx() }
     val bottomPx = with(density) { bottom.dp.toPx() }
     val screenHeightPx = with(density) { screenHeightDp.dp.toPx() }
+    val bottomLinePx = screenHeightPx - bottomPx
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 生效区域预览：区域外压暗，上下边界画虚线
+        // 两条边界线：实心虚线，无灰底，墨水屏上最清晰
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val dimColor = Color.Black.copy(alpha = 0.30f)
-            val topLine = topPx.coerceIn(0f, size.height)
-            val bottomLine = (size.height - bottomPx).coerceIn(0f, size.height)
-            drawRect(dimColor, Offset.Zero, Size(size.width, topLine))
-            drawRect(dimColor, Offset(0f, bottomLine), Size(size.width, size.height - bottomLine))
-
-            val dash = PathEffect.dashPathEffect(floatArrayOf(20f, 14f), 0f)
-            drawLine(Color.Black, Offset(0f, topLine), Offset(size.width, topLine), 2.dp.toPx(), pathEffect = dash)
-            drawLine(Color.Black, Offset(0f, bottomLine), Offset(size.width, bottomLine), 2.dp.toPx(), pathEffect = dash)
+            val dash = PathEffect.dashPathEffect(floatArrayOf(24f, 16f), 0f)
+            drawLine(textColor, Offset(0f, topPx), Offset(size.width, topPx), 3.dp.toPx(), pathEffect = dash)
+            drawLine(textColor, Offset(0f, bottomLinePx), Offset(size.width, bottomLinePx), 3.dp.toPx(), pathEffect = dash)
         }
 
-        // 左侧滑杆：顶部边界
+        // 顶部居中信息（与屏幕中线对齐）
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 24.dp)
+                .background(bgColor, RoundedCornerShape(10.dp))
+                .border(2.dp, textColor, RoundedCornerShape(10.dp))
+                .padding(horizontal = 22.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(R.string.short_swipe_zone_top_fmt, top),
+                color = textColor,
+                style = SettingsTheme.typography.title
+            )
+            Text(
+                text = stringResource(R.string.short_swipe_zone_bottom_fmt, bottom),
+                color = textColor,
+                style = SettingsTheme.typography.title
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.short_swipe_zone_hint),
+                color = textColor,
+                style = SettingsTheme.typography.body
+            )
+        }
+
+        // 左侧滑杆：顶部边界（镜像对称地贴左边缘）
         ZoneSlider(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(72.dp)
+                .width(56.dp)
                 .align(Alignment.CenterStart),
             thumbYPx = topPx,
             trackColor = textColor,
@@ -157,13 +181,13 @@ private fun ShortSwipeZoneEditor(
             }
         )
 
-        // 右侧滑杆：底部边界（手柄位置=底部边界线）
+        // 右侧滑杆：底部边界（与左侧同宽、同内缩）
         ZoneSlider(
             modifier = Modifier
                 .fillMaxHeight()
-                .width(72.dp)
+                .width(56.dp)
                 .align(Alignment.CenterEnd),
-            thumbYPx = (screenHeightPx - bottomPx),
+            thumbYPx = bottomLinePx,
             trackColor = textColor,
             onDrag = { y ->
                 val value = ((screenHeightPx - y) / density.density).roundToInt().coerceIn(0, maxDp)
@@ -174,43 +198,18 @@ private fun ShortSwipeZoneEditor(
             }
         )
 
-        // 中间的说明卡片
-        Column(
+        // 底部居中完成按钮
+        Text(
+            text = stringResource(R.string.short_swipe_zone_done),
+            color = bgColor,
+            style = SettingsTheme.typography.title,
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 104.dp)
-                .background(bgColor, RoundedCornerShape(10.dp))
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(R.string.short_swipe_zone_title),
-                color = textColor,
-                style = SettingsTheme.typography.title
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = stringResource(R.string.short_swipe_zone_values_fmt, top, bottom),
-                color = textColor,
-                style = SettingsTheme.typography.item
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(R.string.short_swipe_zone_hint),
-                color = textColor.copy(alpha = 0.7f),
-                style = SettingsTheme.typography.body
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = stringResource(R.string.short_swipe_zone_done),
-                color = bgColor,
-                style = SettingsTheme.typography.button,
-                modifier = Modifier
-                    .background(textColor, RoundedCornerShape(6.dp))
-                    .clickable { onDone() }
-                    .padding(horizontal = 24.dp, vertical = 8.dp)
-            )
-        }
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 28.dp)
+                .background(textColor, RoundedCornerShape(10.dp))
+                .clickable { onDone() }
+                .padding(horizontal = 32.dp, vertical = 10.dp)
+        )
     }
 }
 
