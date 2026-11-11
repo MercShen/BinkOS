@@ -27,7 +27,6 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 - **Vendor GC16 full refresh** — force the vendor full refresh for every refresh, including gesture-triggered ones.
 - **Vendor page-turn animation** — play the Bigme e-ink page-turn effect when opening/closing screens.
 - **E-ink refresh control** — auto refresh, home-only refresh, configurable refresh delay.
-- **Front light** — control the HiBreak front light from the launcher.
 
 ### Gestures that don't fight the system
 - **Short swipe zone** — restrict page-turn swipes to a configurable vertical band, so the system's edge gestures (home / back) still work. Edit mode gives a live overlay with side handles and dashed bounds; the zone counts from 30 dp so it never hides under the status bar.
@@ -76,3 +75,4 @@ Needs Android SDK 36 and JDK 17. Release signing reads `KEYSTORE_FILE`, `KEYSTOR
 Bink OS is a fork of [inkOS](https://github.com/gezimos/inkOS) by gezimos — all the original launcher design and most of the feature set come from there. inkOS itself descends from mLauncher / oLauncher.
 
 Licensed under GPL-3.0, same as upstream.
+
