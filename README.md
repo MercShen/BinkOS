@@ -9,12 +9,22 @@
   </p>
   <table>
     <tr>
-      <td><img src="docs/img/bink/short-swipe-zone.png" height="360" alt="Short swipe zone editor"></td>
-      <td><img src="docs/img/bink/extras.png" height="360" alt="E-ink extras"></td>
+      <td><img src="docs/img/bink/home-gameboy.jpg" height="360" alt="Bink OS home screen"></td>
+      <td><img src="docs/img/bink/layout-editor.jpg" height="360" alt="Layout editor"></td>
+    </tr>
+    <tr>
+      <td align="center"><sub>Text-first home — pixel font, e-ink refresh</sub></td>
+      <td align="center"><sub>Live layout editor — margins, offsets, hold-to-repeat steppers</sub></td>
+    </tr>
+    <tr>
+      <td><img src="docs/img/bink/short-swipe-zone.png" height="300" alt="Short swipe zone editor"></td>
+      <td><img src="docs/img/bink/extras.png" height="300" alt="E-ink extras"></td>
+      <td><img src="docs/img/bink/advanced-language.jpg" height="300" alt="Language picker"></td>
     </tr>
     <tr>
       <td align="center"><sub>Short swipe zone — page turns only where you want them</sub></td>
       <td align="center"><sub>Bigme refresh &amp; animation switches</sub></td>
+      <td align="center"><sub>Language picker — 简体中文</sub></td>
     </tr>
   </table>
 </div>
