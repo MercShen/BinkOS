@@ -1,5 +1,7 @@
 package com.github.gezimos.inkos.ui.notifications
 
+import com.github.gezimos.inkos.ui.compose.closeOnReverseLongSwipe
+
 import android.os.Build
 import android.os.Bundle
 import android.os.Vibrator
@@ -430,14 +432,13 @@ class LettersFragment : Fragment() {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .gestureHelper(onLongSwipe = { direction ->
-                    try {
-                        if (direction == lettersCloseDirection) {
-                            vibratePaging()
-                            findNavController().popBackStack()
-                        }
-                    } catch (_: Exception) {}
-                })
+                .closeOnReverseLongSwipe(
+                    action = com.github.gezimos.inkos.data.Constants.Action.OpenLettersScreen,
+                    prefs = prefs
+                ) {
+                    vibratePaging()
+                    findNavController().popBackStack()
+                }
                 .background(Theme.colors.background)
                 .inkOsSafeDrawingPadding()
         ) {

@@ -1,5 +1,7 @@
 package com.github.gezimos.inkos.ui
 
+import com.github.gezimos.inkos.ui.compose.closeOnReverseLongSwipe
+
 import android.Manifest
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
@@ -475,6 +477,10 @@ class SettingsFragment : Fragment() {
                         modifier = Modifier
                             .fillMaxSize()
                             .onSizeChanged { viewportHeightPx.intValue = it.height }
+                            .closeOnReverseLongSwipe(
+                                action = com.github.gezimos.inkos.data.Constants.Action.OpenSettings,
+                                prefs = prefs
+                            ) { try { findNavController().popBackStack() } catch (_: Exception) {} }
                             .gestureHelper(
                                 onVerticalPageMove = { delta ->
                                     val vp = viewportHeightPx.intValue

@@ -137,6 +137,7 @@ import com.github.gezimos.inkos.ui.compose.EditModeOverlay
 import com.github.gezimos.inkos.ui.compose.HubFocusZone
 import com.github.gezimos.inkos.ui.compose.NavHelper
 import com.github.gezimos.inkos.ui.compose.SimpleTrayFocusZone
+import com.github.gezimos.inkos.ui.compose.closeOnReverseLongSwipe
 import com.github.gezimos.inkos.ui.compose.gestureHelper
 import com.github.gezimos.inkos.ui.compose.inkOsSafeDrawingPadding
 import kotlinx.coroutines.CoroutineScope
@@ -599,14 +600,13 @@ fun HubScreen(
                     bottomNavEnabled = false
                 )
             }
-            .gestureHelper(onLongSwipe = { direction ->
-                try {
-                    if (direction == GestureBindings.closeDirection(Constants.Action.OpenHub, prefs)) {
-                        VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
-                        onNavigateBack()
-                    }
-                } catch (_: Exception) {}
-            })
+            .closeOnReverseLongSwipe(
+                action = Constants.Action.OpenHub,
+                prefs = prefs
+            ) {
+                VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
+                onNavigateBack()
+            }
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
     ) {
@@ -2024,14 +2024,13 @@ fun SimpleTrayScreen(
                     bottomNavEnabled = prefsLocal.enableBottomNav
                 )
             }
-            .gestureHelper(onLongSwipe = { direction ->
-                try {
-                    if (direction == GestureBindings.closeDirection(Constants.Action.OpenSimpleTray, prefs)) {
-                        VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
-                        onNavigateBack()
-                    }
-                } catch (_: Exception) {}
-            })
+            .closeOnReverseLongSwipe(
+                action = Constants.Action.OpenSimpleTray,
+                prefs = prefs
+            ) {
+                VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
+                onNavigateBack()
+            }
             .then(
                 if (isEditMode) {
                     Modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
