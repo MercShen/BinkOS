@@ -241,9 +241,22 @@ fun getShortcutAsAppListItem(
         val shortcuts = launcherApps.getShortcuts(query, userHandle)
         val shortcut = shortcuts?.firstOrNull() ?: return null
         
-        val label = shortcut.shortLabel?.toString() 
-            ?: shortcut.longLabel?.toString() 
+        // 系统 ShortcutManager 解析我们内部快捷方式的 label 时用的是系统语言，
+        // 不会跟随应用内语言设置，所以这里对内部快捷方式直接用资源重新取。
+        val systemLabel = shortcut.shortLabel?.toString()
+            ?: shortcut.longLabel?.toString()
             ?: shortcutId
+        val label = if (packageName == context.packageName) {
+            when (shortcutId) {
+                Constants.INKOS_SHORTCUT_APP_DRAWER -> context.getString(R.string.app_drawer)
+                Constants.INKOS_SHORTCUT_NOTIFICATIONS -> context.getString(R.string.shortcut_letters_short)
+                Constants.INKOS_SHORTCUT_SIMPLE_TRAY -> context.getString(R.string.shortcut_simple_tray_short)
+                Constants.INKOS_SHORTCUT_HUB -> context.getString(R.string.shortcut_hub_short)
+                Constants.INKOS_SHORTCUT_RECENTS -> context.getString(R.string.shortcut_recents_short)
+                Constants.INKOS_SHORTCUT_SETTINGS -> context.getString(R.string.inkos_settings)
+                else -> systemLabel
+            }
+        } else systemLabel
             
         val customLabel = Prefs(context).getAppAlias("app_alias_${packageName}_$shortcutId")
         

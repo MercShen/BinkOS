@@ -1251,6 +1251,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { _appDrawerPageRequests.emit(-1) }
     }
 
+    /** 内部快捷方式（设置/抽屉/通知/托盘/中枢/最近任务）按当前应用语言取名字。 */
+    private fun internalShortcutLabel(context: Context, pkg: String, shortcutId: String?): String? {
+        val internalIds = setOf(
+            Constants.INKOS_SHORTCUT_APP_DRAWER,
+            Constants.INKOS_SHORTCUT_NOTIFICATIONS,
+            Constants.INKOS_SHORTCUT_SIMPLE_TRAY,
+            Constants.INKOS_SHORTCUT_HUB,
+            Constants.INKOS_SHORTCUT_RECENTS,
+            Constants.INKOS_SHORTCUT_SETTINGS
+        )
+        val id = when {
+            pkg == context.packageName -> shortcutId
+            pkg in internalIds -> pkg
+            else -> null
+        } ?: return null
+        return try {
+            when (id) {
+                Constants.INKOS_SHORTCUT_APP_DRAWER -> context.getString(R.string.app_drawer)
+                Constants.INKOS_SHORTCUT_NOTIFICATIONS -> context.getString(R.string.shortcut_letters_short)
+                Constants.INKOS_SHORTCUT_SIMPLE_TRAY -> context.getString(R.string.shortcut_simple_tray_short)
+                Constants.INKOS_SHORTCUT_HUB -> context.getString(R.string.shortcut_hub_short)
+                Constants.INKOS_SHORTCUT_RECENTS -> context.getString(R.string.shortcut_recents_short)
+                Constants.INKOS_SHORTCUT_SETTINGS -> context.getString(R.string.inkos_settings)
+                else -> null
+            }
+        } catch (_: Exception) {
+            null
+        }
+    }
+
     fun refreshHomeAppsUiState(context: Context) {
         val notifications =
             NotificationManager.getInstance(context).notificationInfoState.value
@@ -1266,7 +1296,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 "app_alias_${appModel.activityPackage}"
             }
             val customLabel = prefs.getAppAlias(aliasKey)
-            val label = if (Constants.isSeparator(appModel.activityPackage)) appModel.activityLabel
+            // 内部快捷方式的 label 在系统 ShortcutManager 里是按系统语言解析的，
+            // 这里统一用资源覆盖，保证跟随应用内语言设置。
+            val internalLabel = internalShortcutLabel(context, appModel.activityPackage, appModel.shortcutId)
+            val label = internalLabel ?: if (Constants.isSeparator(appModel.activityPackage)) appModel.activityLabel
                         else if (customLabel.isNotEmpty()) customLabel else appModel.activityLabel
             val notificationInfo = notifications[appModel.activityPackage]
             HomeAppUiState(
