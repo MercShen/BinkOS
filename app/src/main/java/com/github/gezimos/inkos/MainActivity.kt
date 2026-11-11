@@ -410,6 +410,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun backToHomeScreen() {
         if (!::navController.isInitialized) return
+        // Home 手势/按键回主页时，先关掉仍打开的底部弹窗（如 App Shortcuts 选择器）
+        try {
+            com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.dismissAllSheets()
+        } catch (_: Exception) {}
         navController.popBackStack(R.id.mainFragment, false)
         try {
             com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEink(

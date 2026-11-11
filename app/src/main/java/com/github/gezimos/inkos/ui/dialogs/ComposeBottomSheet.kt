@@ -143,9 +143,22 @@ class ComposeBottomSheetHost(private val activity: Activity) {
 
     companion object {
         private var isAnySheetShowing = false
+        private val activeHosts = java.util.Collections.synchronizedList(
+            mutableListOf<java.lang.ref.WeakReference<ComposeBottomSheetHost>>()
+        )
+
+        /** 关闭所有仍显示的底部弹窗（回到主页/系统 HOME 时用）。 */
+        fun dismissAllSheets() {
+            val snapshot = synchronized(activeHosts) { activeHosts.toList() }
+            activeHosts.clear()
+            snapshot.forEach { ref ->
+                try { ref.get()?.dismiss() } catch (_: Exception) {}
+            }
+        }
     }
 
     init {
+        activeHosts.add(java.lang.ref.WeakReference(this))
         (activity as? LifecycleOwner)?.lifecycle?.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_DESTROY) {
                 isAnySheetShowing = false
@@ -155,6 +168,7 @@ class ComposeBottomSheetHost(private val activity: Activity) {
     }
 
     fun dismiss() {
+        activeHosts.removeAll { it.get() == this || it.get() == null }
         val wasShowing = composeView != null
         isAnySheetShowing = false
         if (insetsListener != null) {
@@ -180,6 +194,8 @@ class ComposeBottomSheetHost(private val activity: Activity) {
     ) {
         if (isAnySheetShowing) return
         dismiss()
+        activeHosts.removeAll { it.get() == null || it.get() === this }
+        activeHosts.add(java.lang.ref.WeakReference(this))
         isAnySheetShowing = true
         
         val root = activity.window.decorView.findViewById<ViewGroup>(android.R.id.content) ?: return
