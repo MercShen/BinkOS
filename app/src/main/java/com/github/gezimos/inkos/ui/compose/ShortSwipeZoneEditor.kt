@@ -7,6 +7,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -132,15 +134,20 @@ private fun ShortSwipeZoneEditor(
         // 两条边界线：实心虚线，无灰底，墨水屏上最清晰
         Canvas(modifier = Modifier.fillMaxSize()) {
             val dash = PathEffect.dashPathEffect(floatArrayOf(24f, 16f), 0f)
-            drawLine(textColor, Offset(0f, topPx), Offset(size.width, topPx), 3.dp.toPx(), pathEffect = dash)
-            drawLine(textColor, Offset(0f, bottomLinePx), Offset(size.width, bottomLinePx), 3.dp.toPx(), pathEffect = dash)
+            // 边界线跟手柄同心：贴到屏幕最边缘时也内缩一个手柄半径，不会被裁掉
+            val edge = 14.dp.toPx()
+            val topLine = topPx.coerceIn(edge, size.height - edge)
+            val bottomLine = bottomLinePx.coerceIn(edge, size.height - edge)
+            drawLine(textColor, Offset(0f, topLine), Offset(size.width, topLine), 3.dp.toPx(), pathEffect = dash)
+            drawLine(textColor, Offset(0f, bottomLine), Offset(size.width, bottomLine), 3.dp.toPx(), pathEffect = dash)
         }
 
         // 顶部居中信息（与屏幕中线对齐）
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 24.dp)
+                .statusBarsPadding()
+                .padding(top = 10.dp)
                 .background(bgColor, RoundedCornerShape(10.dp))
                 .border(2.dp, textColor, RoundedCornerShape(10.dp))
                 .padding(horizontal = 22.dp, vertical = 10.dp),
@@ -205,7 +212,8 @@ private fun ShortSwipeZoneEditor(
             style = SettingsTheme.typography.title,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 28.dp)
+                .navigationBarsPadding()
+                .padding(bottom = 18.dp)
                 .background(textColor, RoundedCornerShape(10.dp))
                 .clickable { onDone() }
                 .padding(horizontal = 32.dp, vertical = 10.dp)
@@ -229,16 +237,18 @@ private fun ZoneSlider(
         }
     ) {
         val cx = size.width / 2f
+        val thumbRadius = 14.dp.toPx()
+        val thumbY = thumbYPx.coerceIn(thumbRadius, size.height - thumbRadius)
         drawLine(
             color = trackColor.copy(alpha = 0.35f),
-            start = Offset(cx, 0f),
-            end = Offset(cx, size.height),
+            start = Offset(cx, thumbRadius),
+            end = Offset(cx, size.height - thumbRadius),
             strokeWidth = 3.dp.toPx()
         )
         drawCircle(
             color = trackColor,
-            radius = 14.dp.toPx(),
-            center = Offset(cx, thumbYPx.coerceIn(0f, size.height))
+            radius = thumbRadius,
+            center = Offset(cx, thumbY)
         )
     }
 }
