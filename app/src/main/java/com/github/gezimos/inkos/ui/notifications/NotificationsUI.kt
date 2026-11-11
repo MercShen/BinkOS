@@ -2156,14 +2156,23 @@ fun SimpleTrayScreen(
                 onBrightnessLongPress = { openBrightnessSettings() }
             )
 
-            if (brightnessBarEnabled) Box(modifier = Modifier.padding(top = 24.dp, bottom = 16.dp)) {
-                BrightnessSlider(
-                    prefs = prefs,
-                    brightness = brightness,
-                    onBrightnessChange = onBrightnessChange,
-                    isDpadMode = isDpadModeState,
-                    isFocused = isDpadMode && focusZone.value == SimpleTrayFocusZone.BRIGHTNESS_SLIDER
+            // 亮度条关闭时也保留同样的上下呼吸间距（只是中间留空），
+            // 否则 Clear All / 消息数量会紧贴上面的快捷开关，看起来挤在一起。
+            Box(
+                modifier = Modifier.padding(
+                    top = if (brightnessBarEnabled) 24.dp else 20.dp,
+                    bottom = if (brightnessBarEnabled) 16.dp else 12.dp
                 )
+            ) {
+                if (brightnessBarEnabled) {
+                    BrightnessSlider(
+                        prefs = prefs,
+                        brightness = brightness,
+                        onBrightnessChange = onBrightnessChange,
+                        isDpadMode = isDpadModeState,
+                        isFocused = isDpadMode && focusZone.value == SimpleTrayFocusZone.BRIGHTNESS_SLIDER
+                    )
+                }
             }
 
             if (validNotifications.isNotEmpty()) {
