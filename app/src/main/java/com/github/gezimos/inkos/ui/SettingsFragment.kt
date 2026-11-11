@@ -779,14 +779,6 @@ class SettingsFragment : Fragment() {
                     onCheckedChange = { viewModel.setEinkRefreshHomeButtonOnly(it) }
                 )
             }
-            // 与自动刷新开关独立：手势触发全刷（refreshEinkForced）同样走这里
-            SettingsSwitch(
-                text = stringResource(R.string.settings_system_full_refresh),
-                fontSize = titleFontSize,
-                description = stringResource(R.string.settings_desc_system_full_refresh),
-                defaultState = uiState.einkSystemFullRefresh,
-                onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
-            )
             // 延迟只用于闪烁回退方案；启用系统全刷后该选项无意义，直接隐藏
             if (!uiState.einkSystemFullRefresh) {
                 SettingsSelect(
@@ -803,17 +795,25 @@ class SettingsFragment : Fragment() {
                 )
             }
             SettingsSwitch(
+                text = getString(R.string.use_volume_keys_for_pages), fontSize = titleFontSize,
+                description = stringResource(R.string.desc_volume_keys),
+                defaultState = uiState.useVolumeKeysForPages,
+                onCheckedChange = { viewModel.setUseVolumeKeysForPages(it) }
+            )
+            // 与自动刷新开关独立：手势触发全刷（refreshEinkForced）同样走这里
+            SettingsSwitch(
+                text = stringResource(R.string.settings_system_full_refresh),
+                fontSize = titleFontSize,
+                description = stringResource(R.string.settings_desc_system_full_refresh),
+                defaultState = uiState.einkSystemFullRefresh,
+                onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
+            )
+            SettingsSwitch(
                 text = stringResource(R.string.settings_page_turn_animation),
                 fontSize = titleFontSize,
                 description = stringResource(R.string.settings_desc_page_turn_animation),
                 defaultState = uiState.einkPageTurnAnimation,
                 onCheckedChange = { viewModel.setEinkPageTurnAnimation(it) }
-            )
-            SettingsSwitch(
-                text = getString(R.string.use_volume_keys_for_pages), fontSize = titleFontSize,
-                description = stringResource(R.string.desc_volume_keys),
-                defaultState = uiState.useVolumeKeysForPages,
-                onCheckedChange = { viewModel.setUseVolumeKeysForPages(it) }
             )
         }
     }
