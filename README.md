@@ -11,7 +11,7 @@
     <tr>
       <td align="center">
         <img src="docs/img/bink/home-gameboy.jpg" height="360" alt="Bink OS home screen"><br>
-        <sub>Text-first home — pixel font, e-ink refresh</sub>
+        <sub>Text-first home — freely place your home apps where you want them</sub>
       </td>
       <td align="center">
         <img src="docs/img/bink/layout-editor.jpg" height="360" alt="Layout editor"><br>
