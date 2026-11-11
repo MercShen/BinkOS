@@ -21,7 +21,7 @@
     <tr>
       <td align="center">
         <img src="docs/img/bink/short-swipe-zone.png" height="300" alt="Short swipe zone editor"><br>
-        <sub>Short swipe zone — page turns only where you want them</sub>
+        <sub>Short swipe zone — short swipe gestures register only where you want them</sub>
       </td>
       <td align="center">
         <img src="docs/img/bink/extras.png" height="300" alt="E-ink extras"><br>
