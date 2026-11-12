@@ -897,6 +897,11 @@ class SettingsFragment : Fragment() {
             var pureReadActive by remember { mutableStateOf(pureReadController.isActive()) }
             val advancedScope = rememberCoroutineScope()
 
+            LaunchedEffect(Unit) {
+                shizukuBridge.start()
+                shizukuBridge.refresh()
+            }
+
             LaunchedEffect(shizukuState.ready) {
                 if (shizukuState.ready) {
                     pureReadController.useExecutor(shizukuBridge.executor())

@@ -1,14 +1,13 @@
 package com.github.gezimos.inkos.power
 
-import android.content.ComponentName
 import android.content.Context
-import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.os.IBinder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import rikka.shizuku.Shizuku
+import java.lang.reflect.Method
+import java.util.concurrent.TimeUnit
 
 /**
  * Binds the Shizuku service and turns it into a [PowerExecutor].
@@ -17,11 +16,14 @@ import rikka.shizuku.Shizuku
  * (uid 2000) rights without root and without unlocking the bootloader, at the
  * cost of a one-time authorisation the user grants in the Shizuku app.
  *
- * Shell commands do not run through `Shizuku.newProcess` - that API is private -
- * but through a bound [RemoteShellService] that Shizuku starts as uid 2000.
+ * Command execution goes through `Shizuku.newProcess`, which the service runs as
+ * uid 2000. That method is private in the published API, so it is reached by
+ * reflection; the alternative - a Shizuku UserService - does not start on this
+ * vendor ROM (its LoadedApk throws an NPE inside makeApplicationInner before the
+ * service class is even touched, so it is not something the app can fix).
  *
  * Everything here is defensive: if the service is absent, the permission was
- * revoked, or the bind fails, the capability drops back to
+ * revoked, or a call fails, the capability drops back to
  * [PowerCapability.NONE] so the UI can grey the toggle out instead of pretending
  * it worked.
  */
@@ -36,53 +38,40 @@ class ShizukuBridge private constructor(private val appContext: Context) {
 
     private val _state = MutableStateFlow(State())
 
-    /** Observable snapshot; updated on every binder/permission/bind change. */
+    /** Observable snapshot; updated on every binder/permission change. */
     val state: StateFlow<State> = _state.asStateFlow()
-    @Volatile
-    private var remote: IRemoteShell? = null
 
     @Volatile
     private var started = false
 
-    @Volatile
-    private var bindRequested = false
+    private val onBinderReceived = Shizuku.OnBinderReceivedListener { refreshCapability() }
+
+    private val onBinderDead = Shizuku.OnBinderDeadListener { refreshCapability() }
 
     private val onPermissionResult = Shizuku.OnRequestPermissionResultListener { _, _ ->
-        onPermissionResult()
-    }
-
-    private val onBinderReceived = Shizuku.OnBinderReceivedListener {
-        bindShellService()
         refreshCapability()
     }
 
-    private val onBinderDead = Shizuku.OnBinderDeadListener {
-        remote = null
-        bindRequested = false
-        refreshCapability()
+    /**
+     * `Shizuku.newProcess(String[] cmd, String[] env, String dir)`.
+     *
+     * Private in the shipped artifact, and `isAccessible` on a non-framework
+     * class is allowed, so this is a stable-enough seam: if a future Shizuku
+     * changes the signature the lookup fails and the capability simply stays
+     * NONE instead of crashing.
+     */
+    private val newProcessMethod: Method? = try {
+        Shizuku::class.java.getDeclaredMethod(
+            "newProcess",
+            Array<String>::class.java,
+            Array<String>::class.java,
+            String::class.java
+        ).apply { isAccessible = true }
+    } catch (_: Throwable) {
+        null
     }
 
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            remote = IRemoteShell.Stub.asInterface(binder)
-            refreshCapability()
-        }
-
-        override fun onServiceDisconnected(name: ComponentName?) {
-            remote = null
-            refreshCapability()
-        }
-    }
-
-    private val userServiceArgs = Shizuku.UserServiceArgs(
-        ComponentName(appContext.packageName, RemoteShellService::class.java.name)
-    )
-        .daemon(true)
-        .version(SERVICE_VERSION)
-        .processNameSuffix("shell")
-        .debuggable(false)
-
-    /** Registers the service listeners and binds the shell service; idempotent. */
+    /** Registers the service listeners; idempotent. */
     fun start() {
         if (started) return
         started = true
@@ -94,7 +83,6 @@ class ShizukuBridge private constructor(private val appContext: Context) {
             // Shizuku not installed: capability stays NONE, which is correct.
         }
         refreshCapability()
-        bindShellService()
     }
 
     fun stop() {
@@ -121,42 +109,39 @@ class ShizukuBridge private constructor(private val appContext: Context) {
         false
     }
 
-    /** Shows the Shizuku permission dialog; the result is not needed here. */
+    /** Shows the Shizuku permission dialog; the result arrives via the listener. */
     fun requestPermission(requestCode: Int) {
-        if (!isServiceAvailable()) return
+        if (!isServiceAvailable()) {
+            android.util.Log.w(TAG, "requestPermission: service not available")
+            return
+        }
         try {
             Shizuku.requestPermission(requestCode)
-        } catch (_: Throwable) {
-            // The service can die between the check and the call.
+            android.util.Log.i(TAG, "requestPermission: sent, code=$requestCode")
+        } catch (t: Throwable) {
+            android.util.Log.e(TAG, "requestPermission failed", t)
         }
     }
 
+    /** Re-reads the service state. Call when the settings screen becomes visible. */
+    fun refresh() = refreshCapability()
+
     /** Call after the user answers the Shizuku permission dialog. */
-    fun onPermissionResult() {
-        bindShellService()
-        refreshCapability()
-    }
+    fun onPermissionResult() = refreshCapability()
 
     /** The executor this bridge can offer right now. */
     fun executor(): PowerExecutor =
-        if (remote != null) ShellExecutor(::runCommand) else NoopExecutor
+        if (hasPermission() && newProcessMethod != null) ShellExecutor(::runCommand) else NoopExecutor
 
     /** True when commands would actually reach a shell process. */
-    fun isReady(): Boolean = remote != null
-
-    private fun bindShellService() {
-        if (bindRequested || !hasPermission()) return
-        bindRequested = true
-        try {
-            Shizuku.bindUserService(userServiceArgs, connection)
-        } catch (_: Throwable) {
-            bindRequested = false
-        }
-    }
+    fun isReady(): Boolean = hasPermission() && newProcessMethod != null
 
     private fun refreshCapability() {
-        _state.value = State(isServiceAvailable(), hasPermission(), remote != null)
-        if (remote != null) {
+        val installed = isServiceAvailable()
+        val granted = hasPermission()
+        val ready = granted && newProcessMethod != null
+        _state.value = State(installed, granted, ready)
+        if (ready) {
             PowerCapabilityDetector.reportShellAvailable()
         } else {
             PowerCapabilityDetector.reportShellUnavailable()
@@ -165,23 +150,58 @@ class ShizukuBridge private constructor(private val appContext: Context) {
 
     /** Executes one command as shell and returns its exit code and output. */
     private fun runCommand(command: String): ExecResult {
-        val shell = remote ?: return ExecResult(-1, "shell service not bound")
+        val method = newProcessMethod ?: return ExecResult(-1, "newProcess unavailable")
         return try {
-            val reply = shell.run(command) ?: return ExecResult(-1, "empty reply")
-            val newline = reply.indexOf('\n')
-            if (newline < 0) {
-                ExecResult(reply.trim().toIntOrNull() ?: -1, "")
+            val process = method.invoke(
+                null,
+                arrayOf("sh", "-c", command),
+                null,
+                null
+            ) as? Process ?: return ExecResult(-1, "no process returned")
+
+            val buffer = StringBuilder()
+            val reader = Thread {
+                try {
+                    process.inputStream.bufferedReader().use { buffer.append(it.readText()) }
+                } catch (_: Throwable) {
+                    // output is best effort; the exit code still matters
+                }
+            }
+            reader.isDaemon = true
+            reader.start()
+
+            // ShizukuRemoteProcess throws from exitValue() while the process is still
+            // running, and Process.waitFor(timeout) calls exactly that on the
+            // timeout path - so poll instead of using the timed wait.
+            val deadline = System.currentTimeMillis() + TIMEOUT_SECONDS * 1000
+            var code: Int? = null
+            while (System.currentTimeMillis() < deadline) {
+                code = try {
+                    process.exitValue()
+                } catch (_: Throwable) {
+                    null
+                }
+                if (code != null) break
+                Thread.sleep(50)
+            }
+            if (code != null) {
+                reader.join(1_000)
+                android.util.Log.i(TAG, "cmd exit=" + code + " :: " + command)
+                ExecResult(code, buffer.toString().trim())
             } else {
-                val code = reply.substring(0, newline).trim().toIntOrNull() ?: -1
-                ExecResult(code, reply.substring(newline + 1).trim())
+                process.destroyForcibly()
+                android.util.Log.w(TAG, "cmd timeout :: " + command)
+                ExecResult(-1, "timeout after ${TIMEOUT_SECONDS}s")
             }
         } catch (t: Throwable) {
+            android.util.Log.e(TAG, "runCommand failed: $command", t)
             ExecResult(-1, t.message ?: t.javaClass.simpleName)
         }
     }
 
     companion object {
-        private const val SERVICE_VERSION = 1
+        private const val TAG = "ShizukuBridge"
+        private const val TIMEOUT_SECONDS = 15L
 
         @Volatile
         private var instance: ShizukuBridge? = null

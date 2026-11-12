@@ -79,7 +79,9 @@ class ModeManager(
             val before = op.probe?.let { executor.run(it).output }
             val undo = op.normalCommand(before)
 
-            if (!executor.run(command).ok) {
+            val result = executor.run(command)
+            if (!result.ok) {
+                android.util.Log.w("ModeManager", "enter failed at " + op.key + " exit=" + result.exitCode + " out=" + result.output)
                 revert(applied)
                 return false
             }
