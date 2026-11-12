@@ -201,7 +201,7 @@ class ShizukuBridge private constructor(private val appContext: Context) {
 
     companion object {
         private const val TAG = "ShizukuBridge"
-        private const val TIMEOUT_SECONDS = 15L
+        private const val TIMEOUT_SECONDS = 60L
 
         @Volatile
         private var instance: ShizukuBridge? = null

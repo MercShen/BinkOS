@@ -38,9 +38,14 @@ interface PowerStore {
 /**
  * Applies a target mode by walking the strategy table.
  *
+ * Execution is batched: every probe goes out in one shell, then every apply in a
+ * second one. A transition touches every installed package, and one IPC round
+ * trip per command took ~40s on the HiBreak; two batches take a couple of
+ * seconds.
+ *
  * Rules, in order of importance:
- *  1. Never half-apply. On the first failed command, revert everything applied in
- *     this transition and leave the mode flag alone.
+ *  1. Never half-apply. If any apply command in the batch fails, revert every
+ *     change from this transition before returning.
  *  2. Never lose the user's original values: the journal carries the restore
  *     command, derived from a probe taken just before the change.
  *  3. Never touch what this capability cannot reach - filtered up front, not
@@ -72,41 +77,47 @@ class ModeManager(
     }
 
     private fun enter(ops: List<PowerOp>): Boolean {
-        val applied = mutableListOf<Change>()
-        for (op in ops) {
-            if (!supports(op)) continue
-            val command = op.pure?.takeIf { it.isNotBlank() } ?: continue
-            val before = op.probe?.let { executor.run(it).output }
-            val undo = op.normalCommand(before)
+        val planned = ops.filter { supports(it) && !it.pure.isNullOrBlank() }
+        if (planned.isEmpty()) return false
 
-            val result = executor.run(command)
-            if (!result.ok) {
-                android.util.Log.w("ModeManager", "enter failed at " + op.key + " exit=" + result.exitCode + " out=" + result.output)
-                revert(applied)
-                return false
-            }
-            applied += Change(op.key, before, undo)
+        // Phase 1: one shell for every probe.
+        val probeResults = executor.runBatch(planned.map { it.probe ?: "true" })
+        val changes = planned.mapIndexed { index, op ->
+            val before = if (op.probe.isNullOrBlank()) null else probeResults[index].output
+            Change(op.key, before, op.normalCommand(before))
         }
-        store.saveJournal(applied)
+
+        // Phase 2: one shell for every apply.
+        val applied = executor.runBatch(planned.map { it.pure!! })
+        val failedAt = applied.indexOfFirst { !it.ok }
+        if (failedAt >= 0) {
+            android.util.Log.w(
+                "ModeManager",
+                "enter failed at " + planned[failedAt].key +
+                    " exit=" + applied[failedAt].exitCode +
+                    " out=" + applied[failedAt].output
+            )
+            revertBatch(changes)
+            return false
+        }
+
+        store.saveJournal(changes)
         store.saveMode(PowerMode.PURE_READ)
         return true
     }
 
     private fun leave(journal: List<Change>): Boolean {
-        if (journal.isEmpty()) {
-            store.saveMode(PowerMode.NORMAL)
-            return true
-        }
-        revert(journal)
+        if (journal.isNotEmpty()) revertBatch(journal)
+        store.saveJournal(emptyList())
         store.saveMode(PowerMode.NORMAL)
         return true
     }
 
-    /** Undo a journal, newest first. Used on failed enter and on leaving. */
-    private fun revert(changes: List<Change>) {
-        for (change in changes.asReversed()) {
-            change.undo?.takeIf { it.isNotBlank() }?.let { executor.run(it) }
-        }
+    /** Undo a set of changes, newest first, in a single shell. */
+    private fun revertBatch(changes: List<Change>) {
+        val undos = changes.asReversed()
+            .mapNotNull { it.undo?.takeIf { command -> command.isNotBlank() } }
+        if (undos.isNotEmpty()) executor.runBatch(undos)
         store.saveJournal(emptyList())
     }
 
@@ -118,7 +129,7 @@ class ModeManager(
     fun reconcileOnStart() {
         val journal = store.loadJournal()
         if (journal.isNotEmpty()) {
-            revert(journal)
+            revertBatch(journal)
             store.saveMode(PowerMode.NORMAL)
         }
     }
