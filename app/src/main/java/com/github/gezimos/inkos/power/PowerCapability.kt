@@ -67,5 +67,10 @@ object PowerCapabilityDetector {
         if (cached != PowerCapability.ROOT) cached = PowerCapability.SHELL
     }
 
+    /** The bridge died or the permission was revoked: drop back to [NONE]. */
+    fun reportShellUnavailable() {
+        if (cached == PowerCapability.SHELL) cached = PowerCapability.NONE
+    }
+
     private fun hasRoot(): Boolean = false // root tier deferred; see detect()
 }

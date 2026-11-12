@@ -89,6 +89,7 @@ android {
     }
 
     buildFeatures {
+        aidl = true
         compose = true
         viewBinding = true
         buildConfig = true
@@ -164,6 +165,8 @@ dependencies {
 
     // Biometric support
     implementation(libs.biometric)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider) // ShizukuProvider for the permission flow
 
     // AndroidX Test - Espresso
     androidTestImplementation(libs.espresso.core)

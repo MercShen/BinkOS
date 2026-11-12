@@ -3,6 +3,7 @@
 [versions]
 agp = "8.10.1"
 kotlin = "2.1.20"
+shizuku = "13.1.5"
 
 # AndroidX Core and AppCompat
 core-ktx = "1.17.0"
@@ -104,6 +105,10 @@ test-rules = { group = "androidx.test", name = "rules", version.ref = "test-rule
 fragment-testing = { group = "androidx.fragment", name = "fragment-testing", version.ref = "fragment-testing" }
 ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4", version.ref = "ui-test-junit4" }
 ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest", version.ref = "ui-test-manifest" }
+
+# Shizuku (shell-level execution bridge)
+shizuku-api = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
+shizuku-provider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
