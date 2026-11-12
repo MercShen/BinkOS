@@ -980,4 +980,6 @@
     <string name="pure_read_warning_apps">Background apps are restricted: anything outside the whitelist stops running in the background, so its notifications and pushes will not arrive.</string>
     <string name="pure_read_warning_confirm">I understand, enable</string>
     <string name="pure_read_warning_cancel">Cancel</string>
+
+    <string name="shizuku_status_not_running">Shizuku is not running — tap to open the app</string>
 </resources>

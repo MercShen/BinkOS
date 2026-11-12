@@ -980,4 +980,6 @@
     <string name="pure_read_warning_apps">后台应用受限：白名单外的应用会停止后台活动，它们的通知与推送不会到达。</string>
     <string name="pure_read_warning_confirm">我已了解，开启</string>
     <string name="pure_read_warning_cancel">取消</string>
+
+    <string name="shizuku_status_not_running">Shizuku 未运行 — 点击打开应用</string>
 </resources>

@@ -31,8 +31,13 @@ class ShizukuBridge private constructor(private val appContext: Context) {
 
     /** Everything the settings UI needs to describe the Shizuku state. */
     data class State(
+        /** Shizuku app is present on the device. */
         val installed: Boolean = false,
+        /** The Shizuku server is running, i.e. the binder is reachable. */
+        val running: Boolean = false,
+        /** This app has been authorised in the Shizuku app. */
         val granted: Boolean = false,
+        /** A shell can actually be executed right now. */
         val ready: Boolean = false
     )
 
@@ -97,10 +102,30 @@ class ShizukuBridge private constructor(private val appContext: Context) {
         }
     }
 
+    /** Shizuku app installed - independent of whether its server is running. */
+    fun isInstalled(): Boolean = try {
+        appContext.packageManager.getPackageInfo(SHIZUKU_PACKAGE, 0) != null
+    } catch (_: Throwable) {
+        false
+    }
+
     fun isServiceAvailable(): Boolean = try {
         Shizuku.pingBinder()
     } catch (_: Throwable) {
         false
+    }
+
+    /** Brings the Shizuku app to the front so the user can start its server. */
+    fun openShizukuApp() {
+        try {
+            val intent = appContext.packageManager.getLaunchIntentForPackage(SHIZUKU_PACKAGE)
+            if (intent != null) {
+                intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                appContext.startActivity(intent)
+            }
+        } catch (_: Throwable) {
+            // The app can vanish between the check and the launch.
+        }
     }
 
     fun hasPermission(): Boolean = try {
@@ -137,10 +162,11 @@ class ShizukuBridge private constructor(private val appContext: Context) {
     fun isReady(): Boolean = hasPermission() && newProcessMethod != null
 
     private fun refreshCapability() {
-        val installed = isServiceAvailable()
+        val installed = isInstalled()
+        val running = isServiceAvailable()
         val granted = hasPermission()
         val ready = granted && newProcessMethod != null
-        _state.value = State(installed, granted, ready)
+        _state.value = State(installed, running, granted, ready)
         if (ready) {
             PowerCapabilityDetector.reportShellAvailable()
         } else {
@@ -202,6 +228,7 @@ class ShizukuBridge private constructor(private val appContext: Context) {
     companion object {
         private const val TAG = "ShizukuBridge"
         private const val TIMEOUT_SECONDS = 60L
+        private const val SHIZUKU_PACKAGE = "moe.shizuku.privileged.api"
 
         @Volatile
         private var instance: ShizukuBridge? = null

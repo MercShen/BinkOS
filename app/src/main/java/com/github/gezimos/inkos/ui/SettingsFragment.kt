@@ -919,14 +919,21 @@ class SettingsFragment : Fragment() {
                 title = stringResource(R.string.shizuku_service_title),
                 description = when {
                     !shizukuState.installed -> stringResource(R.string.shizuku_status_not_installed)
+                    !shizukuState.running -> stringResource(R.string.shizuku_status_not_running)
                     !shizukuState.granted -> stringResource(R.string.shizuku_status_not_authorized)
                     !shizukuState.ready -> stringResource(R.string.shizuku_status_connecting)
                     else -> stringResource(R.string.shizuku_status_connected)
                 },
                 titleFontSize = titleFontSize,
                 onClick = {
-                    if (shizukuState.installed && !shizukuState.granted) {
-                        shizukuBridge.requestPermission(SHIZUKU_PERMISSION_REQUEST)
+                    when {
+                        // Installed but the server is down: the useful action is
+                        // opening Shizuku so the user can start it.
+                        shizukuState.installed && !shizukuState.running ->
+                            shizukuBridge.openShizukuApp()
+                        shizukuState.running && !shizukuState.granted ->
+                            shizukuBridge.requestPermission(SHIZUKU_PERMISSION_REQUEST)
+                        else -> shizukuBridge.refresh()
                     }
                 }
             )
