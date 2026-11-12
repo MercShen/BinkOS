@@ -972,4 +972,12 @@
     <string name="pure_read_mode">Pure reading mode</string>
     <string name="desc_pure_read">Cuts cellular, restricts background apps outside the whitelist and mutes phone-side sensors.</string>
     <string name="desc_pure_read_needs_shizuku">Requires Shizuku authorisation before it can be enabled.</string>
+
+    <!-- Pure reading mode warning -->
+    <string name="pure_read_warning_title">Enable pure reading mode?</string>
+    <string name="pure_read_warning_calls">No calls: the cellular radio is switched off, callers hear "unreachable", and no missed-call record is kept.</string>
+    <string name="pure_read_warning_sms">No SMS: messages wait at the carrier and only arrive after you leave this mode. Verification codes may expire before then.</string>
+    <string name="pure_read_warning_apps">Background apps are restricted: anything outside the whitelist stops running in the background, so its notifications and pushes will not arrive.</string>
+    <string name="pure_read_warning_confirm">I understand, enable</string>
+    <string name="pure_read_warning_cancel">Cancel</string>
 </resources>

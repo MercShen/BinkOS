@@ -2159,6 +2159,56 @@ fun GestureVsPageConflictSheet(onDismiss: () -> Unit) {
     }
 }
 
+/**
+ * Consequence warning for pure-reading mode: it cuts cellular, so calls and SMS
+ * stop arriving, and it throttles background apps. Shown once per install, on
+ * the first switch-on.
+ */
+@Composable
+fun PureReadWarningSheet(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    SheetTitle(stringResource(R.string.pure_read_warning_title))
+
+    val bulletStyle = SettingsTheme.typography.item
+    val bulletColor = Theme.colors.text
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.pure_read_warning_calls),
+            style = bulletStyle,
+            color = bulletColor
+        )
+        Text(
+            text = stringResource(R.string.pure_read_warning_sms),
+            style = bulletStyle,
+            color = bulletColor
+        )
+        Text(
+            text = stringResource(R.string.pure_read_warning_apps),
+            style = bulletStyle,
+            color = bulletColor
+        )
+    }
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.End
+    ) {
+        TextButton(onClick = onDismiss) {
+            Text(stringResource(R.string.pure_read_warning_cancel), color = Theme.colors.text, style = SettingsTheme.typography.button)
+        }
+        TextButton(
+            onClick = {
+                onDismiss()
+                onConfirm()
+            }
+        ) {
+            Text(stringResource(R.string.pure_read_warning_confirm), color = Theme.colors.text, style = SettingsTheme.typography.button)
+        }
+    }
+}
+
 @Composable
 fun ErrorSheet(title: String, message: String, onDismiss: () -> Unit) {
     SheetTitle(title)

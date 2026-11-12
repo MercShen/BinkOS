@@ -333,6 +333,15 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
         }
     }
 
+    fun showPureReadWarning(onConfirm: () -> Unit) {
+        sheetHost.show {
+            PureReadWarningSheet(
+                onConfirm = onConfirm,
+                onDismiss = sheetHost::dismiss
+            )
+        }
+    }
+
     fun showErrorDialog(context: Context, title: String, message: String) {
         sheetHost.show {
             ErrorSheet(

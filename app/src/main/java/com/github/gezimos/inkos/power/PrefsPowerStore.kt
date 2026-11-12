@@ -66,11 +66,19 @@ class PrefsPowerStore(context: Context) : PowerStore {
         prefs.edit().putString(KEY_WHITELIST, packages.joinToString("\n")).apply()
     }
 
+    /** Whether the user has already seen the "this turns your phone off" warning. */
+    fun loadWarningAccepted(): Boolean = prefs.getBoolean(KEY_WARNING, false)
+
+    fun saveWarningAccepted() {
+        prefs.edit().putBoolean(KEY_WARNING, true).apply()
+    }
+
     private companion object {
         const val PREFS = "binkos_power"
         const val KEY_MODE = "mode"
         const val KEY_JOURNAL = "journal"
         const val KEY_WHITELIST = "whitelist"
+        const val KEY_WARNING = "warning_accepted"
 
         /**
          * The keyboard must never be restricted: long-press actions, notes and

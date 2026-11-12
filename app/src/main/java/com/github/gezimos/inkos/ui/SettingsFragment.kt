@@ -933,13 +933,27 @@ class SettingsFragment : Fragment() {
                 else stringResource(R.string.desc_pure_read_needs_shizuku),
                 defaultState = pureReadActive,
                 enabled = shizukuState.ready,
-                onCheckedChange = {
-                    advancedScope.launch {
-                        withContext(Dispatchers.IO) {
-                            pureReadController.useExecutor(shizukuBridge.executor())
-                            pureReadController.toggle()
+                onCheckedChange = { wantOn ->
+                    val runToggle: () -> Unit = {
+                        advancedScope.launch {
+                            withContext(Dispatchers.IO) {
+                                pureReadController.useExecutor(shizukuBridge.executor())
+                                pureReadController.toggle()
+                            }
+                            pureReadActive = pureReadController.isActive()
                         }
-                        pureReadActive = pureReadController.isActive()
+                        Unit
+                    }
+                    // First switch-on shows the consequences once: no calls, no
+                    // SMS, restricted background apps. Cancel leaves the switch
+                    // off and changes nothing.
+                    if (wantOn && !pureReadController.hasAcceptedWarning()) {
+                        dialogBuilder.showPureReadWarning {
+                            pureReadController.acceptWarning()
+                            runToggle()
+                        }
+                    } else {
+                        runToggle()
                     }
                 }
             )

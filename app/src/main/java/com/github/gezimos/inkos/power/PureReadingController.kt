@@ -36,6 +36,11 @@ class PureReadingController(context: Context) {
 
     fun isActive(): Boolean = store.loadMode() == PowerMode.PURE_READ
 
+    /** Whether the user has confirmed the consequences of pure-reading mode. */
+    fun hasAcceptedWarning(): Boolean = store.loadWarningAccepted()
+
+    fun acceptWarning() = store.saveWarningAccepted()
+
     fun whitelist(): Set<String> = store.loadWhitelist()
 
     fun setWhitelist(packages: Set<String>) = store.saveWhitelist(packages)
