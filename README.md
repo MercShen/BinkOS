@@ -7,6 +7,9 @@
     <a href="https://github.com/MercShen/BinkOS/releases">Download APK</a> ·
     <a href="DOCUMENTATION.md">Documentation</a>
   </p>
+  <p>
+    <a href="README.md">English</a> · <a href="README.zh-CN.md">简体中文</a>
+  </p>
   <table>
     <tr>
       <td align="center">
