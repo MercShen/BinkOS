@@ -905,7 +905,11 @@ class SettingsFragment : Fragment() {
             LaunchedEffect(shizukuState.ready) {
                 if (shizukuState.ready) {
                     pureReadController.useExecutor(shizukuBridge.executor())
-                    pureReadController.reconcileOnStart()
+                    // Only a *pending* rollback (mode already NORMAL) is finished here;
+                    // a live session is never touched.
+                    pureReadController.reconcilePendingRollback()
+                    // Reconcile runs at app start, not here: undoing the journal on
+                    // every settings visit would end a session the user is in.
                     pureReadActive = pureReadController.isActive()
                 }
             }

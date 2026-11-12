@@ -72,6 +72,18 @@ class PureReadingController(context: Context) {
         }
     }
 
+    /**
+     * Finishes a rollback that could not run at boot because the shell was not up
+     * yet: a journal left behind while the persisted mode is already NORMAL means
+     * "pending undo", never a live session (a live one keeps mode = PURE_READ).
+     */
+    fun reconcilePendingRollback(): Boolean {
+        if (store.loadMode() != PowerMode.NORMAL) return false
+        if (store.loadJournal().isEmpty()) return false
+        manager.reconcileOnStart()
+        return true
+    }
+
     /** Undo a transition interrupted by a crash or a reboot. */
     fun reconcileOnStart() = manager.reconcileOnStart()
 

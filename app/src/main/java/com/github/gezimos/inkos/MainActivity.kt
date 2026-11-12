@@ -480,6 +480,23 @@ class MainActivity : AppCompatActivity() {
             }
         } catch (_: Exception) {}
 
+        // Pure-reading mode is reverted on a fresh start, never replayed: a
+        // journal left behind means the previous session ended inside the mode,
+        // and the safe target is normal behaviour. Runs on a background thread
+        // because it shells out once per recorded change.
+        try {
+            val powerBridge = com.github.gezimos.inkos.power.ShizukuBridge.get(this)
+            val powerController = com.github.gezimos.inkos.power.PureReadingController(this)
+            powerBridge.start()
+            Thread {
+                if (powerBridge.isReady()) {
+                    powerController.useExecutor(powerBridge.executor())
+                    powerController.reconcileOnStart()
+                }
+            }.start()
+        } catch (_: Throwable) {
+        }
+
         // Register back pressed callback
         onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
 
