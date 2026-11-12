@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -485,6 +486,7 @@ object SettingsComposable {
         fontColor: Color = SettingsTheme.typography.title.color,
         enabled: Boolean = true,
         description: String? = null,
+        imageVector: ImageVector? = null,
         optionAlignment: Int? = null,
         horizontalPadding: Dp = SettingsTheme.color.horizontalPadding,
         verticalPadding: Dp = 10.dp.scaled(rememberScreenScale()),
@@ -516,6 +518,17 @@ object SettingsComposable {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 val textColor = if (!enabled) prefTextColor.copy(alpha = 0.4f) else if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.title.color
+                if (imageVector != null) {
+                    val screenScale = rememberScreenScale()
+                    val iconBoxSize = 24.dp.scaled(screenScale)
+                    Icon(
+                        imageVector = imageVector,
+                        contentDescription = null,
+                        modifier = Modifier.size(iconBoxSize),
+                        tint = textColor
+                    )
+                    Spacer(modifier = Modifier.width(16.dp.scaled(screenScale)))
+                }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,

@@ -46,6 +46,7 @@ import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.FormatSize
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.OfflineBolt
@@ -664,6 +665,7 @@ class SettingsFragment : Fragment() {
             SettingsSelect(
                 title = stringResource(R.string.language),
                 option = homeLanguageOptions[homeLanguageIndex],
+                imageVector = Icons.Rounded.Language,
                 fontSize = titleFontSize,
                 description = stringResource(R.string.desc_language),
                 onClick = {
