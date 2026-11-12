@@ -133,7 +133,7 @@ class ShellExecutor(
     private companion object {
         /** Unlikely to appear in `cmd appops get` / `dumpsys` output. */
         const val MARKER = "__HBZ_EXIT__"
-        const val CHUNK = 40
-        const val PARALLEL = 4
+        const val CHUNK = 32
+        const val PARALLEL = 8
     }
 }
