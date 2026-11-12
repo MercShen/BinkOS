@@ -960,4 +960,16 @@
     <string name="clear_all">Clear All</string>
     <string name="settings_label">Settings</string>
     <string name="desc_simple_tray_brightness">Show the brightness bar at the top of Simple Tray</string>
+
+    <!-- Power / Shizuku (pure reading mode) -->
+    <string name="shizuku_section_title">Shizuku</string>
+    <string name="binkos_section_title">Bink OS</string>
+    <string name="shizuku_service_title">Shizuku service</string>
+    <string name="shizuku_status_not_installed">Not installed</string>
+    <string name="shizuku_status_not_authorized">Not authorised — tap to grant</string>
+    <string name="shizuku_status_connecting">Connecting…</string>
+    <string name="shizuku_status_connected">Connected</string>
+    <string name="pure_read_mode">Pure reading mode</string>
+    <string name="desc_pure_read">Cuts cellular, restricts background apps outside the whitelist and mutes phone-side sensors.</string>
+    <string name="desc_pure_read_needs_shizuku">Requires Shizuku authorisation before it can be enabled.</string>
 </resources>

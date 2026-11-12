@@ -960,4 +960,16 @@
     <string name="clear_all">全部清除</string>
     <string name="settings_label">设置</string>
     <string name="desc_simple_tray_brightness">在简易托盘顶部显示亮度调节条</string>
+
+    <!-- 电源 / Shizuku（纯净阅读模式） -->
+    <string name="shizuku_section_title">Shizuku</string>
+    <string name="binkos_section_title">Bink OS</string>
+    <string name="shizuku_service_title">Shizuku 服务</string>
+    <string name="shizuku_status_not_installed">未安装</string>
+    <string name="shizuku_status_not_authorized">未授权 — 点击授权</string>
+    <string name="shizuku_status_connecting">正在连接…</string>
+    <string name="shizuku_status_connected">已连接</string>
+    <string name="pure_read_mode">纯净阅读模式</string>
+    <string name="desc_pure_read">关蜂窝、限制白名单外的后台应用、关闭手机侧传感器。</string>
+    <string name="desc_pure_read_needs_shizuku">需要先完成 Shizuku 授权才能启用。</string>
 </resources>

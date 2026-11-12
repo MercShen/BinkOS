@@ -5,6 +5,9 @@ import android.content.Context
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.IBinder
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import rikka.shizuku.Shizuku
 
 /**
@@ -24,6 +27,17 @@ import rikka.shizuku.Shizuku
  */
 class ShizukuBridge private constructor(private val appContext: Context) {
 
+    /** Everything the settings UI needs to describe the Shizuku state. */
+    data class State(
+        val installed: Boolean = false,
+        val granted: Boolean = false,
+        val ready: Boolean = false
+    )
+
+    private val _state = MutableStateFlow(State())
+
+    /** Observable snapshot; updated on every binder/permission/bind change. */
+    val state: StateFlow<State> = _state.asStateFlow()
     @Volatile
     private var remote: IRemoteShell? = null
 
@@ -32,6 +46,10 @@ class ShizukuBridge private constructor(private val appContext: Context) {
 
     @Volatile
     private var bindRequested = false
+
+    private val onPermissionResult = Shizuku.OnRequestPermissionResultListener { _, _ ->
+        onPermissionResult()
+    }
 
     private val onBinderReceived = Shizuku.OnBinderReceivedListener {
         bindShellService()
@@ -71,6 +89,7 @@ class ShizukuBridge private constructor(private val appContext: Context) {
         try {
             Shizuku.addBinderReceivedListenerSticky(onBinderReceived)
             Shizuku.addBinderDeadListener(onBinderDead)
+            Shizuku.addRequestPermissionResultListener(onPermissionResult)
         } catch (_: Throwable) {
             // Shizuku not installed: capability stays NONE, which is correct.
         }
@@ -84,6 +103,7 @@ class ShizukuBridge private constructor(private val appContext: Context) {
         try {
             Shizuku.removeBinderReceivedListener(onBinderReceived)
             Shizuku.removeBinderDeadListener(onBinderDead)
+            Shizuku.removeRequestPermissionResultListener(onPermissionResult)
         } catch (_: Throwable) {
             // listener removal is best effort
         }
@@ -135,6 +155,7 @@ class ShizukuBridge private constructor(private val appContext: Context) {
     }
 
     private fun refreshCapability() {
+        _state.value = State(isServiceAvailable(), hasPermission(), remote != null)
         if (remote != null) {
             PowerCapabilityDetector.reportShellAvailable()
         } else {

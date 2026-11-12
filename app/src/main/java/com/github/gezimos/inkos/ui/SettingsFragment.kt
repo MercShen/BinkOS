@@ -79,7 +79,11 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import com.github.gezimos.inkos.ui.compose.gestureHelper
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.github.gezimos.inkos.power.PureReadingController
+import com.github.gezimos.inkos.power.ShizukuBridge
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.os.bundleOf
@@ -174,6 +178,8 @@ sealed interface SettingsRoute {
 // ---------------------------------------------------------------------------
 // Fragment
 // ---------------------------------------------------------------------------
+
+private const val SHIZUKU_PERMISSION_REQUEST = 311
 
 class SettingsFragment : Fragment() {
 
@@ -644,6 +650,44 @@ class SettingsFragment : Fragment() {
                 titleFontSize = titleFontSize,
                 onClick = { navigateTo(SettingsRoute.Extras) },
             )
+            val homeLanguageOptions = listOf(
+                stringResource(R.string.language_system),
+                stringResource(R.string.language_english),
+                stringResource(R.string.language_chinese)
+            )
+            val homeLanguageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+            val homeLanguageIndex = when {
+                homeLanguageTag.startsWith("zh") -> 2
+                homeLanguageTag.startsWith("en") -> 1
+                else -> 0
+            }
+            SettingsSelect(
+                title = stringResource(R.string.language),
+                option = homeLanguageOptions[homeLanguageIndex],
+                fontSize = titleFontSize,
+                description = stringResource(R.string.desc_language),
+                onClick = {
+                    dialogBuilder.showSingleChoiceDialog(
+                        context = requireContext(),
+                        options = homeLanguageOptions.toTypedArray(),
+                        titleResId = R.string.language,
+                        selectedIndex = homeLanguageIndex,
+                        onItemSelected = { selected ->
+                            val idx = homeLanguageOptions.indexOf(selected)
+                            val tag = when (idx) {
+                                0 -> ""
+                                1 -> "en"
+                                else -> "zh-CN"
+                            }
+                            AppCompatDelegate.setApplicationLocales(
+                                if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                                else LocaleListCompat.forLanguageTags(tag)
+                            )
+                            requireActivity().recreate()
+                        }
+                    )
+                }
+            )
             SettingsHomeItem(
                 title = stringResource(R.string.about),
                 imageVector = Icons.Rounded.Info,
@@ -822,6 +866,18 @@ class SettingsFragment : Fragment() {
     // ADVANCED
     // ==================================================================
 
+    /** Hairline rule that separates the Shizuku block from the Bink OS block. */
+    @Composable
+    private fun SectionDivider() {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = SettingsTheme.color.horizontalPadding, vertical = 10.dp)
+                .height(1.dp)
+                .background(SettingsTheme.typography.title.color.copy(alpha = 0.25f))
+        )
+    }
+
     @Composable
     private fun AdvancedContent(fontSize: TextUnit) {
         val titleFontSize = if (fontSize.isSpecified) (fontSize.value * 1.5).sp else fontSize
@@ -832,45 +888,57 @@ class SettingsFragment : Fragment() {
         }
         val uiState by viewModel.homeUiState.collectAsState()
         Column(modifier = Modifier.fillMaxWidth()) {
-            // ---- Language (per-app locale) ----
-            val languageOptions = listOf(
-                stringResource(R.string.language_system),
-                stringResource(R.string.language_english),
-                stringResource(R.string.language_chinese)
-            )
-            val currentLanguageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
-            val languageIndex = when {
-                currentLanguageTag.startsWith("zh") -> 2
-                currentLanguageTag.startsWith("en") -> 1
-                else -> 0
+            // ---- Shizuku ----
+            val shizukuBridge = remember { ShizukuBridge.get(requireContext()) }
+            val pureReadController = remember { PureReadingController(requireContext()) }
+            val shizukuState by shizukuBridge.state.collectAsState()
+            var pureReadActive by remember { mutableStateOf(pureReadController.isActive()) }
+            val advancedScope = rememberCoroutineScope()
+
+            LaunchedEffect(shizukuState.ready) {
+                if (shizukuState.ready) {
+                    pureReadController.useExecutor(shizukuBridge.executor())
+                    pureReadController.reconcileOnStart()
+                    pureReadActive = pureReadController.isActive()
+                }
             }
-            SettingsSelect(
-                title = stringResource(R.string.language),
-                option = languageOptions[languageIndex],
-                fontSize = titleFontSize,
-                description = stringResource(R.string.desc_language),
+
+            SettingsTitle(text = stringResource(R.string.shizuku_section_title), fontSize = titleFontSize)
+            SettingsHomeItem(
+                title = stringResource(R.string.shizuku_service_title),
+                description = when {
+                    !shizukuState.installed -> stringResource(R.string.shizuku_status_not_installed)
+                    !shizukuState.granted -> stringResource(R.string.shizuku_status_not_authorized)
+                    !shizukuState.ready -> stringResource(R.string.shizuku_status_connecting)
+                    else -> stringResource(R.string.shizuku_status_connected)
+                },
+                titleFontSize = titleFontSize,
                 onClick = {
-                    dialogBuilder.showSingleChoiceDialog(
-                        context = requireContext(),
-                        options = languageOptions.toTypedArray(),
-                        titleResId = R.string.language,
-                        selectedIndex = languageIndex,
-                        onItemSelected = { selected ->
-                            val idx = languageOptions.indexOf(selected)
-                            val tag = when (idx) {
-                                0 -> ""
-                                1 -> "en"
-                                else -> "zh-CN"
-                            }
-                            AppCompatDelegate.setApplicationLocales(
-                                if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                                else LocaleListCompat.forLanguageTags(tag)
-                            )
-                            requireActivity().recreate()
-                        }
-                    )
+                    if (shizukuState.installed && !shizukuState.granted) {
+                        shizukuBridge.requestPermission(SHIZUKU_PERMISSION_REQUEST)
+                    }
                 }
             )
+            SettingsSwitch(
+                text = stringResource(R.string.pure_read_mode),
+                fontSize = titleFontSize,
+                description = if (shizukuState.ready) stringResource(R.string.desc_pure_read)
+                else stringResource(R.string.desc_pure_read_needs_shizuku),
+                defaultState = pureReadActive,
+                enabled = shizukuState.ready,
+                onCheckedChange = {
+                    advancedScope.launch {
+                        withContext(Dispatchers.IO) {
+                            pureReadController.useExecutor(shizukuBridge.executor())
+                            pureReadController.toggle()
+                        }
+                        pureReadActive = pureReadController.isActive()
+                    }
+                }
+            )
+            SectionDivider()
+            // ---- Bink OS ----
+            SettingsTitle(text = stringResource(R.string.binkos_section_title), fontSize = titleFontSize)
             SettingsSwitch(
                 text = stringResource(R.string.lock_home_apps), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_lock_home_apps),
