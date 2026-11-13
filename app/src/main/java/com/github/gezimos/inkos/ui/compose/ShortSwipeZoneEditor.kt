@@ -181,7 +181,8 @@ private fun ShortSwipeZoneEditor(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .offset(y = topHandleOffset),
-            color = textColor,
+            barColor = textColor,
+            haloColor = bgColor,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyTop((top + deltaDp).coerceIn(0, maxDp))
@@ -193,7 +194,8 @@ private fun ShortSwipeZoneEditor(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .offset(y = -bottomHandleOffset),
-            color = textColor,
+            barColor = textColor,
+            haloColor = bgColor,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyBottom((bottom - deltaDp).coerceIn(0, maxDp))
@@ -226,11 +228,16 @@ private fun ShortSwipeZoneEditor(
     }
 }
 
-/** 与首页编辑模式（时钟 / 底部组件）一致的细胶囊拖动条。 */
+/**
+ * 与首页编辑模式（时钟 / 底部组件）同款细胶囊拖动条，但改成实心：
+ * 深色模式用白色条、浅色模式用黑色条，再包一圈背景色描边（halo），
+ * 保证无论压深区域还是普通背景上都能看清。
+ */
 @Composable
 private fun ZoneBoundaryHandle(
     modifier: Modifier,
-    color: Color,
+    barColor: Color,
+    haloColor: Color,
     onDrag: (Float) -> Unit
 ) {
     val latestOnDrag by androidx.compose.runtime.rememberUpdatedState(onDrag)
@@ -246,12 +253,19 @@ private fun ZoneBoundaryHandle(
             },
         contentAlignment = Alignment.Center
     ) {
+        // 背景色描边：把实心条和任意底色隔开
         Box(
             modifier = Modifier
-                .width(60.dp)
-                .height(4.dp)
-                .background(color.copy(alpha = 0.5f), RoundedCornerShape(2.dp))
-        )
+                .background(haloColor, RoundedCornerShape(4.dp))
+                .padding(1.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(60.dp)
+                    .height(4.dp)
+                    .background(barColor, RoundedCornerShape(2.dp))
+            )
+        }
     }
 }
 
