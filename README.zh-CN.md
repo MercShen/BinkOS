@@ -27,14 +27,18 @@
         <sub>短滑区域 —— 短滑手势只在你想让它生效的地方生效</sub>
       </td>
       <td align="center">
-        <img src="docs/img/bink/extras.png" height="300" alt="墨水屏扩展选项"><br>
-        <sub>大我刷新与翻页动画开关</sub>
+        <img src="docs/img/bink/gestures-panel.png" height="300" alt="手势快捷面板"><br>
+        <sub>手势快捷面板 —— 滑动、双击与短滑区域一处设置</sub>
       </td>
     </tr>
     <tr>
-      <td colspan="2" align="center">
-        <img src="docs/img/bink/advanced-language.jpg" height="320" alt="语言选择器"><br>
-        <sub>语言选择器 —— 已支持简体中文</sub>
+      <td align="center">
+        <img src="docs/img/bink/extras.png" height="300" alt="墨水屏扩展选项"><br>
+        <sub>大我刷新与翻页动画开关</sub>
+      </td>
+      <td align="center">
+        <img src="docs/img/bink/settings-language.jpg" height="300" alt="语言选择器"><br>
+        <sub>设置 —— 应用内语言，含简体中文</sub>
       </td>
     </tr>
   </table>
@@ -50,7 +54,7 @@ Bink OS 保留了 inkOS 的文字优先首页，并重做了与墨水屏硬件�
 - **刷新策略控制** —— 自动刷新、仅主页刷新、可配置的刷新间隔。
 
 ### 不和系统打架的手势
-- **短滑区域** —— 把翻页短滑限制在可配置的上下边界内，系统边缘手势（回桌面 / 返回）照常可用。编辑模式下有实时预览：左右手柄、虚线边界；区域从 30dp 起算，不会被状态栏挡住。
+- **短滑区域** —— 把翻页短滑限制在可配置的上下边界内，系统边缘手势（回桌面 / 返回）照常可用。编辑模式下会压暗区域外的部分，并在上下边界各给一根拖动条；区域从 30dp 起算，不会被状态栏挡住。
 - **反向长滑关闭** —— 每个界面（应用抽屉、最近任务、信笺、中枢、简易托盘、设置）都用「打开方向的相反长滑」关闭。检测放在指针事件的 Initial pass，内层滚动不会吞掉手势。
 - **可绑定 15+ 动作** —— 4 个滑动方向、双击，以及点击时钟/日期/引言。
 

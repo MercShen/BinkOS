@@ -27,14 +27,18 @@
         <sub>Short swipe zone — short swipe gestures register only where you want them</sub>
       </td>
       <td align="center">
-        <img src="docs/img/bink/extras.png" height="300" alt="E-ink extras"><br>
-        <sub>Bigme refresh &amp; animation switches</sub>
+        <img src="docs/img/bink/gestures-panel.png" height="300" alt="Gestures quick panel"><br>
+        <sub>Gestures quick panel — Try out and customize the new short swipe area in edit mode </sub>
       </td>
     </tr>
     <tr>
-      <td colspan="2" align="center">
-        <img src="docs/img/bink/advanced-language.jpg" height="320" alt="Language picker"><br>
-        <sub>Language picker — 简体中文 supported</sub>
+      <td align="center">
+        <img src="docs/img/bink/extras.png" height="300" alt="E-ink extras"><br>
+        <sub>Bigme refresh &amp; animation switches</sub>
+      </td>
+      <td align="center">
+        <img src="docs/img/bink/settings-language.jpg" height="300" alt="Language picker"><br>
+        <sub>Settings — app language, 简体中文 included</sub>
       </td>
     </tr>
   </table>
@@ -50,7 +54,7 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 - **E-ink refresh control** — auto refresh, home-only refresh, configurable refresh delay.
 
 ### Gestures that don't fight the system
-- **Short swipe zone** — restrict page-turn swipes to a configurable vertical band, so the system's edge gestures (home / back) still work. Edit mode gives a live overlay with side handles and dashed bounds; the zone counts from 30 dp so it never hides under the status bar.
+- **Short swipe zone** — restrict page-turn swipes to a configurable vertical band, so the system's edge gestures (home / back) still work. Edit mode dims everything outside the band and gives you a drag handle on each boundary; the zone counts from 30 dp so it never hides under the status bar.
 - **Reverse long swipe closes** — every surface (app drawer, recents, letters, hub, simple tray, settings) closes with the long swipe opposite to the one that opened it. Detected on the initial pointer pass, so inner scrolling pages can't swallow the gesture.
 - Bind 4 swipe directions, double tap, and clock/date/quote taps to 15+ actions.
 
