@@ -970,7 +970,7 @@
     <string name="shizuku_status_connecting">正在连接…</string>
     <string name="shizuku_status_connected">已连接</string>
     <string name="pure_read_mode">纯净阅读模式</string>
-    <string name="desc_pure_read">关蜂窝、限制白名单外的后台应用、关闭手机侧传感器。</string>
+    <string name="desc_pure_read">关蜂窝（蓝牙会一并关闭且本模式下不可用）、限制白名单外的后台应用、关闭手机侧传感器。</string>
     <string name="desc_pure_read_needs_shizuku">需要先完成 Shizuku 授权才能启用。</string>
 
     <!-- 纯净阅读模式警告 -->
@@ -978,6 +978,7 @@
     <string name="pure_read_warning_calls">接不到电话：蜂窝会被关闭，对方听到的是「暂时无法接通」，也不会留下未接记录。</string>
     <string name="pure_read_warning_sms">收不到短信：短信会暂存在运营商，退出模式后才补收，验证码可能已经过期。</string>
     <string name="pure_read_warning_apps">后台应用受限：白名单外的应用会停止后台活动，它们的通知与推送不会到达。</string>
+    <string name="pure_read_warning_bluetooth">蓝牙会关闭，且在本模式下不可再开关——此时操作蓝牙会让系统崩溃（厂商 ROM 的缺陷）。需要蓝牙请先退出本模式。</string>
     <string name="pure_read_warning_confirm">我已了解，开启</string>
     <string name="pure_read_warning_cancel">取消</string>
 

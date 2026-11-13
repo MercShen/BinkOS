@@ -17,6 +17,8 @@ data class PowerOp(
     val normal: String? = null,
     val probe: String? = null,
     val requiresRoot: Boolean = false,
+    /** Order-sensitive: runs in a fixed order, never in the parallel batch. */
+    val sequential: Boolean = false,
     val normalFromProbe: ((String?) -> String?)? = null
 ) {
     /** Restore command for a probe captured before [pure] ran. */
@@ -56,6 +58,9 @@ class ModeManager(
     private var executor: PowerExecutor
 ) {
 
+    /** Keys of ops whose order matters; kept so revert can split them out too. */
+    private var opSequentialKeys: Set<String> = emptySet()
+
     fun setExecutor(next: PowerExecutor) {
         executor = next
     }
@@ -70,6 +75,7 @@ class ModeManager(
     /** Transition to [target]. Returns true when the device reached it. */
     fun apply(target: PowerMode, ops: List<PowerOp>): Boolean {
         if (!executor.available()) return false
+        opSequentialKeys = ops.filter { it.sequential }.map { it.key }.toSet()
         val journal = store.loadJournal()
         if (store.loadMode() == target && journal.isEmpty()) return true
 
@@ -87,15 +93,31 @@ class ModeManager(
             Change(op.key, before, op.normalCommand(before))
         }
 
-        // Phase 2: one shell for every apply.
-        val applied = executor.runBatch(planned.map { it.pure!! })
-        val failedAt = applied.indexOfFirst { !it.ok }
+        // Phase 2: order-sensitive steps first, in one ordered shell, then the
+        // rest batched and parallelised. Bluetooth-off must finish before
+        // airplane mode goes on, or the ROM's Bluetooth service breaks.
+        val orderedOps = planned.filter { it.sequential }
+        val parallelOps = planned.filterNot { it.sequential }
+
+        var failedOutput = ""
+        var failedAt = -1
+        val orderedResults = executor.runOrdered(orderedOps.map { it.pure!! })
+        val orderedFailure = orderedResults.indexOfFirst { !it.ok }
+        if (orderedFailure >= 0) {
+            failedAt = planned.indexOf(orderedOps[orderedFailure])
+            failedOutput = orderedResults[orderedFailure].output
+        } else {
+            val parallelResults = executor.runBatch(parallelOps.map { it.pure!! })
+            val parallelFailure = parallelResults.indexOfFirst { !it.ok }
+            if (parallelFailure >= 0) {
+                failedAt = planned.indexOf(parallelOps[parallelFailure])
+                failedOutput = parallelResults[parallelFailure].output
+            }
+        }
         if (failedAt >= 0) {
             android.util.Log.w(
                 "ModeManager",
-                "enter failed at " + planned[failedAt].key +
-                    " exit=" + applied[failedAt].exitCode +
-                    " out=" + applied[failedAt].output
+                "enter failed at " + planned[failedAt].key + " out=" + failedOutput
             )
             revertBatch(changes)
             return false
@@ -115,9 +137,17 @@ class ModeManager(
 
     /** Undo a set of changes, newest first, in a single shell. */
     private fun revertBatch(changes: List<Change>) {
-        val undos = changes.asReversed()
+        val orderedKeys = opSequentialKeys
+        val parallelUndos = changes.asReversed()
+            .filterNot { it.key in orderedKeys }
             .mapNotNull { it.undo?.takeIf { command -> command.isNotBlank() } }
-        if (undos.isNotEmpty()) executor.runBatch(undos)
+        val orderedUndos = changes.asReversed()
+            .filter { it.key in orderedKeys }
+            .mapNotNull { it.undo?.takeIf { command -> command.isNotBlank() } }
+
+        if (parallelUndos.isNotEmpty()) executor.runBatch(parallelUndos)
+        // Airplane mode off has to complete before Bluetooth is switched back on.
+        if (orderedUndos.isNotEmpty()) executor.runOrdered(orderedUndos)
         store.saveJournal(emptyList())
     }
 

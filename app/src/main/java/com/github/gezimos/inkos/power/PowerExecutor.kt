@@ -34,6 +34,15 @@ interface PowerExecutor {
      * into two.
      */
     fun runBatch(commands: List<String>): List<ExecResult> = commands.map { run(it) }
+
+    /**
+     * Runs commands strictly in order, in one shell, without chunking or
+     * parallelism. Needed for steps whose order is part of their correctness -
+     * e.g. Bluetooth must be switched off *before* airplane mode goes on, and
+     * back on only *after* it goes off, because this ROM's Bluetooth service
+     * throws inside enable()/disable() while airplane mode is active.
+     */
+    fun runOrdered(commands: List<String>): List<ExecResult> = commands.map { run(it) }
 }
 
 /** Used when no elevated executor is bound; every command reports failure. */
@@ -60,6 +69,9 @@ class ShellExecutor(
     override fun available() = PowerCapabilityDetector.current() == PowerCapability.SHELL
 
     override fun run(command: String) = runner(command)
+
+    override fun runOrdered(commands: List<String>): List<ExecResult> =
+        if (commands.isEmpty()) emptyList() else runChunk(commands)
 
     /**
      * Wraps every command in `{ ... ; } 2>&1` and follows it with a marker line

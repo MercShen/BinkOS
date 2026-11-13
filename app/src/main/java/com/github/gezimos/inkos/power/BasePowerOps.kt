@@ -31,28 +31,39 @@ object BasePowerOps {
     }
 
     /**
-     * Cellular off, everything else untouched. `airplane_mode_radios` has to be
-     * narrowed *before* airplane mode is enabled, otherwise Wi-Fi and Bluetooth
-     * go down with it - and both are needed for online reading and page turners.
+     * Cellular off — with one hard-won ordering rule.
+     *
+     * This ROM's `BluetoothManagerService.enable()/disable()` throws a
+     * NullPointerException (`BluetoothAirplaneModeListener` is null) while
+     * airplane mode is on. Any Bluetooth toggle in that state kills the caller -
+     * the vendor control centre and Settings both crash - so Bluetooth must be
+     * switched off *before* airplane mode goes on, and back on only *after* it
+     * goes off. Those two steps are marked `sequential` and run in a fixed order
+     * instead of in the parallel batch.
+     *
+     * `airplane_mode_radios` is deliberately left alone: narrowing it to `cell`
+     * is a persistent global write that survives uninstall, and it buys nothing
+     * that this ordering does not already give.
      */
     private fun cellularRadio(): List<PowerOp> = listOf(
         PowerOp(
-            key = "radio.airplane_radios",
-            probe = "settings get global airplane_mode_radios",
-            pure = "settings put global airplane_mode_radios cell",
+            key = "radio.bluetooth",
+            probe = "dumpsys bluetooth_manager | grep -m1 '^  enabled'",
+            pure = "cmd bluetooth_manager disable",
+            sequential = true,
             normalFromProbe = { before ->
-                val value = before?.trim()?.takeIf { it.isNotEmpty() && it != "null" } ?: DEFAULT_RADIOS
-                "settings put global airplane_mode_radios $value"
+                // Only switch it back on if it was on to begin with.
+                if (before?.contains("true") == true) "cmd bluetooth_manager enable" else null
             }
         ),
         PowerOp(
             key = "radio.cell",
             probe = "cmd connectivity airplane-mode",
-            pure = "settings put global airplane_mode_on 1; cmd connectivity airplane-mode enable",
-            normal = "cmd connectivity airplane-mode disable"
+            pure = "cmd connectivity airplane-mode enable",
+            normal = "cmd connectivity airplane-mode disable",
+            sequential = true
         )
     )
-
     /** Sensors that exist only to serve the phone side of the device. */
     private fun sensors(): List<PowerOp> = listOf(
         settingOp("sensor.auto_rotate", "system", "accelerometer_rotation", "0", "1"),

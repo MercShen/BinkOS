@@ -2189,6 +2189,11 @@ fun PureReadWarningSheet(onConfirm: () -> Unit, onDismiss: () -> Unit) {
             style = bulletStyle,
             color = bulletColor
         )
+        Text(
+            text = stringResource(R.string.pure_read_warning_bluetooth),
+            style = bulletStyle,
+            color = bulletColor
+        )
     }
 
     Row(
