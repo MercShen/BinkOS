@@ -185,6 +185,7 @@ object OnboardingScreen {
 
         // onboarding 内的翻页动画：上一步从左到右，下一步从右到左
         fun playOnboardingTurn(forward: Boolean) {
+            if (!prefs.einkPageTurnAnimation) return
             if (!com.github.gezimos.inkos.helper.BigmeEink.isAvailable) return
             try {
                 val direction =

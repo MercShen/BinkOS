@@ -960,5 +960,5 @@
     <string name="desc_simple_tray_brightness">Show the brightness bar at the top of Simple Tray</string>
     <string name="onboarding_eink_title">BIGME EXTRAS</string>
     <string name="onboarding_eink_desc">Your HiBreak exposes two vendor e-ink tricks. They take effect the moment you flip them on:\nsystem full refresh uses the vendor GC16 waveform to clear ghosting instead of a screen flash;\npage-turn animation plays the vendor e-ink transition when screens open or close.</string>
-    <string name="onboarding_eink_animation_scope">Page-turn animation only plays in the Regal or HD256 refresh mode. Other modes are silently ignored by the system.</string>
+    <string name="onboarding_eink_animation_scope">Page-turn animation only plays in Regal or HD256 refresh mode.</string>
 </resources>
