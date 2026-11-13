@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
@@ -45,9 +45,9 @@ import kotlin.math.roundToInt
 /**
  * 短滑（翻页）生效区域编辑器。
  *
- * 视觉上与编辑模式里时钟 / 底部组件的手柄保持统一（同一套「细胶囊条」）：
- *   - 上下边界各一根可上下拖动的胶囊条，取代原来的粗虚线；
- *   - 不显示 dp 数值，靠压深区域实时反馈；
+ * 视觉上与编辑模式里时钟 / 底部组件的手柄一致（细胶囊条、实心、无描边）：
+ *   - 上下边界各一根可拖动的条，取代原来的粗虚线；
+ *   - 拖动时在条的正下方 / 正上方显示当前 dp（水平居中）；
  *   - 中间只保留标题 + 一行小字说明。
  *
  * 退出：点被压深（不响应短滑）的区域，或按返回键。
@@ -126,7 +126,6 @@ private fun ShortSwipeZoneEditor(
     onDone: () -> Unit
 ) {
     val density = LocalDensity.current
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val maxDp = Constants.MAX_SHORT_SWIPE_ZONE_DP
     // 顶部坐标从 30dp 起算：显示 0dp 对应屏幕顶部往下 30dp 的位置
     val topBase = Constants.SHORT_SWIPE_ZONE_TOP_BASE_DP
@@ -143,22 +142,28 @@ private fun ShortSwipeZoneEditor(
     // 墨水屏上纯黑半透明最稳：无论浅色/深色主题，被压深的区域都明显暗一档
     val dimColor = Color.Black.copy(alpha = 0.55f)
 
-    // 至少留 120dp 的可短滑区，避免两条边撞在一起
-    fun applyTop(value: Int) {
-        if (screenHeightDp - (value + topBase) - bottom >= MIN_ZONE_DP) {
-            top = value
-            onTopChange(value + topBase)
-        }
-    }
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        // 真实可用高度：LocalConfiguration 在挂到 decorView 的 ComposeView 上不可靠
+        val screenHeightDp = maxHeight.value.roundToInt()
 
-    fun applyBottom(value: Int) {
-        if (screenHeightDp - value - (top + topBase) >= MIN_ZONE_DP) {
-            bottom = value
-            onBottomChange(value)
+        // 至少留 120dp 的可短滑区，避免两条边撞在一起
+        fun applyTop(value: Int) {
+            if (screenHeightDp - (value + topBase) - bottom >= MIN_ZONE_DP) {
+                top = value
+                onTopChange(value + topBase)
+            }
         }
-    }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+        fun applyBottom(value: Int) {
+            if (screenHeightDp - value - (top + topBase) >= MIN_ZONE_DP) {
+                bottom = value
+                onBottomChange(value)
+            }
+        }
+
+        val topMaxDp = (screenHeightDp - bottom - topBase - MIN_ZONE_DP).coerceIn(0, maxDp)
+        val bottomMaxDp = (screenHeightDp - (top + topBase) - MIN_ZONE_DP).coerceIn(0, maxDp)
+
         // 顶部被屏蔽区（不响应短滑）
         Box(
             modifier = Modifier
@@ -185,11 +190,12 @@ private fun ShortSwipeZoneEditor(
                 .offset(y = topHandleOffset),
             barColor = textColor,
             value = top + topBase,
+            maxValue = topMaxDp + topBase,
             invertDirection = false,
             labelBelow = true,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
-                applyTop((top + deltaDp).coerceIn(0, maxDp))
+                applyTop((top + deltaDp).coerceIn(0, topMaxDp))
             }
         )
 
@@ -200,11 +206,12 @@ private fun ShortSwipeZoneEditor(
                 .offset(y = -bottomHandleOffset),
             barColor = textColor,
             value = bottom,
+            maxValue = bottomMaxDp,
             invertDirection = true,
             labelBelow = false,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
-                applyBottom((bottom - deltaDp).coerceIn(0, maxDp))
+                applyBottom((bottom - deltaDp).coerceIn(0, bottomMaxDp))
             }
         )
 
@@ -236,14 +243,14 @@ private fun ShortSwipeZoneEditor(
 
 /**
  * 与首页编辑模式（时钟 / 底部组件）同款细胶囊拖动条，实心、无描边：
- * 深色模式白色、浅色模式黑色，在压深区和普通背景上都清晰。
- * 拖动时只在条的右侧偏下显示一个当前值（只有一个参数在变，不必显示起始值）。
+ * 深色模式白色、浅色模式黑色。拖动时在条的下方 / 上方正中显示当前 dp。
  */
 @Composable
 private fun ZoneBoundaryHandle(
     modifier: Modifier,
     barColor: Color,
     value: Int,
+    maxValue: Int,
     invertDirection: Boolean = false,
     labelBelow: Boolean = true,
     onDrag: (Float) -> Unit
@@ -273,10 +280,15 @@ private fun ZoneBoundaryHandle(
                     onDragCancel = { isDragging = false },
                     onVerticalDrag = { change, dragAmount ->
                         change.consume()
-                        latestOnDrag(dragAmount)
                         accumulatedPx += dragAmount
-                        dragValue = dragStartValue +
-                            (accumulatedPx * directionMultiplier / density.density).toInt()
+                        val candidate = (dragStartValue +
+                            (accumulatedPx * directionMultiplier / density.density).toInt())
+                            .coerceIn(0, maxValue)
+                        // 到底后不再重复下发，数字也不会继续跑
+                        if (candidate != dragValue) {
+                            dragValue = candidate
+                            latestOnDrag(dragAmount)
+                        }
                     }
                 )
             },
@@ -289,14 +301,13 @@ private fun ZoneBoundaryHandle(
                 .background(barColor, RoundedCornerShape(2.dp))
         )
         if (isDragging) {
-            // 贴着条的右端、落在高亮区内侧，避免数字正好压在被压深/高亮的交界上
             Text(
                 text = "$dragValue",
                 color = barColor,
                 fontSize = 14.sp,
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .offset(x = 18.dp, y = if (labelBelow) 24.dp else (-24).dp)
+                    .align(Alignment.Center)
+                    .offset(y = if (labelBelow) 28.dp else (-28).dp)
             )
         }
     }
