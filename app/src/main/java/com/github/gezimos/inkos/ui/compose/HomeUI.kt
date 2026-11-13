@@ -3220,7 +3220,11 @@ private fun HomeMediaWidget(
                     }
                 }
                 .clip(coverShape)
-                .clickableNoRippleGestureAware { callbacks.onMediaAction(HomeMediaAction.Open) },
+                .then(
+                    // 编辑模式只允许拖动布局，不能让按钮把播放器点开
+                    if (showEditMode) Modifier
+                    else Modifier.clickableNoRippleGestureAware { callbacks.onMediaAction(HomeMediaAction.Open) }
+                ),
             contentAlignment = Alignment.Center
         ) {
             if (albumArtBitmap != null) {
@@ -3258,7 +3262,7 @@ private fun HomeMediaWidget(
             textIslandsShape = textIslandsShape,
             size = 32.dp
         ) {
-            callbacks.onMediaAction(HomeMediaAction.Previous)
+            if (!showEditMode) callbacks.onMediaAction(HomeMediaAction.Previous)
         }
         MediaButton(
             imageVector = if (state.mediaInfo?.isPlaying == true) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
@@ -3270,7 +3274,7 @@ private fun HomeMediaWidget(
             showTextIslands = showTextIslands,
             textIslandsShape = textIslandsShape
         ) {
-            callbacks.onMediaAction(HomeMediaAction.PlayPause)
+            if (!showEditMode) callbacks.onMediaAction(HomeMediaAction.PlayPause)
         }
         MediaButton(
             imageVector = Icons.Rounded.SkipNext,
@@ -3282,7 +3286,7 @@ private fun HomeMediaWidget(
             textIslandsShape = textIslandsShape,
             size = 32.dp
         ) {
-            callbacks.onMediaAction(HomeMediaAction.Next)
+            if (!showEditMode) callbacks.onMediaAction(HomeMediaAction.Next)
         }
         Box(modifier = Modifier.padding(end = 8.dp)) {
             MediaButton(
@@ -3295,7 +3299,7 @@ private fun HomeMediaWidget(
                 textIslandsShape = textIslandsShape,
                 size = 32.dp
             ) {
-                callbacks.onMediaAction(HomeMediaAction.Stop)
+                if (!showEditMode) callbacks.onMediaAction(HomeMediaAction.Stop)
             }
         }
     }
