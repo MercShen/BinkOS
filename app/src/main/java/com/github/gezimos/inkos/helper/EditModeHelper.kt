@@ -87,6 +87,9 @@ object EditModeHelper {
      * 编辑模式首页会据此隐藏时钟 / 底部组件等其它拖动条，避免两套手柄叠在一起。
      */
     val zoneEditorVisible = androidx.compose.runtime.mutableStateOf(false)
+
+    /** 短滑区域编辑器注册的关闭回调：退出编辑模式时把覆盖层一起收掉。 */
+    var zoneEditorCloseHook: (() -> Unit)? = null
     private var fontPickerCallback: ((callback: (android.graphics.Typeface, String) -> Unit) -> Unit)? = null
 
     fun initFontPicker(launcher: (callback: (android.graphics.Typeface, String) -> Unit) -> Unit) {
@@ -99,13 +102,25 @@ object EditModeHelper {
         set(value) { currentSheetRef = value?.let { WeakReference(it) } }
     fun toggleEditMode(): Boolean {
         val newState = !_isEditModeActive.value
-        _isEditModeActive.value = newState
+        if (!newState) {
+            // 退编辑模式时走统一的退出路径，顺便把短滑区域编辑器收掉
+            exitEditMode()
+            return false
+        }
+        _isEditModeActive.value = true
         VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
-        return newState
+        return true
     }
     fun isEditMode(): Boolean = _isEditModeActive.value
     fun exitEditMode() {
         _isEditModeActive.value = false
+        // 退出编辑模式时短滑区域编辑器也不应继续占位
+        zoneEditorVisible.value = false
+        try {
+            zoneEditorCloseHook?.invoke()
+        } catch (_: Exception) {
+        }
+        zoneEditorCloseHook = null
         currentSheet?.dismiss()
         currentSheet = null
     }

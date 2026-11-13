@@ -70,14 +70,17 @@ fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Uni
     fun close() {
         // 让首页恢复自己的拖动条
         EditModeHelper.zoneEditorVisible.value = false
+        EditModeHelper.zoneEditorCloseHook = null
         try { backCallback?.remove() } catch (_: Exception) {}
         backCallback = null
         try { root.removeView(overlay) } catch (_: Exception) {}
         try { overlay.disposeComposition() } catch (_: Exception) {}
     }
 
-    // 打开期间隐藏首页时钟 / 底部组件等其它拖动条
+    // 打开期间隐藏首页时钟 / 底部组件等其它拖动条；
+    // 同时注册关闭回调，退出编辑模式时这一层覆盖会一起被收掉。
     EditModeHelper.zoneEditorVisible.value = true
+    EditModeHelper.zoneEditorCloseHook = { close() }
 
     overlay.setContent {
         SettingsTheme(isDark = prefs.getResolvedTheme() == Constants.Theme.Dark) {

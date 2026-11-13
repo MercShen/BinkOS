@@ -284,6 +284,16 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // 自动化的 extras 用过即清：Activity 因语言切换等重建时会复用同一个 launch intent，
+        // 不清掉会在重建后把对话框/编辑器再弹一次。
+        try {
+            intent.removeExtra(EXTRA_AUTOMATION_DEST)
+            intent.removeExtra(EXTRA_AUTOMATION_SKIP_ONBOARDING)
+            intent.removeExtra(EXTRA_AUTOMATION_REFRESH)
+            setIntent(intent)
+        } catch (_: Throwable) {
+        }
+
         return !dest.isNullOrEmpty()
     }
 
@@ -678,9 +688,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 无手势入口：adb --es dest <name> 直接打开目标界面（见 handleAutomationIntent）
-        handleAutomationIntent(intent)
-
-
+        // 仅在首次创建时消费，避免 Activity 重建（如切换语言）时重复执行
+        if (savedInstanceState == null) {
+            handleAutomationIntent(intent)
+        }
 
         try {
             backGesture = com.github.gezimos.inkos.helper.BackGesture(
@@ -907,6 +918,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        // 编辑器覆盖层挂在 decorView 上，随 Activity 一起销毁；顺手清掉标志位，避免下次进来还隐藏拖动条
+        com.github.gezimos.inkos.helper.EditModeHelper.zoneEditorVisible.value = false
         super.onDestroy()
         einkHelper?.let {
             lifecycle.removeObserver(it)
