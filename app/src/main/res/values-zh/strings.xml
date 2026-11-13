@@ -959,7 +959,7 @@
     <string name="settings_label">设置</string>
     <string name="desc_simple_tray_brightness">在简易托盘顶部显示亮度调节条</string>
     <string name="onboarding_eink_title">更多功能</string>
-    <string name="onboarding_eink_desc">你的设备支持两项厂商墨水屏特性，打开即时生效：\n系统全刷用厂商 GC16 波形清掉残影（替代整屏闪烁）；\n翻页动画在打开/关闭界面时播放厂商墨水屏过渡效果。</string>
+    <string name="onboarding_eink_desc">你的设备支持这些厂商墨水屏特性，打开即时生效：</string>
     <string name="onboarding_eink_animation_scope">翻页动画只在 Regal 与 高清256 刷新模式下生效</string>
     <string name="tooltip_edit_favorites_title">编辑收藏</string>
     <string name="tooltip_edit_favorites_line1">点顶部的数字可修改每页应用数与页数。</string>

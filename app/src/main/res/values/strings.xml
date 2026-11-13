@@ -959,7 +959,7 @@
     <string name="settings_label">Settings</string>
     <string name="desc_simple_tray_brightness">Show the brightness bar at the top of Simple Tray</string>
     <string name="onboarding_eink_title">EXTRAS</string>
-    <string name="onboarding_eink_desc">Your device supports two vendor e-ink features. They take effect the moment you flip them on:\nsystem full refresh uses the vendor GC16 waveform to clear ghosting instead of a screen flash;\npage-turn animation plays the vendor e-ink transition when screens open or close.</string>
+    <string name="onboarding_eink_desc">Your device supports these vendor e-ink features; they apply as soon as you turn them on:</string>
     <string name="onboarding_eink_animation_scope">Page-turn animation only plays in Regal or HD256 refresh mode.</string>
     <string name="tooltip_edit_favorites_title">Edit Favorites</string>
     <string name="tooltip_edit_favorites_line1">Tap the numbers on top to change the number of apps/pages.</string>
