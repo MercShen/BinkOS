@@ -89,6 +89,7 @@ object BackupZipHelper {
             prefs.clear()
             File(tmp, FILES_DIR).takeIf { it.exists() }?.copyRecursively(context.filesDir, overwrite = true)
             prefs.loadFromString(json)
+            prefs.repairWallpaperPath()
             true
         } catch (_: Exception) {
             false

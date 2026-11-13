@@ -129,6 +129,7 @@ private const val ICON_TINT_CONTRAST = "ICON_TINT_CONTRAST"
 private const val SELECTED_ICON_PACK_PACKAGE = "SELECTED_ICON_PACK_PACKAGE"
 private const val INKOS_WALLPAPER_PATH = "INKOS_WALLPAPER_PATH"
 private const val INKOS_WALLPAPER_RESOURCE_ID = "INKOS_WALLPAPER_RESOURCE_ID"
+private const val CUSTOM_WALLPAPERS = "CUSTOM_WALLPAPERS"
 private const val PINNED_SHORTCUTS = "PINNED_SHORTCUTS"
 
 // Recents screen preferences
@@ -1957,6 +1958,59 @@ class Prefs(val context: Context) {
     var inkosWallpaperResourceId: Int
         get() = prefs.getInt(INKOS_WALLPAPER_RESOURCE_ID, 0)
         set(value) = prefs.edit { putInt(INKOS_WALLPAPER_RESOURCE_ID, value) }
+
+    /**
+     * 用户从相册导入的壁纸，存的是**相对 filesDir 的路径**
+     * （如 "wallpapers/custom_1712345678.png"）。
+     * 相对路径能让 ZIP 备份在换包/换机后仍然有效。
+     */
+    var customWallpapers: MutableList<String>
+        get() {
+            val raw = prefs.getString(CUSTOM_WALLPAPERS, null)
+            val list = if (raw.isNullOrBlank()) {
+                mutableListOf()
+            } else {
+                try {
+                    gson.fromJson(raw, Array<String>::class.java)?.toMutableList() ?: mutableListOf()
+                } catch (_: Exception) {
+                    mutableListOf()
+                }
+            }
+            // 迁移：老版本只有 filesDir/inkos_wallpaper.png，没有画廊条目
+            if (list.isEmpty()) {
+                val legacy = java.io.File(context.filesDir, "inkos_wallpaper.png")
+                if (legacy.exists()) list.add("inkos_wallpaper.png")
+            }
+            return list
+        }
+        set(value) = prefs.edit {
+            putString(CUSTOM_WALLPAPERS, gson.toJson(value.distinct().toTypedArray()))
+        }
+
+    /**
+     * ZIP 恢复后绝对路径可能失效（换包/换机）。用自定义壁纸条目把路径修回来，
+     * 找不到任何文件时退化为 null（桌面回落纯色背景）。
+     */
+    fun repairWallpaperPath() {
+        val current = inkosWallpaperPath
+        if (current != null && java.io.File(current).exists()) return
+        val fromList = customWallpapers
+            .asReversed()
+            .map { java.io.File(context.filesDir, it) }
+            .firstOrNull { it.exists() }
+        if (fromList != null) {
+            inkosWallpaperPath = fromList.absolutePath
+            inkosWallpaperResourceId = 0
+            return
+        }
+        val legacy = java.io.File(context.filesDir, "inkos_wallpaper.png")
+        if (legacy.exists()) {
+            inkosWallpaperPath = legacy.absolutePath
+            inkosWallpaperResourceId = 0
+        } else {
+            inkosWallpaperPath = null
+        }
+    }
 
     companion object {
 

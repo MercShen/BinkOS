@@ -589,6 +589,8 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         prefs = Prefs(this)
+        // ZIP 恢复/换包后绝对路径可能失效，启动时按自定义壁纸条目自愈
+        prefs.repairWallpaperPath()
 
         // --- Bigme (大我) e-ink animation: resolve the vendor DisplayPolicyManager once ---
         try {

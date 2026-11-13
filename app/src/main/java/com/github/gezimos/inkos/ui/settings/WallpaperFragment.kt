@@ -69,14 +69,6 @@ class WallpaperFragment : Fragment() {
                             fontSize = if (settingsSize > 0) settingsSize.sp else TextUnit.Unspecified,
                             isDark = isDark,
                             showStatusBar = homeUiStateValue.showStatusBar,
-                            onExternalWallpaperClick = {
-                                try {
-                                    val intent = android.content.Intent(android.content.Intent.ACTION_SET_WALLPAPER)
-                                    startActivity(intent)
-                                } catch (e: Exception) {
-                                    android.widget.Toast.makeText(context, "Wallpaper settings not available", android.widget.Toast.LENGTH_SHORT).show()
-                                }
-                            },
                             onWallpaperSet = {
                                 findNavController().popBackStack(com.github.gezimos.inkos.R.id.mainFragment, false)
                             }

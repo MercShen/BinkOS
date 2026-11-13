@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -71,7 +72,6 @@ fun WallpaperUI(
     fontSize: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified,
     isDark: Boolean = false,
     showStatusBar: Boolean = false,
-    onExternalWallpaperClick: () -> Unit = {},
     onWallpaperSet: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -80,83 +80,96 @@ fun WallpaperUI(
     val titleFontSize = if (fontSize != androidx.compose.ui.unit.TextUnit.Unspecified) (fontSize.value * 1.5).sp else fontSize
 
     var isLoading by remember { mutableStateOf(false) }
-    var showSetWallpaperScreen by remember { mutableStateOf(false) }
-    var setWallpaperSheetTrigger by remember { mutableIntStateOf(0) }
-    var currentImageResourceId by remember { mutableStateOf<Int?>(null) }
-    var currentImageUri by remember { mutableStateOf<Uri?>(null) }
     val scope = rememberCoroutineScope()
 
     val presets = WallpaperUtility.PRESET_WALLPAPERS
+    // Bitmap 类壁纸（相册导入）存相对 filesDir 的路径，追加在预设后面
+    var customNames by remember { mutableStateOf(prefs.customWallpapers.toList()) }
+    val entries = remember(customNames) {
+        presets.map { WallpaperEntry(it, null) } +
+            customNames.map { WallpaperEntry(null, it) }
+    }
     var selectedIndex by remember { mutableIntStateOf(0) }
-    val safeIndex = selectedIndex.coerceIn(0, presets.lastIndex)
-    val selectedPreset = presets[safeIndex]
+    val safeIndex = selectedIndex.coerceIn(0, entries.lastIndex)
+    val selectedEntry = entries[safeIndex]
+
+    @Composable
+    fun entryTitle(entry: WallpaperEntry): String =
+        entry.preset?.name?.uppercase() ?: stringResource(R.string.wallpaper_custom_title)
 
     val screenWidthDp = context.resources.configuration.screenWidthDp
     val thumbsPerPage = if (screenWidthDp < 360) 4 else 6
-    val thumbPages = remember(presets, thumbsPerPage) { presets.chunked(thumbsPerPage) }
-    // Current thumb page follows selected index
+    val thumbPages = remember(entries, thumbsPerPage) { entries.chunked(thumbsPerPage) }
     val currentThumbPage = safeIndex / thumbsPerPage
 
-    fun setAndroidWallpaper(flags: Int, resourceId: Int?, uri: Uri?) {
+    fun finishApply() {
+        isLoading = false
+        onWallpaperSet?.invoke() ?: onBackClick()
+    }
+
+    /** 把 Bitmap 落盘成 Bink OS 壁纸并生效（无裁剪 1:1 像素）。 */
+    fun applyBitmap(bitmap: android.graphics.Bitmap?) {
+        if (bitmap == null) {
+            isLoading = false
+            return
+        }
         scope.launch {
             try {
-                isLoading = true
-                val success = withContext(Dispatchers.IO) {
-                    when {
-                        uri != null -> wallpaperUtility.setWallpaperFromUri(uri, flags)
-                        resourceId != null -> wallpaperUtility.setWallpaperFromResource(resourceId, flags)
-                        else -> false
+                withContext(Dispatchers.IO) {
+                    val fitted = wallpaperUtility.createFittedBitmap(
+                        bitmap,
+                        wallpaperUtility.screenWidth,
+                        wallpaperUtility.screenHeight
+                    )
+                    val path = wallpaperUtility.saveBitmapToInternalStorage(fitted, "inkos_wallpaper.png")
+                    prefs.apply {
+                        inkosWallpaperPath = path
+                        inkosWallpaperResourceId = 0
+                        if (backgroundOpacity == 255) backgroundOpacity = 0
                     }
+                    if (fitted != bitmap) fitted.recycle()
+                    bitmap.recycle()
                 }
+                finishApply()
+            } catch (_: Exception) {
                 isLoading = false
-                if (success) onWallpaperSet?.invoke() ?: onBackClick()
-            } catch (_: Exception) { isLoading = false }
+            }
         }
     }
 
-    fun setInkOSWallpaper(resourceId: Int?, uri: Uri?) {
+    fun applyPresetResource(resourceId: Int) {
+        isLoading = true
         scope.launch {
-            try {
-                isLoading = true
-                val bitmap = withContext(Dispatchers.IO) {
-                    when {
-                        uri != null -> wallpaperUtility.loadBitmapFromUri(uri)
-                        resourceId != null -> wallpaperUtility.loadBitmapFromResource(resourceId)
-                        else -> null
-                    }
-                }
-                if (bitmap != null) {
-                    withContext(Dispatchers.IO) {
-                        val fitted = wallpaperUtility.createFittedBitmap(bitmap, wallpaperUtility.screenWidth, wallpaperUtility.screenHeight)
-                        val path = wallpaperUtility.saveBitmapToInternalStorage(fitted, "inkos_wallpaper.png")
-                        Prefs(context).apply {
-                            inkosWallpaperPath = path
-                            inkosWallpaperResourceId = resourceId ?: 0
-                            if (backgroundOpacity == 255) backgroundOpacity = 0
-                        }
-                        if (fitted != bitmap) fitted.recycle()
-                        bitmap.recycle()
-                    }
-                }
-                isLoading = false
-                onWallpaperSet?.invoke() ?: onBackClick()
-            } catch (_: Exception) { isLoading = false }
+            val bitmap = withContext(Dispatchers.IO) {
+                if (resourceId <= -3) wallpaperUtility.loadGeneratedWallpaper(resourceId)
+                else wallpaperUtility.loadBitmapFromResource(resourceId)
+            }
+            applyBitmap(bitmap)
         }
     }
 
-    val imagePickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val uri = result.data?.data
-        if (uri != null) {
-            currentImageResourceId = null
-            currentImageUri = uri
-            showSetWallpaperScreen = true
-            setWallpaperSheetTrigger++
+    /** 直接使用已导入的文件，不重新编码。 */
+    fun applyCustom(relativePath: String) {
+        val file = java.io.File(context.filesDir, relativePath)
+        if (!file.exists()) {
+            isLoading = false
+            return
         }
+        prefs.apply {
+            inkosWallpaperPath = file.absolutePath
+            inkosWallpaperResourceId = 0
+            if (backgroundOpacity == 255) backgroundOpacity = 0
+        }
+        finishApply()
     }
 
-    fun triggerSet(preset: WallpaperUtility.PresetWallpaper) {
+    fun applyEntry(entry: WallpaperEntry) {
+        val custom = entry.customRelPath
+        if (custom != null) {
+            applyCustom(custom)
+            return
+        }
+        val preset = entry.preset ?: return
         if (preset.isGenerated) {
             showSheet {
                 com.github.gezimos.inkos.ui.dialogs.SheetTitle(preset.name)
@@ -164,19 +177,50 @@ fun WallpaperUI(
                     variants = preset.variants!!,
                     onSelect = { variantId ->
                         dismissSheet()
-                        currentImageResourceId = variantId
-                        currentImageUri = null
-                        showSetWallpaperScreen = true
-                        setWallpaperSheetTrigger++
+                        applyPresetResource(variantId)
                     }
                 )
             }
         } else {
-            currentImageResourceId = preset.resourceId
-            currentImageUri = null
-            showSetWallpaperScreen = true
-            setWallpaperSheetTrigger++
+            applyPresetResource(preset.resourceId)
         }
+    }
+
+    /** 相册导入：fit → 存 filesDir/wallpapers/ → 追加画廊条目并选中（不立即应用）。 */
+    fun importFromUri(uri: Uri) {
+        isLoading = true
+        scope.launch {
+            try {
+                val relative = withContext(Dispatchers.IO) {
+                    val bitmap = wallpaperUtility.loadBitmapFromUri(uri) ?: return@withContext null
+                    val fitted = wallpaperUtility.createFittedBitmap(
+                        bitmap,
+                        wallpaperUtility.screenWidth,
+                        wallpaperUtility.screenHeight
+                    )
+                    val saved = wallpaperUtility.saveCustomWallpaper(fitted)
+                    if (fitted != bitmap) fitted.recycle()
+                    bitmap.recycle()
+                    saved
+                }
+                if (relative != null) {
+                    val updated = (customNames + relative).distinct()
+                    customNames = updated
+                    prefs.customWallpapers = updated.toMutableList()
+                    selectedIndex = presets.size + updated.size - 1
+                }
+                isLoading = false
+            } catch (_: Exception) {
+                isLoading = false
+            }
+        }
+    }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
+        if (uri != null) importFromUri(uri)
     }
 
     SettingsTheme(isDark) {
@@ -193,8 +237,8 @@ fun WallpaperUI(
                     if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
                     when (event.key) {
                         Key.DirectionLeft -> { if (selectedIndex > 0) selectedIndex--; true }
-                        Key.DirectionRight -> { if (selectedIndex < presets.lastIndex) selectedIndex++; true }
-                        Key.DirectionCenter, Key.Enter -> { triggerSet(selectedPreset); true }
+                        Key.DirectionRight -> { if (selectedIndex < entries.lastIndex) selectedIndex++; true }
+                        Key.DirectionCenter, Key.Enter -> { applyEntry(selectedEntry); true }
                         else -> false
                     }
                 }
@@ -202,7 +246,7 @@ fun WallpaperUI(
             // Header
             SettingsComposable.PageHeader(
                 iconRes = R.drawable.ic_back,
-                title = selectedPreset.name.uppercase(),
+                title = entryTitle(selectedEntry),
                 onClick = onBackClick,
                 showStatusBar = showStatusBar,
                 titleFontSize = titleFontSize,
@@ -242,14 +286,14 @@ fun WallpaperUI(
                     .padding(top = 12.dp.scaled(screenScale), bottom = 12.dp.scaled(screenScale))
                     .clip(cardShape)
                     .border(1.5.dp.scaled(screenScale), textColor, cardShape)
-                    .pointerInput(presets.size) {
+                    .pointerInput(entries.size) {
                         detectHorizontalDragGestures(
                             onHorizontalDrag = { _, dragAmount -> previewDragX += dragAmount },
                             onDragEnd = {
                                 val threshold = 48f
                                 if (previewDragX > threshold && selectedIndex > 0) {
                                     selectedIndex--
-                                } else if (previewDragX < -threshold && selectedIndex < presets.lastIndex) {
+                                } else if (previewDragX < -threshold && selectedIndex < entries.lastIndex) {
                                     selectedIndex++
                                 }
                                 previewDragX = 0f
@@ -258,7 +302,13 @@ fun WallpaperUI(
                         )
                     }
             ) {
-                WallpaperPreviewContent(selectedPreset.resourceId, bgColor, textColor, Modifier.fillMaxSize())
+                WallpaperEntryPreview(
+                    entry = selectedEntry,
+                    wallpaperUtility = wallpaperUtility,
+                    bgColor = bgColor,
+                    textColor = textColor,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             // Paged thumbnail strip with swipe
@@ -275,9 +325,9 @@ fun WallpaperUI(
                             onDragEnd = {
                                 val threshold = 48f
                                 if (thumbDragX > threshold && currentThumbPage > 0) {
-                                    selectedIndex = ((currentThumbPage - 1) * thumbsPerPage).coerceIn(0, presets.lastIndex)
+                                    selectedIndex = ((currentThumbPage - 1) * thumbsPerPage).coerceIn(0, entries.lastIndex)
                                 } else if (thumbDragX < -threshold && currentThumbPage < thumbPages.lastIndex) {
-                                    selectedIndex = ((currentThumbPage + 1) * thumbsPerPage).coerceIn(0, presets.lastIndex)
+                                    selectedIndex = ((currentThumbPage + 1) * thumbsPerPage).coerceIn(0, entries.lastIndex)
                                 }
                                 thumbDragX = 0f
                             },
@@ -286,8 +336,8 @@ fun WallpaperUI(
                     },
                 horizontalArrangement = Arrangement.spacedBy(8.dp.scaled(screenScale))
             ) {
-                pageThumbs.forEachIndexed { _, preset ->
-                    val globalIndex = presets.indexOf(preset)
+                pageThumbs.forEach { entry ->
+                    val globalIndex = entries.indexOf(entry)
                     val isSelected = globalIndex == safeIndex
                     val interactionSource = remember(globalIndex) { MutableInteractionSource() }
                     val isFocused = interactionSource.collectIsFocusedAsState().value
@@ -310,7 +360,13 @@ fun WallpaperUI(
                             ) { selectedIndex = globalIndex }
                     ) {
                         Box(Modifier.fillMaxSize().clip(cardShape)) {
-                            WallpaperPreviewContent(preset.resourceId, bgColor, textColor, Modifier.fillMaxSize())
+                            WallpaperEntryPreview(
+                                entry = entry,
+                                wallpaperUtility = wallpaperUtility,
+                                bgColor = bgColor,
+                                textColor = textColor,
+                                modifier = Modifier.fillMaxSize()
+                            )
                         }
                     }
                 }
@@ -319,7 +375,7 @@ fun WallpaperUI(
                 repeat(empty) { Spacer(Modifier.weight(1f)) }
             }
 
-            // Separator + SET button with chevrons
+            // Separator + APPLY button with chevrons
             Box(Modifier.fillMaxWidth().height(1.5.dp.scaled(screenScale)).background(textColor))
             val setInteraction = remember { MutableInteractionSource() }
             val setFocused = setInteraction.collectIsFocusedAsState().value
@@ -328,7 +384,7 @@ fun WallpaperUI(
                     .fillMaxWidth()
                     .height(48.dp.scaled(screenScale))
                     .background(if (setFocused) textColor else bgColor)
-                    .clickable(interactionSource = setInteraction, indication = null) { triggerSet(selectedPreset) },
+                    .clickable(interactionSource = setInteraction, indication = null) { applyEntry(selectedEntry) },
                 contentAlignment = Alignment.Center
             ) {
                 Row(
@@ -360,7 +416,7 @@ fun WallpaperUI(
                         modifier = Modifier
                             .size(24.dp.scaled(screenScale))
                             .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
-                                if (selectedIndex < presets.lastIndex) selectedIndex++
+                                if (selectedIndex < entries.lastIndex) selectedIndex++
                             }
                     )
                 }
@@ -373,39 +429,37 @@ fun WallpaperUI(
             }
         }
     }
+}
 
-    // Set wallpaper bottom sheet
-    LaunchedEffect(showSetWallpaperScreen, setWallpaperSheetTrigger) {
-        if (showSetWallpaperScreen) {
-            showSheet {
-                com.github.gezimos.inkos.ui.dialogs.SetWallpaperSheet(
-                    onSetForHome = {
-                        val rid = currentImageResourceId; val uri = currentImageUri; showSetWallpaperScreen = false
-                        Prefs(context).apply { inkosWallpaperPath = null; if (backgroundOpacity == 255) backgroundOpacity = 0 }
-                        setAndroidWallpaper(android.app.WallpaperManager.FLAG_SYSTEM, rid, uri)
-                    },
-                    onSetForLockScreen = {
-                        val rid = currentImageResourceId; val uri = currentImageUri; showSetWallpaperScreen = false
-                        Prefs(context).apply { inkosWallpaperPath = null; if (backgroundOpacity == 255) backgroundOpacity = 0 }
-                        setAndroidWallpaper(android.app.WallpaperManager.FLAG_LOCK, rid, uri)
-                    },
-                    onSetForBoth = {
-                        val rid = currentImageResourceId; val uri = currentImageUri; showSetWallpaperScreen = false
-                        Prefs(context).apply { inkosWallpaperPath = null; if (backgroundOpacity == 255) backgroundOpacity = 0 }
-                        setAndroidWallpaper(android.app.WallpaperManager.FLAG_SYSTEM or android.app.WallpaperManager.FLAG_LOCK, rid, uri)
-                    },
-                    onSetInkOSNoCrop = {
-                        val rid = currentImageResourceId; val uri = currentImageUri; showSetWallpaperScreen = false
-                        setInkOSWallpaper(rid, uri)
-                    },
-                    onDismiss = { dismissSheet(); showSetWallpaperScreen = false },
-                    onShowInkosInfo = {
-                        dismissSheet()
-                        showSheet { com.github.gezimos.inkos.ui.dialogs.InkosWallpaperInfoSheet(onDismiss = { dismissSheet(); setWallpaperSheetTrigger++ }) }
-                    }
-                )
-            }
+/** 画廊条目：要么是内置预设，要么是用户导入的自定义壁纸（相对 filesDir）。 */
+private data class WallpaperEntry(
+    val preset: WallpaperUtility.PresetWallpaper?,
+    val customRelPath: String?
+)
+
+@Composable
+private fun WallpaperEntryPreview(
+    entry: WallpaperEntry,
+    wallpaperUtility: WallpaperUtility,
+    bgColor: androidx.compose.ui.graphics.Color,
+    textColor: androidx.compose.ui.graphics.Color,
+    modifier: Modifier = Modifier
+) {
+    val custom = entry.customRelPath
+    if (custom != null) {
+        val bitmap = remember(custom) { wallpaperUtility.loadCustomWallpaper(custom) }
+        if (bitmap != null) {
+            androidx.compose.foundation.Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = null,
+                modifier = modifier,
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Box(modifier.background(bgColor))
         }
+    } else {
+        WallpaperPreviewContent(entry.preset?.resourceId ?: -1, bgColor, textColor, modifier)
     }
 }
 

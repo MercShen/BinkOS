@@ -905,7 +905,6 @@ object SettingsSearchHelper {
         entry(listOf("display", "screen", "brightness"), "Display", Settings.ACTION_DISPLAY_SETTINGS),
         entry(listOf("dpi", "density", "smallest width", "resolution", "scale"), "Display Size & DPI", Settings.ACTION_DISPLAY_SETTINGS),
         entry(listOf("font", "text size", "font size"), "Font Size", Settings.ACTION_DISPLAY_SETTINGS),
-        entry(listOf("wallpaper", "background", "theme"), "Wallpaper", Intent.ACTION_SET_WALLPAPER),
         entry(listOf("dark mode", "dark theme", "night mode", "night light"), "Dark Mode", Settings.ACTION_DISPLAY_SETTINGS),
         entry(listOf("rotation", "auto rotate", "orientation"), "Auto-Rotate", Settings.ACTION_DISPLAY_SETTINGS),
         entry(listOf("sound", "volume", "ring", "audio", "vibrat"), "Sound", Settings.ACTION_SOUND_SETTINGS),

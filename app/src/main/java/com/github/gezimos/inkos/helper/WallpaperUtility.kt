@@ -1,6 +1,5 @@
 package com.github.gezimos.inkos.helper
 
-import android.app.WallpaperManager
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -9,7 +8,6 @@ import android.graphics.Color
 import android.graphics.Paint
 import com.github.gezimos.inkos.data.Prefs
 import android.net.Uri
-import androidx.exifinterface.media.ExifInterface
 import com.github.gezimos.inkos.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -88,130 +86,6 @@ class WallpaperUtility(private val context: Context) {
         val variants: IntArray? = null
     ) {
         val isGenerated get() = variants != null
-    }
-    suspend fun setWallpaperFromBitmap(bitmap: Bitmap, flags: Int = WallpaperManager.FLAG_SYSTEM): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val wallpaperManager = WallpaperManager.getInstance(context)
-
-            val screenSizedBitmap = createFittedBitmap(bitmap, screenWidth, screenHeight)
-
-            if (flags == (WallpaperManager.FLAG_SYSTEM or WallpaperManager.FLAG_LOCK)) {
-                try {
-                    wallpaperManager.setBitmap(screenSizedBitmap, null, false, WallpaperManager.FLAG_SYSTEM)
-                } catch (e: Exception) {
-                    android.util.Log.e("WallpaperUtility", "Failed to set home screen wallpaper", e)
-                }
-                try {
-                    wallpaperManager.setBitmap(screenSizedBitmap, null, false, WallpaperManager.FLAG_LOCK)
-                } catch (e: Exception) {
-                    android.util.Log.e("WallpaperUtility", "Failed to set lock screen wallpaper", e)
-                }
-            } else {
-                wallpaperManager.setBitmap(screenSizedBitmap, null, false, flags)
-            }
-
-            screenSizedBitmap.recycle()
-
-            true
-        } catch (e: Exception) {
-            android.util.Log.e("WallpaperUtility", "Failed to set wallpaper", e)
-            e.printStackTrace()
-            false
-        }
-    }
-    suspend fun setSolidColorWallpaper(color: Int, flags: Int = WallpaperManager.FLAG_SYSTEM): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val bitmap = Bitmap.createBitmap(screenWidth, screenHeight, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(bitmap)
-            canvas.drawColor(color)
-            setWallpaperFromBitmap(bitmap, flags)
-        } catch (e: Exception) {
-            android.util.Log.e("WallpaperUtility", "Failed to set solid color wallpaper", e)
-            false
-        }
-    }
-    suspend fun setWallpaperFromResource(
-        resourceId: Int,
-        flags: Int = WallpaperManager.FLAG_SYSTEM
-    ): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val bitmap = loadBitmapFromResource(resourceId)
-            if (bitmap != null) {
-                val result = setWallpaperFromBitmap(bitmap, flags)
-                bitmap.recycle()
-                result
-            } else {
-                false
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("WallpaperUtility", "Failed to set wallpaper from resource", e)
-            false
-        }
-    }
-    suspend fun setWallpaperFromUri(
-        uri: Uri,
-        flags: Int = WallpaperManager.FLAG_SYSTEM
-    ): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val bitmap = loadBitmapFromUri(uri)
-            if (bitmap != null) {
-                // Get EXIF orientation and apply
-                var oriented = bitmap
-                try {
-                    val parcelFileDescriptor = context.contentResolver.openFileDescriptor(uri, "r")
-                    if (parcelFileDescriptor != null) {
-                        val exif = ExifInterface(parcelFileDescriptor.fileDescriptor)
-                        val orientation = exif.getAttributeInt(
-                            ExifInterface.TAG_ORIENTATION,
-                            ExifInterface.ORIENTATION_NORMAL
-                        )
-                        oriented = applyOrientation(bitmap, orientation)
-                        if (oriented != bitmap) bitmap.recycle()
-                        parcelFileDescriptor.close()
-                    }
-                } catch (e: Exception) {
-                    android.util.Log.w("WallpaperUtility", "Could not read EXIF orientation", e)
-                }
-
-                val result = setWallpaperFromBitmap(oriented, flags)
-                oriented.recycle()
-                result
-            } else {
-                false
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("WallpaperUtility", "Failed to set wallpaper from URI", e)
-            false
-        }
-    }
-    private fun applyOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
-        if (orientation == ExifInterface.ORIENTATION_NORMAL) {
-            return bitmap
-        }
-
-        val matrix = android.graphics.Matrix()
-        when (orientation) {
-            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
-            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
-            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
-            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.postScale(-1f, 1f)
-            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.postScale(1f, -1f)
-            ExifInterface.ORIENTATION_TRANSPOSE -> {
-                matrix.postRotate(90f)
-                matrix.postScale(-1f, 1f)
-            }
-            ExifInterface.ORIENTATION_TRANSVERSE -> {
-                matrix.postRotate(270f)
-                matrix.postScale(-1f, 1f)
-            }
-        }
-
-        return try {
-            Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
-        } catch (e: OutOfMemoryError) {
-            android.util.Log.e("WallpaperUtility", "Out of memory when applying orientation", e)
-            bitmap
-        }
     }
     fun loadBitmapFromResource(resourceId: Int): Bitmap? {
         return try {
@@ -666,6 +540,38 @@ class WallpaperUtility(private val context: Context) {
             null
         }
     }
+    /** Directory holding user-imported wallpapers (under filesDir, so ZIP backup picks it up). */
+    fun wallpapersDir(): java.io.File =
+        java.io.File(context.filesDir, "wallpapers").apply { if (!exists()) mkdirs() }
+
+    /**
+     * Persist a user-picked wallpaper and return a path **relative to filesDir**
+     * (e.g. "wallpapers/custom_1712345678.png"). Relative paths survive ZIP
+     * restore across packages/devices; absolute ones do not.
+     */
+    fun saveCustomWallpaper(bitmap: Bitmap, name: String? = null): String? {
+        return try {
+            val fileName = name ?: "custom_${System.currentTimeMillis()}.png"
+            val file = java.io.File(wallpapersDir(), fileName)
+            java.io.FileOutputStream(file).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, out)
+            }
+            "wallpapers/$fileName"
+        } catch (e: Exception) {
+            android.util.Log.e("WallpaperUtility", "Failed to save custom wallpaper", e)
+            null
+        }
+    }
+
+    fun loadCustomWallpaper(relativePath: String): Bitmap? = try {
+        val file = java.io.File(context.filesDir, relativePath)
+        if (file.exists()) android.graphics.BitmapFactory.decodeFile(file.absolutePath) else null
+    } catch (e: Exception) {
+        null
+    }
+
+    fun customWallpaperFile(relativePath: String): java.io.File =
+        java.io.File(context.filesDir, relativePath)
     fun saveBitmapToInternalStorage(bitmap: Bitmap, filename: String): String? {
         try {
             val file = java.io.File(context.filesDir, filename)
