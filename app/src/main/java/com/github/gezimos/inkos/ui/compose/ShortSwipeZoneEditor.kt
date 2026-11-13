@@ -182,7 +182,6 @@ private fun ShortSwipeZoneEditor(
                 .align(Alignment.TopCenter)
                 .offset(y = topHandleOffset),
             barColor = textColor,
-            haloColor = bgColor,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyTop((top + deltaDp).coerceIn(0, maxDp))
@@ -195,7 +194,6 @@ private fun ShortSwipeZoneEditor(
                 .align(Alignment.BottomCenter)
                 .offset(y = -bottomHandleOffset),
             barColor = textColor,
-            haloColor = bgColor,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyBottom((bottom - deltaDp).coerceIn(0, maxDp))
@@ -230,14 +228,13 @@ private fun ShortSwipeZoneEditor(
 
 /**
  * 与首页编辑模式（时钟 / 底部组件）同款细胶囊拖动条，但改成实心：
- * 深色模式用白色条、浅色模式用黑色条，再包一圈背景色描边（halo），
+ * 实心条：深色模式白色、浅色模式黑色，保证在压深区和普通背景上都清晰。
  * 保证无论压深区域还是普通背景上都能看清。
  */
 @Composable
 private fun ZoneBoundaryHandle(
     modifier: Modifier,
     barColor: Color,
-    haloColor: Color,
     onDrag: (Float) -> Unit
 ) {
     val latestOnDrag by androidx.compose.runtime.rememberUpdatedState(onDrag)
@@ -253,19 +250,12 @@ private fun ZoneBoundaryHandle(
             },
         contentAlignment = Alignment.Center
     ) {
-        // 背景色描边：把实心条和任意底色隔开
         Box(
             modifier = Modifier
-                .background(haloColor, RoundedCornerShape(4.dp))
-                .padding(1.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(60.dp)
-                    .height(4.dp)
-                    .background(barColor, RoundedCornerShape(2.dp))
-            )
-        }
+                .width(60.dp)
+                .height(4.dp)
+                .background(barColor, RoundedCornerShape(2.dp))
+        )
     }
 }
 
