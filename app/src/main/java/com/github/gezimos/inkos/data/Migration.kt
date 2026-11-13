@@ -219,23 +219,25 @@ class Migration(val context: Context) {
 
 
         try {
-            if (savedVersionCode <= 101004) {
-                val sp = prefs.sharedPrefs
-                val importedText = sp.getInt("TEXT_COLOR", android.graphics.Color.BLACK)
-                val importedBg = sp.getInt("BACKGROUND_COLOR", android.graphics.Color.WHITE)
-                val wasDark = (sp.getString("APP_THEME", "Light") ?: "Light") == "Dark"
-
-                val editor = sp.edit()
-                if (wasDark) {
-                    editor.putInt("DARK_TEXT_COLOR", importedText)
-                    editor.putInt("DARK_BACKGROUND_COLOR", importedBg)
-                    editor.putInt("TEXT_COLOR", importedBg)
-                    editor.putInt("BACKGROUND_COLOR", importedText)
-                } else {
-                    editor.putInt("DARK_TEXT_COLOR", importedBg)
-                    editor.putInt("DARK_BACKGROUND_COLOR", importedText)
+            // 旧版 inkOS（versionCode <= 101004）只有一套颜色，没有 DARK_* 键。
+            // BinkOS 的 versionCode 重新从 1 起算，旧的 `savedVersionCode <= 101004` 条件恒为真，
+            // 会导致每次启动都把深色/浅色配色对调一次 —— 表现为「设置里是深色、画面却是浅色」。
+            // 这里改成一次性、非破坏性迁移：只补缺失的 DARK_* 键，绝不覆盖已有配色。
+            val sp = prefs.sharedPrefs
+            if (!sp.getBoolean("color_palette_migrated", false)) {
+                if (!sp.contains("DARK_BACKGROUND_COLOR") && !sp.contains("DARK_TEXT_COLOR")) {
+                    val editor = sp.edit()
+                    editor.putInt("DARK_TEXT_COLOR", android.graphics.Color.WHITE)
+                    editor.putInt("DARK_BACKGROUND_COLOR", android.graphics.Color.BLACK)
+                    if (!sp.contains("TEXT_COLOR")) {
+                        editor.putInt("TEXT_COLOR", android.graphics.Color.BLACK)
+                    }
+                    if (!sp.contains("BACKGROUND_COLOR")) {
+                        editor.putInt("BACKGROUND_COLOR", android.graphics.Color.WHITE)
+                    }
+                    editor.apply()
                 }
-                editor.apply()
+                sp.edit().putBoolean("color_palette_migrated", true).apply()
             }
         } catch (_: Exception) {}
 
