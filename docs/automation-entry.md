@@ -33,6 +33,7 @@ adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity \
 | `guide` | 使用引导 |
 | `editmode` | 切换编辑模式（等同快捷菜单里的 Edit mode） |
 | `editfavorites` | 编辑收藏（应用列表 EditFavorites） |
+| `shortswipe` / `zone` | 短滑生效区域编辑器（原编辑模式 → 手势 → Short swipe area） |
 | `onboarding` | 首启引导 |
 
 ## 附加开关

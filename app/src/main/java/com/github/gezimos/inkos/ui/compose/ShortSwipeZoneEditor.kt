@@ -1,22 +1,17 @@
 package com.github.gezimos.inkos.ui.compose
 
 import android.content.Context
-import android.view.WindowManager
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,10 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -42,12 +35,17 @@ import com.github.gezimos.inkos.data.Constants
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
-import kotlin.math.roundToInt
+import com.github.gezimos.inkos.ui.dialogs.StepperSlider
 
 /**
- * 短滑（翻页）生效区域编辑器：
- * 全屏覆盖层，左右两侧各一根竖向滑杆（左=顶部边界，右=底部边界），
- * 用虚线 + 半透明遮罩实时预览真正会响应短滑的区域，避免底部弹窗遮挡画面。
+ * 短滑（翻页）生效区域编辑器。
+ *
+ * 视觉语言与「设置 → margin / offset」那套 StepperSlider 保持一致：
+ * 不再画边界虚线、不再用两侧滑杆手柄，改为
+ *   1. 把**不响应短滑**的上下区域直接压深（视觉上强调中间生效区）；
+ *   2. 屏幕正中给一块标题 + Top / Bottom 两条 −＋ 步进器。
+ *
+ * 退出：点压深的区域任意位置，或按返回键（不再有 Done 按钮）。
  */
 fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Unit) {
     val activity = context as? androidx.fragment.app.FragmentActivity
@@ -129,130 +127,102 @@ private fun ShortSwipeZoneEditor(
     val bgColor = Theme.colors.background
     val topPx = with(density) { (top + topBase).dp.toPx() }
     val bottomPx = with(density) { bottom.dp.toPx() }
-    val screenHeightPx = with(density) { screenHeightDp.dp.toPx() }
-    val bottomLinePx = screenHeightPx - bottomPx
+
+    // 墨水屏上纯黑半透明最稳：无论浅色/深色主题，被压深的区域都明显暗一档
+    val dimColor = Color.Black.copy(alpha = 0.55f)
+
+    // 至少留 120dp 的可短滑区，避免两条边撞在一起
+    fun applyTop(value: Int) {
+        if (screenHeightDp - (value + topBase) - bottom >= MIN_ZONE_DP) {
+            top = value
+            onTopChange(value + topBase)
+        }
+    }
+
+    fun applyBottom(value: Int) {
+        if (screenHeightDp - value - (top + topBase) >= MIN_ZONE_DP) {
+            bottom = value
+            onBottomChange(value)
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 两条边界线：实心虚线，无灰底，墨水屏上最清晰
+        // 顶部被屏蔽区（不响应短滑）
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(with(density) { topPx.toDp() })
+                .background(dimColor)
+                .clickable { onDone() }
+        )
+
+        // 底部被屏蔽区
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(with(density) { bottomPx.toDp() })
+                .background(dimColor)
+                .clickable { onDone() }
+        )
+
+        // 粗虚线分界线：保留原来的视觉锚点，标出「开始响应短滑 / 结束响应短滑」的位置
         Canvas(modifier = Modifier.fillMaxSize()) {
             val dash = PathEffect.dashPathEffect(floatArrayOf(24f, 16f), 0f)
-            // 边界线跟手柄同心：贴到屏幕最边缘时也内缩一个手柄半径，不会被裁掉
-            val edge = 14.dp.toPx()
-            val topLine = topPx.coerceIn(edge, size.height - edge)
-            val bottomLine = bottomLinePx.coerceIn(edge, size.height - edge)
-            drawLine(textColor, Offset(0f, topLine), Offset(size.width, topLine), 3.dp.toPx(), pathEffect = dash)
-            drawLine(textColor, Offset(0f, bottomLine), Offset(size.width, bottomLine), 3.dp.toPx(), pathEffect = dash)
+            val stroke = 3.dp.toPx()
+            val topY = topPx.coerceIn(0f, size.height)
+            val bottomY = (size.height - bottomPx).coerceIn(0f, size.height)
+            drawLine(textColor, Offset(0f, topY), Offset(size.width, topY), stroke, pathEffect = dash)
+            drawLine(textColor, Offset(0f, bottomY), Offset(size.width, bottomY), stroke, pathEffect = dash)
         }
 
-        // 顶部居中信息（与屏幕中线对齐）
+        // 居中的 −＋ 面板，和设置里的 offset 控件同一套语言
         Column(
             modifier = Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 10.dp)
-                .background(bgColor, RoundedCornerShape(10.dp))
-                .border(2.dp, textColor, RoundedCornerShape(10.dp))
-                .padding(horizontal = 22.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .align(Alignment.Center)
+                .padding(horizontal = 28.dp)
+                .background(bgColor, RoundedCornerShape(12.dp))
+                .border(2.dp, textColor, RoundedCornerShape(12.dp))
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.Start
         ) {
+            Text(
+                text = stringResource(R.string.short_swipe_zone_title),
+                color = textColor,
+                style = SettingsTheme.typography.title
+            )
+            Spacer(modifier = Modifier.height(14.dp))
+
             Text(
                 text = stringResource(R.string.short_swipe_zone_top_fmt, top),
                 color = textColor,
-                style = SettingsTheme.typography.title
+                style = SettingsTheme.typography.item
             )
+            StepperSlider(
+                value = top,
+                onValueChange = { applyTop(it) },
+                minValue = 0,
+                maxValue = maxDp,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
             Text(
                 text = stringResource(R.string.short_swipe_zone_bottom_fmt, bottom),
                 color = textColor,
-                style = SettingsTheme.typography.title
+                style = SettingsTheme.typography.item
             )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = stringResource(R.string.short_swipe_zone_hint),
-                color = textColor,
-                style = SettingsTheme.typography.body
+            StepperSlider(
+                value = bottom,
+                onValueChange = { applyBottom(it) },
+                minValue = 0,
+                maxValue = maxDp,
+                modifier = Modifier.fillMaxWidth()
             )
         }
-
-        // 左侧滑杆：顶部边界（镜像对称地贴左边缘）
-        ZoneSlider(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(56.dp)
-                .align(Alignment.CenterStart),
-            thumbYPx = topPx,
-            trackColor = textColor,
-            onDrag = { y ->
-                val raw = (y / density.density).roundToInt()
-                val value = (raw - topBase).coerceIn(0, maxDp)
-                val actualTop = value + topBase
-                if (screenHeightDp - actualTop - bottom >= 120) {
-                    top = value
-                    onTopChange(actualTop)
-                }
-            }
-        )
-
-        // 右侧滑杆：底部边界（与左侧同宽、同内缩）
-        ZoneSlider(
-            modifier = Modifier
-                .fillMaxHeight()
-                .width(56.dp)
-                .align(Alignment.CenterEnd),
-            thumbYPx = bottomLinePx,
-            trackColor = textColor,
-            onDrag = { y ->
-                val value = ((screenHeightPx - y) / density.density).roundToInt().coerceIn(0, maxDp)
-                if (screenHeightDp - value - top >= 120) {
-                    bottom = value
-                    onBottomChange(value)
-                }
-            }
-        )
-
-        // 底部居中完成按钮
-        Text(
-            text = stringResource(R.string.short_swipe_zone_done),
-            color = bgColor,
-            style = SettingsTheme.typography.title,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 18.dp)
-                .background(textColor, RoundedCornerShape(10.dp))
-                .clickable { onDone() }
-                .padding(horizontal = 32.dp, vertical = 10.dp)
-        )
     }
 }
 
-@Composable
-private fun ZoneSlider(
-    modifier: Modifier,
-    thumbYPx: Float,
-    trackColor: Color,
-    onDrag: (Float) -> Unit
-) {
-    Canvas(
-        modifier = modifier.pointerInput(Unit) {
-            detectVerticalDragGestures { change, _ ->
-                change.consume()
-                onDrag(change.position.y)
-            }
-        }
-    ) {
-        val cx = size.width / 2f
-        val thumbRadius = 14.dp.toPx()
-        val thumbY = thumbYPx.coerceIn(thumbRadius, size.height - thumbRadius)
-        drawLine(
-            color = trackColor.copy(alpha = 0.35f),
-            start = Offset(cx, thumbRadius),
-            end = Offset(cx, size.height - thumbRadius),
-            strokeWidth = 3.dp.toPx()
-        )
-        drawCircle(
-            color = trackColor,
-            radius = thumbRadius,
-            center = Offset(cx, thumbY)
-        )
-    }
-}
+/** 可短滑区域的最小高度（dp）。 */
+private const val MIN_ZONE_DP = 120

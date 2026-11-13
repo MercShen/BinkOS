@@ -262,6 +262,8 @@ class MainActivity : AppCompatActivity() {
                     "guide" -> navController.navigate(R.id.guideFragment)
                     "onboarding" -> navController.navigate(R.id.onboardingFragment)
                     "editmode", "edit_mode" -> com.github.gezimos.inkos.helper.EditModeHelper.toggleEditMode()
+                    "shortswipe", "short_swipe", "zone" ->
+                        com.github.gezimos.inkos.ui.compose.showShortSwipeZoneEditor(this, prefs) {}
                     "editfavorites", "edit_favorites" -> navController.navigate(
                         R.id.appsFragment,
                         androidx.core.os.bundleOf("flag" to "EditFavorites", "n" to 0)
