@@ -430,11 +430,6 @@ object OnboardingScreen {
                                 onCheckedChange = { enabled ->
                                     bigmePageTurnAnim = enabled
                                     prefs.einkPageTurnAnimation = enabled
-                                    if (enabled) {
-                                        try {
-                                            com.github.gezimos.inkos.helper.BigmeEink.onHomePageTurn(context, true)
-                                        } catch (_: Throwable) {}
-                                    }
                                 }
                             )
                             Text(
