@@ -1,6 +1,7 @@
 package com.github.gezimos.inkos.ui
 
 import android.app.AppOpsManager
+import com.github.gezimos.inkos.R
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
@@ -177,8 +178,8 @@ class RecentsFragment : Fragment() {
                         if (!hasShownDialog) {
                             hasShownDialog = true
                             showPermissionExplanationDialog(
-                                title = "Usage Stats Permission",
-                                message = "This app needs usage stats permission to show your recently used apps. You will be taken to Android settings to grant this permission.",
+                                title = ctx.getString(R.string.perm_usage_stats_title),
+                                message = ctx.getString(R.string.perm_usage_stats_message),
                                 onContinue = { requestUsageStatsPermission() }
                             )
                         }

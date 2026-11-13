@@ -164,10 +164,10 @@ fun AppsDrawerLayout(
     if (state.flag == com.github.gezimos.inkos.data.Constants.AppDrawerFlag.EditFavorites) {
         OneTimeTooltip(
             key = "tooltip_edit_favorites_shown",
-            title = "Edit Favorites",
+            title = stringResource(R.string.tooltip_edit_favorites_title),
             lines = listOf(
-                "Tap the numbers on top to change the number of apps/pages.",
-                "Drag the = icon to re-order apps."
+                stringResource(R.string.tooltip_edit_favorites_line1),
+                stringResource(R.string.tooltip_edit_favorites_line2)
             )
         )
     }
@@ -175,9 +175,9 @@ fun AppsDrawerLayout(
     if (state.flag == com.github.gezimos.inkos.data.Constants.AppDrawerFlag.HiddenApps) {
         OneTimeTooltip(
             key = "tooltip_hidden_apps_shown",
-            title = "Hidden Apps",
+            title = stringResource(R.string.tooltip_hidden_apps_title),
             lines = listOf(
-                "Tap the title to multi-select apps to hide or unhide."
+                stringResource(R.string.tooltip_hidden_apps_line1)
             )
         )
     }
@@ -185,9 +185,9 @@ fun AppsDrawerLayout(
     if (state.flag == com.github.gezimos.inkos.data.Constants.AppDrawerFlag.EditHiddenApps) {
         OneTimeTooltip(
             key = "tooltip_edit_hidden_apps_shown",
-            title = "Hide Apps",
+            title = stringResource(R.string.tooltip_edit_hidden_apps_title),
             lines = listOf(
-                "Tap apps to hide or unhide them, then tap Done."
+                stringResource(R.string.tooltip_edit_hidden_apps_line1)
             )
         )
     }
@@ -237,10 +237,10 @@ fun AppsDrawerLayout(
                         if (state.flag == Constants.AppDrawerFlag.SetHomeApp || state.flag == Constants.AppDrawerFlag.HiddenApps || state.flag == Constants.AppDrawerFlag.EditFavorites || state.flag == Constants.AppDrawerFlag.EditHiddenApps) {
                             item(key = "title") {
                                 val titleText = when (state.flag) {
-                                    Constants.AppDrawerFlag.SetHomeApp -> "SELECT APP"
-                                    Constants.AppDrawerFlag.HiddenApps -> "HIDDEN APPS"
-                                    Constants.AppDrawerFlag.EditFavorites -> "$selectedFavoritesCount/$maxFavorites apps"
-                                    Constants.AppDrawerFlag.EditHiddenApps -> "$selectedFavoritesCount hidden"
+                                    Constants.AppDrawerFlag.SetHomeApp -> stringResource(R.string.apps_header_select)
+                                    Constants.AppDrawerFlag.HiddenApps -> stringResource(R.string.apps_header_hidden)
+                                    Constants.AppDrawerFlag.EditFavorites -> stringResource(R.string.apps_header_count_fmt, selectedFavoritesCount, maxFavorites)
+                                    Constants.AppDrawerFlag.EditHiddenApps -> stringResource(R.string.apps_header_hidden_count_fmt, selectedFavoritesCount)
                                     else -> ""
                                 }
 
@@ -319,7 +319,7 @@ fun AppsDrawerLayout(
                                     // Right-aligned: Done / edit icon on left
                                     if (hasDone && isRightAlignedTitle) {
                                         Text(
-                                            text = "Done",
+                                            text = stringResource(R.string.done),
                                             color = doneTextColor,
                                             fontSize = uiState.appDrawerSize.sp.scaled(screenScale),
                                             maxLines = 1,
@@ -353,7 +353,7 @@ fun AppsDrawerLayout(
                                     // Left/center: Done on right
                                     if (hasDone && !isRightAlignedTitle) {
                                         Text(
-                                            text = "Done",
+                                            text = stringResource(R.string.done),
                                             color = doneTextColor,
                                             fontSize = uiState.appDrawerSize.sp.scaled(screenScale),
                                             maxLines = 1,

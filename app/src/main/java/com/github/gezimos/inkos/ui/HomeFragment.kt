@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.gezimos.inkos.ui.compose.OneTimeTooltip
 import com.github.gezimos.inkos.ui.compose.TooltipBubble
@@ -291,18 +292,18 @@ class HomeFragmentCompose : Fragment() {
                         val isLastEditStep = editTooltipStep == 5
                         TooltipBubble(
                             title = when (editTooltipStep) {
-                                1 -> "Background"
-                                2 -> "Clock"
-                                3 -> "Date"
-                                4 -> "Bottom Widget"
-                                else -> "Cue Bars"
+                                1 -> stringResource(R.string.tooltip_edit_bg_title)
+                                2 -> stringResource(R.string.tooltip_edit_clock_title)
+                                3 -> stringResource(R.string.tooltip_edit_date_title)
+                                4 -> stringResource(R.string.tooltip_edit_widget_title)
+                                else -> stringResource(R.string.tooltip_edit_cue_title)
                             },
                             lines = when (editTooltipStep) {
-                                1 -> listOf("Tap on background (empty areas) to edit theme, alignment, etc")
-                                2 -> listOf("Tap on clock to edit clock widget, font size, clock format etc")
-                                3 -> listOf("Click on date to edit date row size, font, format etc")
-                                4 -> listOf("Click on bottom widget to edit widget size, widget type & other settings")
-                                else -> listOf("Drag the cue bars to adjust the position of the home elements")
+                                1 -> listOf(stringResource(R.string.tooltip_edit_bg_line))
+                                2 -> listOf(stringResource(R.string.tooltip_edit_clock_line))
+                                3 -> listOf(stringResource(R.string.tooltip_edit_date_line))
+                                4 -> listOf(stringResource(R.string.tooltip_edit_widget_line))
+                                else -> listOf(stringResource(R.string.tooltip_edit_cue_line))
                             },
                             icon = when (editTooltipStep) {
                                 1 -> Icons.Rounded.Palette
@@ -312,7 +313,7 @@ class HomeFragmentCompose : Fragment() {
                                 else -> Icons.Rounded.DragHandle
                             },
                             alignment = Alignment.Center,
-                            nextLabel = if (isLastEditStep) "Done" else "Next",
+                            nextLabel = if (isLastEditStep) stringResource(R.string.done) else stringResource(R.string.home_tooltip_next),
                             minContentHeight = 80.dp,
                             onNext = {
                                 if (isLastEditStep) {

@@ -961,4 +961,34 @@
     <string name="onboarding_eink_title">大我专属</string>
     <string name="onboarding_eink_desc">你这台 HiBreak 支持两项厂商墨水屏能力，在这里打开即时生效：\n系统全刷用厂商 GC16 波形清掉残影（替代整屏闪烁）；\n翻页动画在打开/关闭界面时播放大我自家的墨水屏过渡效果。</string>
     <string name="onboarding_eink_animation_scope">翻页动画只在 Regal 与 高清256 刷新模式下生效</string>
+    <string name="tooltip_edit_favorites_title">编辑收藏</string>
+    <string name="tooltip_edit_favorites_line1">点顶部的数字可修改每页应用数与页数。</string>
+    <string name="tooltip_edit_favorites_line2">拖动 = 图标可以调整应用顺序。</string>
+    <string name="tooltip_hidden_apps_title">已隐藏应用</string>
+    <string name="tooltip_hidden_apps_line1">点击标题可多选应用，批量隐藏或取消隐藏。</string>
+    <string name="tooltip_edit_hidden_apps_title">隐藏应用</string>
+    <string name="tooltip_edit_hidden_apps_line1">点应用即可隐藏或取消隐藏，完成后点「完成」。</string>
+    <string name="tooltip_recents_title">最近任务</string>
+    <string name="tooltip_recents_line1">点击标题可在「最近任务」和「最常使用」之间切换。</string>
+    <string name="tooltip_letters_title">信笺</string>
+    <string name="tooltip_letters_line1">上下滑动可切换通知。</string>
+    <string name="tooltip_letters_line2">长按「忽略」可清空全部通知。</string>
+    <string name="tooltip_edit_bg_title">背景</string>
+    <string name="tooltip_edit_bg_line">点击空白区域可修改主题、对齐等设置。</string>
+    <string name="tooltip_edit_clock_title">时钟</string>
+    <string name="tooltip_edit_clock_line">点击时钟可修改时钟样式、字号与时间格式。</string>
+    <string name="tooltip_edit_date_title">日期</string>
+    <string name="tooltip_edit_date_line">点击日期可修改日期行大小、字体与格式。</string>
+    <string name="tooltip_edit_widget_title">底部组件</string>
+    <string name="tooltip_edit_widget_line">点击底部组件可修改组件大小、类型等设置。</string>
+    <string name="tooltip_edit_cue_title">调节条</string>
+    <string name="tooltip_edit_cue_line">拖动调节条可调整主屏元素的位置。</string>
+    <string name="perm_usage_stats_title">使用情况访问权限</string>
+    <string name="perm_usage_stats_message">这个应用需要「使用情况访问权限」才能显示最近使用的应用。接下来会跳到 Android 设置去授权。</string>
+    <string name="perm_notification_message">inkOS 需要通知使用权才能在这里显示通知。接下来会跳到 Android 设置去授权。</string>
+    <string name="perm_write_settings_message">这个应用需要「修改系统设置」权限才能控制屏幕亮度。接下来会跳到 Android 设置去授权。</string>
+    <string name="apps_header_select">选择应用</string>
+    <string name="apps_header_hidden">已隐藏应用</string>
+    <string name="apps_header_count_fmt">%1$d/%2$d 个应用</string>
+    <string name="apps_header_hidden_count_fmt">已隐藏 %1$d 个</string>
 </resources>

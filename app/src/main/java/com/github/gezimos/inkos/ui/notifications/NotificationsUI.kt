@@ -400,7 +400,7 @@ fun HubScreen(
             hasShownNotifDialog = true
             onShowPermissionExplanationDialog(
                 ctx.getString(R.string.perm_notification_title),
-                "inkOS needs notification access to show your notifications here. You will be taken to Android settings to grant this permission."
+                ctx.getString(R.string.perm_notification_message)
             ) {
                 try {
                     ctx.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))

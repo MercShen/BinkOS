@@ -961,4 +961,34 @@
     <string name="onboarding_eink_title">BIGME EXTRAS</string>
     <string name="onboarding_eink_desc">Your HiBreak exposes two vendor e-ink tricks. They take effect the moment you flip them on:\nsystem full refresh uses the vendor GC16 waveform to clear ghosting instead of a screen flash;\npage-turn animation plays the vendor e-ink transition when screens open or close.</string>
     <string name="onboarding_eink_animation_scope">Page-turn animation only plays in Regal or HD256 refresh mode.</string>
+    <string name="tooltip_edit_favorites_title">Edit Favorites</string>
+    <string name="tooltip_edit_favorites_line1">Tap the numbers on top to change the number of apps/pages.</string>
+    <string name="tooltip_edit_favorites_line2">Drag the = icon to re-order apps.</string>
+    <string name="tooltip_hidden_apps_title">Hidden Apps</string>
+    <string name="tooltip_hidden_apps_line1">Tap the title to multi-select apps to hide or unhide.</string>
+    <string name="tooltip_edit_hidden_apps_title">Hide Apps</string>
+    <string name="tooltip_edit_hidden_apps_line1">Tap apps to hide or unhide them, then tap Done.</string>
+    <string name="tooltip_recents_title">Recents</string>
+    <string name="tooltip_recents_line1">Tap the title to toggle between Recents and Most Used</string>
+    <string name="tooltip_letters_title">Letters</string>
+    <string name="tooltip_letters_line1">Swipe up and down to move between notifications.</string>
+    <string name="tooltip_letters_line2">Long press dismiss to dismiss all notifications.</string>
+    <string name="tooltip_edit_bg_title">Background</string>
+    <string name="tooltip_edit_bg_line">Tap on background (empty areas) to edit theme, alignment, etc</string>
+    <string name="tooltip_edit_clock_title">Clock</string>
+    <string name="tooltip_edit_clock_line">Tap on clock to edit clock widget, font size, clock format etc</string>
+    <string name="tooltip_edit_date_title">Date</string>
+    <string name="tooltip_edit_date_line">Click on date to edit date row size, font, format etc</string>
+    <string name="tooltip_edit_widget_title">Bottom Widget</string>
+    <string name="tooltip_edit_widget_line">Click on bottom widget to edit widget size, widget type &amp; other settings</string>
+    <string name="tooltip_edit_cue_title">Cue Bars</string>
+    <string name="tooltip_edit_cue_line">Drag the cue bars to adjust the position of the home elements</string>
+    <string name="perm_usage_stats_title">Usage Stats Permission</string>
+    <string name="perm_usage_stats_message">This app needs usage stats permission to show your recently used apps. You will be taken to Android settings to grant this permission.</string>
+    <string name="perm_notification_message">inkOS needs notification access to show your notifications here. You will be taken to Android settings to grant this permission.</string>
+    <string name="perm_write_settings_message">This app needs permission to modify system settings to control screen brightness. You will be taken to Android settings to grant this permission.</string>
+    <string name="apps_header_select">SELECT APP</string>
+    <string name="apps_header_hidden">HIDDEN APPS</string>
+    <string name="apps_header_count_fmt">%1$d/%2$d apps</string>
+    <string name="apps_header_hidden_count_fmt">%1$d hidden</string>
 </resources>

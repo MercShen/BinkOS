@@ -77,8 +77,8 @@ fun RecentsLayout(
 
     OneTimeTooltip(
         key = "tooltip_recents_shown",
-        title = "Recents",
-        lines = listOf("Tap the title to toggle between Recents and Most Used"),
+        title = stringResource(R.string.tooltip_recents_title),
+        lines = listOf(stringResource(R.string.tooltip_recents_line1)),
         trigger = hasPermission
     )
 

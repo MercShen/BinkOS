@@ -114,8 +114,8 @@ class SimpleTrayFragment : Fragment() {
             if (showExplanation) {
                 showPermissionExplanationDialog(
                     title = getString(R.string.perm_write_settings_title),
-                    message = "This app needs permission to modify system settings to control screen brightness. " +
-                        "You will be taken to Android settings to grant this permission.",
+                    message = getString(R.string.perm_write_settings_message),
+
                     onContinue = {
                         try {
                             val intent = Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
