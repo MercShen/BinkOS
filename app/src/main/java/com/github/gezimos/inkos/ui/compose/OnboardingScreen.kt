@@ -410,7 +410,7 @@ object OnboardingScreen {
                                 horizontalPadding = 0.dp,
                                 onCheckedChange = { enabled ->
                                     bigmeFullRefresh = enabled
-                                    prefs.einkSystemFullRefresh = enabled
+                                    if (viewModel != null) viewModel.setEinkSystemFullRefresh(enabled) else prefs.einkSystemFullRefresh = enabled
                                     if (enabled) {
                                         try {
                                             com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEinkForced(
@@ -429,7 +429,7 @@ object OnboardingScreen {
                                 horizontalPadding = 0.dp,
                                 onCheckedChange = { enabled ->
                                     bigmePageTurnAnim = enabled
-                                    prefs.einkPageTurnAnimation = enabled
+                                    if (viewModel != null) viewModel.setEinkPageTurnAnimation(enabled) else prefs.einkPageTurnAnimation = enabled
                                 }
                             )
                             Text(
