@@ -5,9 +5,9 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -176,22 +176,22 @@ private fun ShortSwipeZoneEditor(
             drawLine(textColor, Offset(0f, bottomY), Offset(size.width, bottomY), stroke, pathEffect = dash)
         }
 
-        // 居中的 −＋ 面板，和设置里的 offset 控件同一套语言
+        // 居中的 −＋ 面板：排版对齐「设置 → margin / offset」那套（标签 item 样式 + 16dp 节奏）
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(horizontal = 28.dp)
                 .background(bgColor, RoundedCornerShape(12.dp))
                 .border(2.dp, textColor, RoundedCornerShape(12.dp))
-                .padding(horizontal = 20.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
                 text = stringResource(R.string.short_swipe_zone_title),
                 color = textColor,
-                style = SettingsTheme.typography.title
+                style = SettingsTheme.typography.header
             )
-            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = stringResource(R.string.short_swipe_zone_top_fmt, top),
@@ -205,8 +205,6 @@ private fun ShortSwipeZoneEditor(
                 maxValue = maxDp,
                 modifier = Modifier.fillMaxWidth()
             )
-
-            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = stringResource(R.string.short_swipe_zone_bottom_fmt, bottom),
