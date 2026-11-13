@@ -112,6 +112,15 @@ object EditModeHelper {
         return true
     }
     fun isEditMode(): Boolean = _isEditModeActive.value
+
+    /** 显式设置编辑模式（自动化/测试用，避免 toggle 被 onPause 抵消）。 */
+    fun setEditMode(enabled: Boolean) {
+        if (enabled) {
+            _isEditModeActive.value = true
+        } else {
+            exitEditMode()
+        }
+    }
     fun exitEditMode() {
         _isEditModeActive.value = false
         // 退出编辑模式时短滑区域编辑器也不应继续占位

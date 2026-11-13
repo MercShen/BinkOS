@@ -262,6 +262,10 @@ class MainActivity : AppCompatActivity() {
                     "guide" -> navController.navigate(R.id.guideFragment)
                     "onboarding" -> navController.navigate(R.id.onboardingFragment)
                     "editmode", "edit_mode" -> com.github.gezimos.inkos.helper.EditModeHelper.toggleEditMode()
+                    "editmode_on", "edit_on" -> window.decorView.postDelayed({
+                        com.github.gezimos.inkos.helper.EditModeHelper.setEditMode(true)
+                    }, 600)
+                    "editmode_off", "edit_off" -> com.github.gezimos.inkos.helper.EditModeHelper.setEditMode(false)
                     "shortswipe", "short_swipe", "zone" ->
                         com.github.gezimos.inkos.ui.compose.showShortSwipeZoneEditor(this, prefs) {}
                     "editfavorites", "edit_favorites" -> navController.navigate(
