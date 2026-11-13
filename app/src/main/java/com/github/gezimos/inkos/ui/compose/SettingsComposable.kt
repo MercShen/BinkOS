@@ -482,6 +482,7 @@ object SettingsComposable {
         title: String,
         option: String,
         fontSize: TextUnit = TextUnit.Unspecified, // Default font size for the title
+        optionFontSize: TextUnit = TextUnit.Unspecified, // Optional override for the value on the right
         fontColor: Color = SettingsTheme.typography.title.color,
         enabled: Boolean = true,
         description: String? = null,
@@ -543,7 +544,7 @@ object SettingsComposable {
                     Text(
                         text = option,
                         style = SettingsTheme.typography.item,
-                        fontSize = fontSize,
+                        fontSize = if (optionFontSize.isSpecified) optionFontSize else fontSize,
                         color = if (!enabled) prefTextColor.copy(alpha = 0.4f) else if (isHighlighted) prefBackgroundColor else fontColor
                     )
                 }

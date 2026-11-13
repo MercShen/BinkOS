@@ -848,6 +848,7 @@ class SettingsFragment : Fragment() {
                 title = stringResource(R.string.language),
                 option = languageOptions[languageIndex],
                 fontSize = titleFontSize,
+                optionFontSize = (titleFontSize.value * 0.85f).sp,
                 description = stringResource(R.string.desc_language),
                 onClick = {
                     dialogBuilder.showSingleChoiceDialog(

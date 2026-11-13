@@ -925,10 +925,10 @@
 
     <!-- Language / locale -->
     <string name="language">Language</string>
-    <string name="language_system">System default</string>
+    <string name="language_system">Follow System</string>
     <string name="language_english">English</string>
     <string name="language_chinese">简体中文</string>
-    <string name="desc_language">App display language. System default follows your device.</string>
+    <string name="desc_language">App display language</string>
 
     <!-- Onboarding & guide -->
     <string name="onboarding_desc_0">A distraction-free interface for clarity and focus. Optimized for e-ink devices, QWERTY and T9 phones.</string>
