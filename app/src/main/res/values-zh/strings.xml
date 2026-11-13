@@ -928,7 +928,7 @@
     <string name="language_system">跟随系统</string>
     <string name="language_english">English</string>
     <string name="language_chinese">简体中文</string>
-    <string name="desc_language">应用显示语言。跟随系统将使用设备的语言。</string>
+    <string name="desc_language">应用显示语言</string>
 
     <!-- Onboarding & guide -->
     <string name="onboarding_desc_0">专注、无干扰的界面，为墨水屏设备与全键盘 / T9 手机优化。</string>
