@@ -195,12 +195,94 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "MainActivity"
+
+        /**
+         * 自动化入口（无手势）。给 AI agent / 脚本用：
+         *
+         *   adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity \
+         *       --es dest settings --ez skip_onboarding true
+         *
+         * dest 取值见 [handleAutomationIntent]。
+         */
+        const val EXTRA_AUTOMATION_DEST = "dest"
+        const val EXTRA_AUTOMATION_SKIP_ONBOARDING = "skip_onboarding"
+        const val EXTRA_AUTOMATION_REFRESH = "refresh_eink"
     }
 
     private fun isOnboarding(): Boolean {
         if (!::navController.isInitialized) return false
         val destId = navController.currentDestination?.id
         return destId == R.id.onboardingFragment
+    }
+
+    /**
+     * 无手势入口：把「只挂在手势上的界面」变成可以用 adb 直接打开的。
+     *
+     * 支持的 dest：
+     *   home / drawer / recents / tray / hub / letters / settings /
+     *   lookfeel / about / wallpaper / colors / themes / guide / onboarding
+     *
+     * 额外开关：
+     *    --ez skip_onboarding true   清掉首启标记（不再卡在引导）
+     *    --ez refresh_eink true      打开界面后强制一次 GC16 全刷
+     *
+     * @return true 表示这条 intent 已被自动化入口处理，调用方不必再走普通分支。
+     */
+    private fun handleAutomationIntent(intent: Intent?): Boolean {
+        intent ?: return false
+        if (!::navController.isInitialized) return false
+
+        if (intent.getBooleanExtra(EXTRA_AUTOMATION_SKIP_ONBOARDING, false)) {
+            prefs.firstOpen = false
+        }
+
+        val dest = intent.getStringExtra(EXTRA_AUTOMATION_DEST)?.trim()?.lowercase()
+        Log.i(TAG, "automation: dest=$dest action=${intent.action}")
+        if (!dest.isNullOrEmpty()) {
+            try {
+                when (dest) {
+                    "home" -> navController.popBackStack(R.id.mainFragment, false)
+                    "drawer", "apps", "applist" -> navController.navigate(R.id.appListFragment)
+                    "recents" -> navController.navigate(R.id.recentsFragment)
+                    "tray", "simpletray" -> navController.navigate(R.id.simpleTrayFragment)
+                    "hub" -> navController.navigate(R.id.hubFragment)
+                    "letters", "notifications" -> navController.navigate(R.id.lettersFragment)
+                    "settings" -> navController.navigate(R.id.settingsFragment)
+                    "lookfeel" -> navController.navigate(
+                        R.id.settingsFragment,
+                        androidx.core.os.bundleOf("initialRoute" to "LookFeel")
+                    )
+                    "about", "support" -> navController.navigate(
+                        R.id.settingsFragment,
+                        androidx.core.os.bundleOf("initialRoute" to "Support")
+                    )
+                    "wallpaper" -> navController.navigate(R.id.wallpaperFragment)
+                    "colors", "coloreditor" -> navController.navigate(R.id.colorEditorFragment)
+                    "themes", "themepresets" -> navController.navigate(R.id.themePresetsFragment)
+                    "guide" -> navController.navigate(R.id.guideFragment)
+                    "onboarding" -> navController.navigate(R.id.onboardingFragment)
+                    "editmode", "edit_mode" -> com.github.gezimos.inkos.helper.EditModeHelper.toggleEditMode()
+                    "editfavorites", "edit_favorites" -> navController.navigate(
+                        R.id.appsFragment,
+                        androidx.core.os.bundleOf("flag" to "EditFavorites", "n" to 0)
+                    )
+                    else -> Log.w(TAG, "automation: unknown dest '$dest'")
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "automation: navigate '$dest' failed: ${t.javaClass.simpleName}: ${t.message}")
+            }
+        }
+
+        if (intent.getBooleanExtra(EXTRA_AUTOMATION_REFRESH, false)) {
+            try {
+                com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEinkForced(
+                    this, prefs, null, 100, useActivityRoot = true
+                )
+            } catch (_: Throwable) {
+            }
+        }
+
+        return !dest.isNullOrEmpty()
     }
 
     private val onBackPressedCallback = object : OnBackPressedCallback(true) {
@@ -362,8 +444,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onNewIntent(intent: Intent) {
-        if (isOnboarding()) return
         super.onNewIntent(intent)
+        setIntent(intent)
+        if (handleAutomationIntent(intent)) return
+        if (isOnboarding()) return
         if (intent.getBooleanExtra("OPEN_SIMPLE_TRAY", false)) {
             navigateToSimpleTray()
             return
@@ -590,6 +674,9 @@ class MainActivity : AppCompatActivity() {
             }
             navController.navigate(R.id.onboardingFragment)
         }
+
+        // 无手势入口：adb --es dest <name> 直接打开目标界面（见 handleAutomationIntent）
+        handleAutomationIntent(intent)
 
 
 
