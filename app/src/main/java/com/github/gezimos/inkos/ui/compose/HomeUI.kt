@@ -3175,13 +3175,11 @@ private fun HomeMediaWidget(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val context = androidx.compose.ui.platform.LocalContext.current
         val metadata = state.mediaInfo?.controller?.metadata
+        // 封面限制到 144px 解码，避免 4K 封面把几十 MB 位图挂在这里
         val albumArtBitmap = remember(metadata) {
-            try {
-                metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ALBUM_ART)
-                    ?: metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_ART)
-                    ?: metadata?.getBitmap(android.media.MediaMetadata.METADATA_KEY_DISPLAY_ICON)
-            } catch (_: Exception) { null }
+            com.github.gezimos.inkos.helper.MediaArtwork.load(context, metadata)
         }
 
         // Shape for cover image/icon (36dp size)
