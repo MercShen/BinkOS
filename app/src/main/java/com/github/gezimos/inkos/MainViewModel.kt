@@ -134,7 +134,7 @@ data class HomeUiState(
     val einkRefreshHomeButtonOnly: Boolean = false,
     val einkRefreshDelay: Int = 0,
     val einkSystemFullRefresh: Boolean = false,
-    val einkPageTurnAnimation: Boolean = true,
+    val einkPageTurnAnimation: Boolean = false,
     val useVolumeKeysForPages: Boolean = false,
     val selectedAppShortcuts: Set<String>? = null, // null means all selected by default
     val einkHelperMode: Int = 0,

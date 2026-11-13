@@ -1620,7 +1620,7 @@ class Prefs(val context: Context) {
         set(value) = prefs.edit { putInt(HOME_PAGER_ALIGN, value.coerceIn(0, 1)) }
     /** 打开/关闭界面时播放大我系统翻页动画 */
     var einkPageTurnAnimation: Boolean
-        get() = prefs.getBoolean(EINK_PAGE_TURN_ANIMATION, true)
+        get() = prefs.getBoolean(EINK_PAGE_TURN_ANIMATION, false)
         set(value) = prefs.edit { putBoolean(EINK_PAGE_TURN_ANIMATION, value) }
     /** 用大我系统的 GC16 全刷代替原来的整屏闪烁 */
     var einkSystemFullRefresh: Boolean
