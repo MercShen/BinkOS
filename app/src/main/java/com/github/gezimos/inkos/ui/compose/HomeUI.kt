@@ -361,7 +361,7 @@ fun HomeUI(
                     }
             )
 
-            if (showEditMode) {
+            if (showEditMode && !EditModeHelper.zoneEditorVisible.value) {
                 HomeAppsMoveHandle(
                     style = prefs.homeHandleStyle,
                     onDrag = { dx, dy -> callbacks.onAppsAreaDrag(dx, dy) },
@@ -514,7 +514,8 @@ fun HomeUI(
         }
         
         // Edit mode: drag cue handles + overlay
-        if (showEditMode) {
+        // 短滑区域编辑器打开时隐藏：那里有自己的一套边界手柄，避免两套手柄叠在一起
+        if (showEditMode && !EditModeHelper.zoneEditorVisible.value) {
             // Top cue — drag to adjust top widget margin
             DragCueHandle(
                 currentValueDp = state.topWidgetMargin,
@@ -3397,7 +3398,7 @@ private fun HomeAndroidWidget(
                     Text(stringResource(R.string.home_tap_to_choose_widget), color = Theme.colors.text.copy(alpha = 0.5f), fontSize = 14.sp)
                 }
 
-                if (isEditMode) {
+                if (isEditMode && !EditModeHelper.zoneEditorVisible.value) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.CenterEnd)
@@ -3418,7 +3419,7 @@ private fun HomeAndroidWidget(
                 }
             }
 
-            if (isEditMode) {
+            if (isEditMode && !EditModeHelper.zoneEditorVisible.value) {
                 // Bottom
                 WidgetEdgeHandle(
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(24.dp).offset(y = 12.dp),

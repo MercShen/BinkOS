@@ -81,6 +81,12 @@ object EditModeHelper {
     
     private val _isEditModeActive = MutableStateFlow(false)
     val isEditModeFlow: StateFlow<Boolean> = _isEditModeActive
+
+    /**
+     * 短滑区域编辑器打开时为 true。
+     * 编辑模式首页会据此隐藏时钟 / 底部组件等其它拖动条，避免两套手柄叠在一起。
+     */
+    val zoneEditorVisible = androidx.compose.runtime.mutableStateOf(false)
     private var fontPickerCallback: ((callback: (android.graphics.Typeface, String) -> Unit) -> Unit)? = null
 
     fun initFontPicker(launcher: (callback: (android.graphics.Typeface, String) -> Unit) -> Unit) {

@@ -949,10 +949,9 @@
 
     <!-- Short swipe zone editor -->
     <string name="short_swipe_zone_title">Short swipe area</string>
+    <string name="short_swipe_zone_caption">Short-swipe gestures only work inside the highlighted area</string>
 
     <!-- Short swipe zone editor -->
-    <string name="short_swipe_zone_top_fmt">Top: %1$d dp</string>
-    <string name="short_swipe_zone_bottom_fmt">Bottom: %1$d dp</string>
     <!-- Simple tray brightness bar -->
     <string name="enable_brightness_slider">Brightness slider</string>
     <string name="clear_all">Clear All</string>

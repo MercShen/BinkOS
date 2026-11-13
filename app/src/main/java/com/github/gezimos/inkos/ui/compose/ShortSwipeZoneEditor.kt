@@ -1,17 +1,19 @@
 package com.github.gezimos.inkos.ui.compose
 
 import android.content.Context
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,31 +23,32 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.github.gezimos.inkos.R
 import com.github.gezimos.inkos.data.Constants
 import com.github.gezimos.inkos.data.Prefs
+import com.github.gezimos.inkos.helper.EditModeHelper
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
-import com.github.gezimos.inkos.ui.dialogs.StepperSlider
+import kotlin.math.roundToInt
 
 /**
  * 短滑（翻页）生效区域编辑器。
  *
- * 视觉语言与「设置 → margin / offset」那套 StepperSlider 保持一致：
- * 不再画边界虚线、不再用两侧滑杆手柄，改为
- *   1. 把**不响应短滑**的上下区域直接压深（视觉上强调中间生效区）；
- *   2. 屏幕正中给一块标题 + Top / Bottom 两条 −＋ 步进器。
+ * 视觉上与编辑模式里时钟 / 底部组件的手柄保持统一（同一套「细胶囊条」）：
+ *   - 上下边界各一根可上下拖动的胶囊条，取代原来的粗虚线；
+ *   - 不显示 dp 数值，靠压深区域实时反馈；
+ *   - 中间只保留标题 + 一行小字说明。
  *
- * 退出：点压深的区域任意位置，或按返回键（不再有 Done 按钮）。
+ * 退出：点被压深（不响应短滑）的区域，或按返回键。
  */
 fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Unit) {
     val activity = context as? androidx.fragment.app.FragmentActivity
@@ -63,11 +66,16 @@ fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Uni
 
     var backCallback: androidx.activity.OnBackPressedCallback? = null
     fun close() {
+        // 让首页恢复自己的拖动条
+        EditModeHelper.zoneEditorVisible.value = false
         try { backCallback?.remove() } catch (_: Exception) {}
         backCallback = null
         try { root.removeView(overlay) } catch (_: Exception) {}
         try { overlay.disposeComposition() } catch (_: Exception) {}
     }
+
+    // 打开期间隐藏首页时钟 / 底部组件等其它拖动条
+    EditModeHelper.zoneEditorVisible.value = true
 
     overlay.setContent {
         SettingsTheme(isDark = prefs.getResolvedTheme() == Constants.Theme.Dark) {
@@ -127,6 +135,8 @@ private fun ShortSwipeZoneEditor(
     val bgColor = Theme.colors.background
     val topPx = with(density) { (top + topBase).dp.toPx() }
     val bottomPx = with(density) { bottom.dp.toPx() }
+    val topHandleOffset = with(density) { topPx.toDp() } - HANDLE_HALF
+    val bottomHandleOffset = with(density) { bottomPx.toDp() } - HANDLE_HALF
 
     // 墨水屏上纯黑半透明最稳：无论浅色/深色主题，被压深的区域都明显暗一档
     val dimColor = Color.Black.copy(alpha = 0.55f)
@@ -166,25 +176,39 @@ private fun ShortSwipeZoneEditor(
                 .clickable { onDone() }
         )
 
-        // 粗虚线分界线：保留原来的视觉锚点，标出「开始响应短滑 / 结束响应短滑」的位置
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val dash = PathEffect.dashPathEffect(floatArrayOf(24f, 16f), 0f)
-            val stroke = 3.dp.toPx()
-            val topY = topPx.coerceIn(0f, size.height)
-            val bottomY = (size.height - bottomPx).coerceIn(0f, size.height)
-            drawLine(textColor, Offset(0f, topY), Offset(size.width, topY), stroke, pathEffect = dash)
-            drawLine(textColor, Offset(0f, bottomY), Offset(size.width, bottomY), stroke, pathEffect = dash)
-        }
+        // 上边界拖动条
+        ZoneBoundaryHandle(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = topHandleOffset),
+            color = textColor,
+            onDrag = { dragPx ->
+                val deltaDp = (dragPx / density.density).roundToInt()
+                applyTop((top + deltaDp).coerceIn(0, maxDp))
+            }
+        )
 
-        // 居中的 −＋ 面板：排版对齐「设置 → margin / offset」那套（标签 item 样式 + 16dp 节奏）
+        // 下边界拖动条
+        ZoneBoundaryHandle(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .offset(y = -bottomHandleOffset),
+            color = textColor,
+            onDrag = { dragPx ->
+                val deltaDp = (dragPx / density.density).roundToInt()
+                applyBottom((bottom - deltaDp).coerceIn(0, maxDp))
+            }
+        )
+
+        // 居中的说明面板：标题 + 一行小字
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
-                .padding(horizontal = 28.dp)
+                .padding(horizontal = 32.dp)
                 .background(bgColor, RoundedCornerShape(12.dp))
                 .border(2.dp, textColor, RoundedCornerShape(12.dp))
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
@@ -192,35 +216,47 @@ private fun ShortSwipeZoneEditor(
                 color = textColor,
                 style = SettingsTheme.typography.header
             )
-
             Text(
-                text = stringResource(R.string.short_swipe_zone_top_fmt, top),
+                text = stringResource(R.string.short_swipe_zone_caption),
                 color = textColor,
-                style = SettingsTheme.typography.item
-            )
-            StepperSlider(
-                value = top,
-                onValueChange = { applyTop(it) },
-                minValue = 0,
-                maxValue = maxDp,
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Text(
-                text = stringResource(R.string.short_swipe_zone_bottom_fmt, bottom),
-                color = textColor,
-                style = SettingsTheme.typography.item
-            )
-            StepperSlider(
-                value = bottom,
-                onValueChange = { applyBottom(it) },
-                minValue = 0,
-                maxValue = maxDp,
-                modifier = Modifier.fillMaxWidth()
+                style = SettingsTheme.typography.header,
+                fontSize = (SettingsTheme.typography.header.fontSize.value * 0.9f).sp
             )
         }
     }
 }
 
+/** 与首页编辑模式（时钟 / 底部组件）一致的细胶囊拖动条。 */
+@Composable
+private fun ZoneBoundaryHandle(
+    modifier: Modifier,
+    color: Color,
+    onDrag: (Float) -> Unit
+) {
+    val latestOnDrag by androidx.compose.runtime.rememberUpdatedState(onDrag)
+    Box(
+        modifier = modifier
+            .width(HANDLE_TOUCH_WIDTH)
+            .height(HANDLE_TOUCH_HEIGHT)
+            .pointerInput(Unit) {
+                detectVerticalDragGestures { change, dragAmount ->
+                    change.consume()
+                    latestOnDrag(dragAmount)
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .width(60.dp)
+                .height(4.dp)
+                .background(color.copy(alpha = 0.5f), RoundedCornerShape(2.dp))
+        )
+    }
+}
+
 /** 可短滑区域的最小高度（dp）。 */
 private const val MIN_ZONE_DP = 120
+private val HANDLE_TOUCH_WIDTH = 80.dp
+private val HANDLE_TOUCH_HEIGHT = 32.dp
+private val HANDLE_HALF = 16.dp
