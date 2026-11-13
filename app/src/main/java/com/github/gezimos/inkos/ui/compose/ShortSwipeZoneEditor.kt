@@ -186,6 +186,7 @@ private fun ShortSwipeZoneEditor(
             barColor = textColor,
             value = top + topBase,
             invertDirection = false,
+            labelBelow = true,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyTop((top + deltaDp).coerceIn(0, maxDp))
@@ -200,6 +201,7 @@ private fun ShortSwipeZoneEditor(
             barColor = textColor,
             value = bottom,
             invertDirection = true,
+            labelBelow = false,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyBottom((bottom - deltaDp).coerceIn(0, maxDp))
@@ -235,7 +237,7 @@ private fun ShortSwipeZoneEditor(
 /**
  * 与首页编辑模式（时钟 / 底部组件）同款细胶囊拖动条，实心、无描边：
  * 深色模式白色、浅色模式黑色，在压深区和普通背景上都清晰。
- * 拖动过程中按 DragCueHandle 的做法，左右两侧显示「起始值 / 当前值」。
+ * 拖动时只在条的右侧偏下显示一个当前值（只有一个参数在变，不必显示起始值）。
  */
 @Composable
 private fun ZoneBoundaryHandle(
@@ -243,6 +245,7 @@ private fun ZoneBoundaryHandle(
     barColor: Color,
     value: Int,
     invertDirection: Boolean = false,
+    labelBelow: Boolean = true,
     onDrag: (Float) -> Unit
 ) {
     val latestOnDrag by androidx.compose.runtime.rememberUpdatedState(onDrag)
@@ -286,21 +289,14 @@ private fun ZoneBoundaryHandle(
                 .background(barColor, RoundedCornerShape(2.dp))
         )
         if (isDragging) {
-            Text(
-                text = "$dragStartValue",
-                color = barColor.copy(alpha = 0.5f),
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .offset(x = (-16).dp)
-            )
+            // 贴着条的右端、落在高亮区内侧，避免数字正好压在被压深/高亮的交界上
             Text(
                 text = "$dragValue",
-                color = barColor.copy(alpha = 0.8f),
+                color = barColor,
                 fontSize = 14.sp,
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
-                    .offset(x = 16.dp)
+                    .offset(x = 18.dp, y = if (labelBelow) 24.dp else (-24).dp)
             )
         }
     }
