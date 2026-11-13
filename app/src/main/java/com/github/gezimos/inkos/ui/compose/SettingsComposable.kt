@@ -200,6 +200,8 @@ object SettingsComposable {
         imageVector: ImageVector? = null,
         @DrawableRes iconRes: Int? = null,
         description: String? = null,
+        value: String? = null,
+        valueFontSize: TextUnit = TextUnit.Unspecified,
         onClick: () -> Unit = {},
         titleFontSize: TextUnit = TextUnit.Unspecified,
         horizontalPadding: Dp = SettingsTheme.color.horizontalPadding,
@@ -254,7 +256,7 @@ object SettingsComposable {
                 )
                 Spacer(modifier = Modifier.width(16.dp.scaled(screenScale)))
             }
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = SettingsTheme.typography.title,
@@ -270,6 +272,16 @@ object SettingsComposable {
                         color = if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.title.color
                     )
                 }
+            }
+
+            if (value != null) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = value,
+                    style = SettingsTheme.typography.item,
+                    fontSize = if (valueFontSize.isSpecified) valueFontSize else titleFontSize,
+                    color = if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.item.color
+                )
             }
         }
     }
@@ -483,6 +495,7 @@ object SettingsComposable {
         title: String,
         option: String,
         fontSize: TextUnit = TextUnit.Unspecified, // Default font size for the title
+        optionFontSize: TextUnit = TextUnit.Unspecified, // Optional override for the value on the right
         fontColor: Color = SettingsTheme.typography.title.color,
         enabled: Boolean = true,
         description: String? = null,
@@ -556,7 +569,7 @@ object SettingsComposable {
                     Text(
                         text = option,
                         style = SettingsTheme.typography.item,
-                        fontSize = fontSize,
+                        fontSize = if (optionFontSize.isSpecified) optionFontSize else fontSize,
                         color = if (!enabled) prefTextColor.copy(alpha = 0.4f) else if (isHighlighted) prefBackgroundColor else fontColor
                     )
                 }
