@@ -3373,7 +3373,7 @@ private fun HomeAndroidWidget(
                         key(view) {
                             androidx.compose.ui.viewinterop.AndroidView(
                                 factory = { ctx ->
-                                    android.widget.FrameLayout(ctx).apply {
+                                    BlockableFrameLayout(ctx).apply {
                                         (view.parent as? android.view.ViewGroup)?.removeView(view)
                                         addView(view, android.widget.FrameLayout.LayoutParams(
                                             android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
@@ -3381,7 +3381,13 @@ private fun HomeAndroidWidget(
                                         ).apply { gravity = android.view.Gravity.CENTER })
                                     }
                                 },
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
+                                update = { host ->
+                                    // 编辑模式下在 ViewGroup 层拦截触摸：宿主的 onTouchListener 拦不住子 View，
+                                    // 必须走 onInterceptTouchEvent，否则点一下就会触发 widget 自己的点击
+                                    // （例如「继续阅读」直接跳进阅读器）。编辑模式下用户意图是拖动/调整。
+                                    (host as? BlockableFrameLayout)?.blockTouches = isEditMode
+                                }
                             )
                         }
                     } ?: run {
@@ -4748,5 +4754,22 @@ fun QuickMenuSheet(
                 onDismiss()
             }
         )
+    }
+}
+
+/**
+ * 内嵌 Android 小组件的宿主容器。
+ * 编辑模式下把 [blockTouches] 置 true：在 ViewGroup 层拦截并吞掉触摸，
+ * 避免小组件自己的点击（如「继续阅读」跳进阅读器）在编辑模式下被触发。
+ */
+private class BlockableFrameLayout(context: android.content.Context) : android.widget.FrameLayout(context) {
+    var blockTouches: Boolean = false
+
+    override fun onInterceptTouchEvent(ev: android.view.MotionEvent): Boolean {
+        return blockTouches || super.onInterceptTouchEvent(ev)
+    }
+
+    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
+        return blockTouches || super.onTouchEvent(event)
     }
 }
