@@ -366,6 +366,9 @@ fun Modifier.gestureHelper(
     val velocityThreshold = 80 // Reduced from 100 for faster detection
     
     val lastPageMove = remember { androidx.compose.runtime.mutableStateOf(0L) }
+    // 屏幕高度优先用宿主 View 的实际高度：LocalConfiguration 在这类全屏 Compose 宿主上
+    // 可能少算系统栏，导致短滑区域边界算错（表现为高亮区很小、底部仍能翻页）。
+    val hostView = androidx.compose.ui.platform.LocalView.current
     val screenHeightPx = with(density) { androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp.dp.toPx() }
     val shortSwipeTopPx = with(density) { shortSwipeZoneTop.toPx() }
     val shortSwipeBottomPx = with(density) { shortSwipeZoneBottom.toPx() }
@@ -400,10 +403,13 @@ fun Modifier.gestureHelper(
                 downInShortSwipeZone = run {
                     val top = currentShortSwipeTopPx.value
                     val bottom = currentShortSwipeBottomPx.value
+                    // 两个都是 0 表示用户没设置过，视为不限制
                     if (top <= 0f && bottom <= 0f) return@run true
-                    val zoneBottom = currentScreenHeightPx.value - bottom
-                    // 区域被压得太小（<120dp）时视为不限制，避免误锁死翻页
-                    if (zoneBottom - top < 120f * density.density) return@run true
+                    val screenH = if (hostView.height > 0) hostView.height.toFloat()
+                        else currentScreenHeightPx.value
+                    val zoneBottom = screenH - bottom
+                    // 注意：即使区域被压得很小也要如实判定，不能再回退成“不限制”，
+                    // 否则界面显示只高亮一小条、底部却照样能翻页。
                     e.y >= top && e.y <= zoneBottom
                 }
                 try { currentOnAnyTouch.value?.invoke() } catch (_: Exception) {}
