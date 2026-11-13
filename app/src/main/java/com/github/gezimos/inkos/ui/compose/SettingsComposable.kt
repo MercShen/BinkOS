@@ -199,6 +199,8 @@ object SettingsComposable {
         imageVector: ImageVector? = null,
         @DrawableRes iconRes: Int? = null,
         description: String? = null,
+        value: String? = null,
+        valueFontSize: TextUnit = TextUnit.Unspecified,
         onClick: () -> Unit = {},
         titleFontSize: TextUnit = TextUnit.Unspecified,
         horizontalPadding: Dp = SettingsTheme.color.horizontalPadding,
@@ -253,7 +255,7 @@ object SettingsComposable {
                 )
                 Spacer(modifier = Modifier.width(16.dp.scaled(screenScale)))
             }
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = SettingsTheme.typography.title,
@@ -269,6 +271,16 @@ object SettingsComposable {
                         color = if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.title.color
                     )
                 }
+            }
+
+            if (value != null) {
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = value,
+                    style = SettingsTheme.typography.item,
+                    fontSize = if (valueFontSize.isSpecified) valueFontSize else titleFontSize,
+                    color = if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.item.color
+                )
             }
         }
     }

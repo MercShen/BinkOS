@@ -46,6 +46,7 @@ import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.FormatSize
 import androidx.compose.material.icons.rounded.Forum
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.OfflineBolt
@@ -544,6 +545,28 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    private fun showLanguagePicker(options: List<String>, selectedIndex: Int) {
+        dialogBuilder.showSingleChoiceDialog(
+            context = requireContext(),
+            options = options.toTypedArray(),
+            titleResId = R.string.language,
+            selectedIndex = selectedIndex,
+            onItemSelected = { selected ->
+                val idx = options.indexOf(selected)
+                val tag = when (idx) {
+                    0 -> ""
+                    1 -> "en"
+                    else -> "zh-CN"
+                }
+                AppCompatDelegate.setApplicationLocales(
+                    if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
+                    else LocaleListCompat.forLanguageTags(tag)
+                )
+                requireActivity().recreate()
+            }
+        )
+    }
+
     private fun checkAdminPermission() {
         val isAdmin: Boolean = deviceManager.isAdminActive(componentName)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P)
@@ -600,6 +623,27 @@ class SettingsFragment : Fragment() {
                 description = stringResource(R.string.desc_notifications_settings),
                 titleFontSize = titleFontSize,
                 onClick = { navigateTo(SettingsRoute.Notifications) },
+            )
+            // ---- Language（直接放在首页，点开选择器）----
+            val languageOptions = listOf(
+                stringResource(R.string.language_system),
+                stringResource(R.string.language_english),
+                stringResource(R.string.language_chinese)
+            )
+            val currentLanguageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+            val languageIndex = when {
+                currentLanguageTag.startsWith("zh") -> 2
+                currentLanguageTag.startsWith("en") -> 1
+                else -> 0
+            }
+            SettingsHomeItem(
+                title = stringResource(R.string.language),
+                imageVector = Icons.Rounded.Language,
+                description = stringResource(R.string.desc_language),
+                value = languageOptions[languageIndex],
+                valueFontSize = if (titleFontSize.isSpecified) (titleFontSize.value * 0.85f).sp else TextUnit.Unspecified,
+                titleFontSize = titleFontSize,
+                onClick = { showLanguagePicker(languageOptions, languageIndex) },
             )
             if (privateSpaceManager.isPrivateSpaceSupported() &&
                 privateSpaceManager.isPrivateSpaceSetUp(showToast = false, launchSettings = false)
@@ -832,46 +876,6 @@ class SettingsFragment : Fragment() {
         }
         val uiState by viewModel.homeUiState.collectAsState()
         Column(modifier = Modifier.fillMaxWidth()) {
-            // ---- Language (per-app locale) ----
-            val languageOptions = listOf(
-                stringResource(R.string.language_system),
-                stringResource(R.string.language_english),
-                stringResource(R.string.language_chinese)
-            )
-            val currentLanguageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
-            val languageIndex = when {
-                currentLanguageTag.startsWith("zh") -> 2
-                currentLanguageTag.startsWith("en") -> 1
-                else -> 0
-            }
-            SettingsSelect(
-                title = stringResource(R.string.language),
-                option = languageOptions[languageIndex],
-                fontSize = titleFontSize,
-                optionFontSize = (titleFontSize.value * 0.85f).sp,
-                description = stringResource(R.string.desc_language),
-                onClick = {
-                    dialogBuilder.showSingleChoiceDialog(
-                        context = requireContext(),
-                        options = languageOptions.toTypedArray(),
-                        titleResId = R.string.language,
-                        selectedIndex = languageIndex,
-                        onItemSelected = { selected ->
-                            val idx = languageOptions.indexOf(selected)
-                            val tag = when (idx) {
-                                0 -> ""
-                                1 -> "en"
-                                else -> "zh-CN"
-                            }
-                            AppCompatDelegate.setApplicationLocales(
-                                if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                                else LocaleListCompat.forLanguageTags(tag)
-                            )
-                            requireActivity().recreate()
-                        }
-                    )
-                }
-            )
             SettingsSwitch(
                 text = stringResource(R.string.lock_home_apps), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_lock_home_apps),
