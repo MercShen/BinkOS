@@ -10,6 +10,11 @@ import com.github.gezimos.inkos.ui.compose.SettingsComposable.PageIndicator
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.material.icons.rounded.FileOpen
 import com.github.gezimos.inkos.helper.IconUtility
+import com.github.gezimos.inkos.helper.IconShape
+import com.github.gezimos.inkos.helper.IconShapeUtility
+import com.github.gezimos.inkos.ui.compose.AppIconBox
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material.icons.rounded.Restore
@@ -2330,6 +2335,37 @@ fun IconStylePickerSheet(
         })
     }
 
+    val sampleFavorite = remember {
+        runCatching {
+            (0 until prefs.homeAppsNum)
+                .map { prefs.getHomeAppModel(it) }
+                .firstOrNull { it.activityPackage.isNotBlank() && it.activityLabel.isNotBlank() }
+        }.getOrNull()
+    }
+    val selectedOption = options.getOrNull(selectedIdx)
+    val previewMode = selectedOption?.mode ?: currentMode
+    val previewPack = selectedOption?.packPkg ?: currentIconPack
+    val previewSizePx = remember { (40 * context.resources.displayMetrics.density).toInt() }
+    val previewBitmap = remember(sampleFavorite, previewMode, previewPack, liveIconShape) {
+        val app = sampleFavorite ?: return@remember null
+        if (previewMode < 0) return@remember null
+        runCatching {
+            IconUtility.loadAppIcon(
+                context = context,
+                packageName = app.activityPackage,
+                iconSourceMode = previewMode,
+                selectedIconPackPackage = previewPack,
+                sizePx = previewSizePx,
+                activityClass = app.activityClass,
+                userHandle = app.user,
+                shortcutId = app.shortcutId,
+                tintArgb = if (previewMode == 4 || previewMode == 5 || previewMode == 6) textColor.toArgb() else 0,
+                iconShapeId = liveIconShape,
+                bgArgb = if (previewMode == 6) bgColor.toArgb() else 0
+            ).second
+        }.getOrNull()
+    }
+
     val spacing = 12.dp.scaled(screenScale)
     val minCardWidth = 70.dp.scaled(screenScale)
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
@@ -2340,6 +2376,52 @@ fun IconStylePickerSheet(
         val initialPage = (selectedIdx / visibleCount).coerceIn(0, pageCount - 1)
         var currentPage by remember(pageCount) { mutableIntStateOf(initialPage) }
         Column(modifier = Modifier.fillMaxWidth()) {
+        if (sampleFavorite != null) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp.scaled(screenScale)),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                AppIconBox(
+                    iconSourceMode = if (previewMode < 0) 0 else previewMode,
+                    iconShape = IconShape.fromPreference(liveIconShape),
+                    size = 40.dp.scaled(screenScale),
+                    showBackground = false,
+                    backgroundColor = bgColor,
+                    showBorder = previewMode >= 0 && IconShapeUtility.borderWidthForMode(previewMode) != null,
+                    borderColor = textColor
+                ) {
+                    when {
+                        previewMode < 0 -> Icon(
+                            imageVector = Icons.Rounded.VisibilityOff,
+                            contentDescription = stringResource(R.string.icon_none),
+                            tint = textColor,
+                            modifier = Modifier.size(20.dp.scaled(screenScale))
+                        )
+                        previewBitmap != null -> Image(
+                            bitmap = previewBitmap.asImageBitmap(),
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        else -> Text(
+                            text = IconUtility.generateCodeForLabel(sampleFavorite.normalizedLabel),
+                            color = textColor,
+                            style = SettingsTheme.typography.title,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(12.dp.scaled(screenScale)))
+                Text(
+                    text = sampleFavorite.label,
+                    color = textColor,
+                    style = SettingsTheme.typography.title,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
