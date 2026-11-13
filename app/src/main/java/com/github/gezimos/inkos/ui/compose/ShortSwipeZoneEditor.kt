@@ -18,7 +18,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -182,6 +184,8 @@ private fun ShortSwipeZoneEditor(
                 .align(Alignment.TopCenter)
                 .offset(y = topHandleOffset),
             barColor = textColor,
+            value = top + topBase,
+            invertDirection = false,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyTop((top + deltaDp).coerceIn(0, maxDp))
@@ -194,6 +198,8 @@ private fun ShortSwipeZoneEditor(
                 .align(Alignment.BottomCenter)
                 .offset(y = -bottomHandleOffset),
             barColor = textColor,
+            value = bottom,
+            invertDirection = true,
             onDrag = { dragPx ->
                 val deltaDp = (dragPx / density.density).roundToInt()
                 applyBottom((bottom - deltaDp).coerceIn(0, maxDp))
@@ -227,26 +233,49 @@ private fun ShortSwipeZoneEditor(
 }
 
 /**
- * 与首页编辑模式（时钟 / 底部组件）同款细胶囊拖动条，但改成实心：
- * 实心条：深色模式白色、浅色模式黑色，保证在压深区和普通背景上都清晰。
- * 保证无论压深区域还是普通背景上都能看清。
+ * 与首页编辑模式（时钟 / 底部组件）同款细胶囊拖动条，实心、无描边：
+ * 深色模式白色、浅色模式黑色，在压深区和普通背景上都清晰。
+ * 拖动过程中按 DragCueHandle 的做法，左右两侧显示「起始值 / 当前值」。
  */
 @Composable
 private fun ZoneBoundaryHandle(
     modifier: Modifier,
     barColor: Color,
+    value: Int,
+    invertDirection: Boolean = false,
     onDrag: (Float) -> Unit
 ) {
     val latestOnDrag by androidx.compose.runtime.rememberUpdatedState(onDrag)
+    val latestValue by androidx.compose.runtime.rememberUpdatedState(value)
+    val density = LocalDensity.current
+    var isDragging by remember { mutableStateOf(false) }
+    var dragStartValue by remember { mutableIntStateOf(value) }
+    var dragValue by remember { mutableIntStateOf(value) }
+    var accumulatedPx by remember { mutableFloatStateOf(0f) }
+    val directionMultiplier = if (invertDirection) -1f else 1f
+
     Box(
         modifier = modifier
             .width(HANDLE_TOUCH_WIDTH)
             .height(HANDLE_TOUCH_HEIGHT)
             .pointerInput(Unit) {
-                detectVerticalDragGestures { change, dragAmount ->
-                    change.consume()
-                    latestOnDrag(dragAmount)
-                }
+                detectVerticalDragGestures(
+                    onDragStart = {
+                        isDragging = true
+                        dragStartValue = latestValue
+                        dragValue = latestValue
+                        accumulatedPx = 0f
+                    },
+                    onDragEnd = { isDragging = false },
+                    onDragCancel = { isDragging = false },
+                    onVerticalDrag = { change, dragAmount ->
+                        change.consume()
+                        latestOnDrag(dragAmount)
+                        accumulatedPx += dragAmount
+                        dragValue = dragStartValue +
+                            (accumulatedPx * directionMultiplier / density.density).toInt()
+                    }
+                )
             },
         contentAlignment = Alignment.Center
     ) {
@@ -256,6 +285,24 @@ private fun ZoneBoundaryHandle(
                 .height(4.dp)
                 .background(barColor, RoundedCornerShape(2.dp))
         )
+        if (isDragging) {
+            Text(
+                text = "$dragStartValue",
+                color = barColor.copy(alpha = 0.5f),
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = (-16).dp)
+            )
+            Text(
+                text = "$dragValue",
+                color = barColor.copy(alpha = 0.8f),
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset(x = 16.dp)
+            )
+        }
     }
 }
 
