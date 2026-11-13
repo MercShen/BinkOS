@@ -4296,7 +4296,13 @@ private fun Modifier.clickableNoRipple(onClick: () -> Unit): Modifier =
         GestureHelper.notifyElementClicked()
         onClick()
     }
+// 注意：pointerInput(Unit) 的 lambda 只在首次组合时捕获一次。
+// 直接传 onClick 会被永久固定在首次组合那一刻的闭包里：媒体组件若在编辑模式首次组合，
+// 退出编辑模式后仍会带着 showEditMode=true 的旧闭包（反之亦然）。
+// 用 rememberUpdatedState 保证手势始终调用最新的 onClick。
+@Composable
 private fun Modifier.clickableNoRippleGestureAware(onClick: () -> Unit): Modifier {
+    val latestOnClick = androidx.compose.runtime.rememberUpdatedState(onClick)
     return this.then(
         Modifier.pointerInput(Unit) {
             val clickThreshold = 10.dp.toPx() // Maximum movement to consider it a click
@@ -4320,7 +4326,7 @@ private fun Modifier.clickableNoRippleGestureAware(onClick: () -> Unit): Modifie
                 } while (event.changes.any { it.pressed })
                 
                 if (isClick && maxMovement <= clickThreshold) {
-                    onClick()
+                    latestOnClick.value()
                 }
             }
         }
