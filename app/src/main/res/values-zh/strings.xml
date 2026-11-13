@@ -869,9 +869,9 @@
     <string name="settings_fork_title">inkOS 的分支</string>
     <string name="settings_fork_description">Bink OS 是 gezimos 的 inkOS 的个人分支，感谢原作者。</string>
     <string name="settings_system_full_refresh">系统全刷（Bigme）</string>
-    <string name="settings_desc_system_full_refresh">任何刷新（包括手势触发的刷新）都使用厂商 GC16 全刷</string>
+    <string name="settings_desc_system_full_refresh">所有刷新都使用厂商 GC16 全刷</string>
     <string name="settings_page_turn_animation">翻页动画（Bigme）</string>
-    <string name="settings_desc_page_turn_animation">打开或关闭界面时播放厂商墨水屏翻页动画</string>
+    <string name="settings_desc_page_turn_animation">使用厂商的翻页刷新动画</string>
     <string name="settings_desc_choose_launcher">选择用作主屏幕的桌面</string>
     <string name="settings_desc_view_onboarding">再次查看设置向导</string>
     <string name="settings_desc_guide">了解手势与交互</string>

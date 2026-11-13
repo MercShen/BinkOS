@@ -869,9 +869,9 @@
     <string name="settings_fork_title">Fork of inkOS</string>
     <string name="settings_fork_description">Bink OS is a personal fork of inkOS by gezimos, with thanks to the original author.</string>
     <string name="settings_system_full_refresh">System Full Refresh (Bigme)</string>
-    <string name="settings_desc_system_full_refresh">Use the vendor GC16 full refresh for any refresh, including gesture-triggered ones</string>
+    <string name="settings_desc_system_full_refresh">Use the vendor GC16 waveform for every refresh</string>
     <string name="settings_page_turn_animation">Page Turn Animation (Bigme)</string>
-    <string name="settings_desc_page_turn_animation">Play the vendor e-ink page-turn animation when opening/closing screens</string>
+    <string name="settings_desc_page_turn_animation">Enable vendor page turn animations</string>
     <string name="settings_desc_choose_launcher">Choose which launcher to use as your home screen</string>
     <string name="settings_desc_view_onboarding">View the setup wizard again</string>
     <string name="settings_desc_guide">Learn gestures and interactions</string>
