@@ -1,0 +1,2 @@
+# 标记：本分支的 debug 构建使用「BinkOS Shizuku Debug」命名（见 app/build.gradle.kts）。
+这个文件只在 shizuku 分支存在，主分支不要创建。
