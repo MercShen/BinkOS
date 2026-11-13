@@ -995,5 +995,6 @@
     <string name="icons_homepage">主屏</string>
     <string name="icons_hub_tray">中枢 / 简易托盘</string>
     <string name="icon_disabled">关闭</string>
-    <string name="desc_hub_icons">在中枢与简易托盘中显示应用图标</string>
+    <string name="desc_hub_icons">在中枢中显示应用图标</string>
+    <string name="icons_hub">中枢</string>
 </resources>

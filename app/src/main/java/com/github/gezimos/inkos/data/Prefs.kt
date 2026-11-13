@@ -128,6 +128,15 @@ private const val ICON_SOURCE_MODE = "ICON_SOURCE_MODE"
 private const val ICON_SHAPE = "ICON_SHAPE"
 private const val ICON_TINT_CONTRAST = "ICON_TINT_CONTRAST"
 private const val SELECTED_ICON_PACK_PACKAGE = "SELECTED_ICON_PACK_PACKAGE"
+    private const val HOME_ICON_SOURCE_MODE = "HOME_ICON_SOURCE_MODE"
+    private const val HOME_ICON_SHAPE = "HOME_ICON_SHAPE"
+    private const val HOME_ICON_PACK = "HOME_ICON_PACK"
+    private const val DRAWER_ICON_SOURCE_MODE = "DRAWER_ICON_SOURCE_MODE"
+    private const val DRAWER_ICON_SHAPE = "DRAWER_ICON_SHAPE"
+    private const val DRAWER_ICON_PACK = "DRAWER_ICON_PACK"
+    private const val HUB_ICON_SOURCE_MODE = "HUB_ICON_SOURCE_MODE"
+    private const val HUB_ICON_SHAPE = "HUB_ICON_SHAPE"
+    private const val HUB_ICON_PACK = "HUB_ICON_PACK"
 private const val INKOS_WALLPAPER_PATH = "INKOS_WALLPAPER_PATH"
 private const val INKOS_WALLPAPER_RESOURCE_ID = "INKOS_WALLPAPER_RESOURCE_ID"
 private const val CUSTOM_WALLPAPERS = "CUSTOM_WALLPAPERS"
@@ -1824,6 +1833,37 @@ class Prefs(val context: Context) {
     var selectedIconPackPackage: String
         get() = prefs.getString(SELECTED_ICON_PACK_PACKAGE, "") ?: ""
         set(value) = prefs.edit { putString(SELECTED_ICON_PACK_PACKAGE, value) }
+    // ---- Per-surface icon settings (home / app drawer / hub) ----
+    // 未显式设置过的界面沿用旧的全局值，保证升级后外观不变。
+    var homeIconSourceMode: Int
+        get() = prefs.getInt(HOME_ICON_SOURCE_MODE, iconSourceMode)
+        set(value) = prefs.edit { putInt(HOME_ICON_SOURCE_MODE, value.coerceIn(0, 6)) }
+    var homeIconShape: Int
+        get() = prefs.getInt(HOME_ICON_SHAPE, iconShape)
+        set(value) = prefs.edit { putInt(HOME_ICON_SHAPE, value.coerceIn(0, 2)) }
+    var homeIconPack: String
+        get() = prefs.getString(HOME_ICON_PACK, null) ?: selectedIconPackPackage
+        set(value) = prefs.edit { putString(HOME_ICON_PACK, value) }
+
+    var drawerIconSourceMode: Int
+        get() = prefs.getInt(DRAWER_ICON_SOURCE_MODE, iconSourceMode)
+        set(value) = prefs.edit { putInt(DRAWER_ICON_SOURCE_MODE, value.coerceIn(0, 6)) }
+    var drawerIconShape: Int
+        get() = prefs.getInt(DRAWER_ICON_SHAPE, iconShape)
+        set(value) = prefs.edit { putInt(DRAWER_ICON_SHAPE, value.coerceIn(0, 2)) }
+    var drawerIconPack: String
+        get() = prefs.getString(DRAWER_ICON_PACK, null) ?: selectedIconPackPackage
+        set(value) = prefs.edit { putString(DRAWER_ICON_PACK, value) }
+
+    var hubIconSourceMode: Int
+        get() = prefs.getInt(HUB_ICON_SOURCE_MODE, iconSourceMode)
+        set(value) = prefs.edit { putInt(HUB_ICON_SOURCE_MODE, value.coerceIn(0, 6)) }
+    var hubIconShape: Int
+        get() = prefs.getInt(HUB_ICON_SHAPE, iconShape)
+        set(value) = prefs.edit { putInt(HUB_ICON_SHAPE, value.coerceIn(0, 2)) }
+    var hubIconPack: String
+        get() = prefs.getString(HUB_ICON_PACK, null) ?: selectedIconPackPackage
+        set(value) = prefs.edit { putString(HUB_ICON_PACK, value) }
 
     var homeAppCharLimit: Int
         get() = prefs.getInt("home_app_char_limit", 20) // default to 20

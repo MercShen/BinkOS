@@ -1771,78 +1771,99 @@ class SettingsFragment : Fragment() {
                         }
                     })
                 SettingsTitle(text = stringResource(R.string.icons_section), fontSize = titleFontSize)
-                val iconsPacks = remember { IconPackUtility.getInstalledIconPacks(requireContext()) }
-                val iconStyles = listOf(
-                    stringResource(R.string.icon_letters),
-                    stringResource(R.string.icon_inkos),
-                    stringResource(R.string.icon_minimal),
-                    stringResource(R.string.icon_filled),
-                    stringResource(R.string.icon_system)
-                ) + iconsPacks.map { it.second }
-                val iconStyleModes = listOf(0, 4, 5, 6, 2)
-                val iconDisabled = stringResource(R.string.icon_disabled)
-                val packFallback = stringResource(R.string.settings_icon_pack_fallback)
-                val currentPackName = iconsPacks.firstOrNull { it.first == uiState.selectedIconPackPackage }?.second ?: packFallback
-                val currentIconLabel = when (uiState.iconSourceMode) {
-                    0 -> iconStyles[0]; 2 -> iconStyles[4]; 3 -> currentPackName
-                    4 -> iconStyles[1]; 5 -> iconStyles[2]; 6 -> iconStyles[3]; else -> iconStyles[0]
+                val iconStylePacks = remember { IconPackUtility.getInstalledIconPacks(requireContext()) }
+                val iconDisabledLabel = stringResource(R.string.icon_disabled)
+                val iconPackFallback = stringResource(R.string.settings_icon_pack_fallback)
+                var hubIcons by remember { mutableStateOf(prefs.hubShowIcons) }
+                var hubMode by remember { mutableIntStateOf(prefs.hubIconSourceMode) }
+                var hubPack by remember { mutableStateOf(prefs.hubIconPack) }
+                var hubShape by remember { mutableIntStateOf(prefs.hubIconShape) }
+                val styleLabel: (Boolean, Int, String) -> String = { enabled, mode, pack ->
+                    when {
+                        !enabled -> iconDisabledLabel
+                        mode == 0 -> getString(R.string.icon_letters)
+                        mode == 2 -> getString(R.string.icon_system)
+                        mode == 3 -> iconStylePacks.firstOrNull { it.first == pack }?.second ?: iconPackFallback
+                        mode == 4 -> getString(R.string.icon_inkos)
+                        mode == 5 -> getString(R.string.icon_minimal)
+                        mode == 6 -> getString(R.string.icon_filled)
+                        else -> getString(R.string.icon_letters)
+                    }
                 }
-                val drawerIconsEnabled = drawerState.drawerShowIcons
-                fun pickIconsFor(surface: Int) {
-                    val options = mutableListOf(iconDisabled)
-                    options += iconStyles
-                    val enabled = when (surface) {
-                        0 -> uiState.showIcons; 1 -> drawerIconsEnabled; else -> uiState.hubShowIcons
+                fun openIconSheet(surface: Int) {
+                    val currentMode = when (surface) {
+                        0 -> uiState.iconSourceMode
+                        1 -> drawerState.iconSourceMode
+                        else -> hubMode
                     }
-                    val selected = if (!enabled) 0 else when (uiState.iconSourceMode) {
-                        4 -> 2; 5 -> 3; 6 -> 4; 2 -> 5
-                        3 -> iconsPacks.indexOfFirst { it.first == uiState.selectedIconPackPackage }.let { if (it >= 0) 6 + it else 1 }
-                        else -> 1
+                    val currentPack = when (surface) {
+                        0 -> uiState.selectedIconPackPackage
+                        1 -> drawerState.selectedIconPackPackage
+                        else -> hubPack
                     }
-                    dialogBuilder.showSingleChoiceDialog(
-                        context = requireContext(),
-                        options = options.toTypedArray(),
-                        titleResId = when (surface) { 0 -> R.string.icons_homepage; 1 -> R.string.app_drawer; else -> R.string.icons_hub_tray },
-                        selectedIndex = selected,
-                        onItemSelected = { value ->
-                            val idx = options.indexOf(value)
-                            if (idx == 0) {
-                                when (surface) {
-                                    0 -> viewModel.setShowIcons(false)
-                                    1 -> viewModel.setDrawerShowIcons(false)
-                                    else -> viewModel.setHubShowIcons(false)
+                    val currentShape = when (surface) {
+                        0 -> uiState.iconShape
+                        1 -> drawerState.iconShape
+                        else -> hubShape
+                    }
+                    val currentEnabled = when (surface) {
+                        0 -> uiState.showIcons
+                        1 -> drawerState.drawerShowIcons
+                        else -> hubIcons
+                    }
+                    dialogBuilder.showIconStylePicker(
+                        currentMode = currentMode,
+                        currentIconPack = currentPack,
+                        iconPacks = iconStylePacks,
+                        showIcons = currentEnabled,
+                        currentIconShape = currentShape,
+                        onSelect = { newMode, newPack ->
+                            when (surface) {
+                                0 -> if (newMode == -1) viewModel.setShowIcons(false) else {
+                                    viewModel.setShowIcons(true)
+                                    viewModel.setIconSourceMode(newMode)
+                                    if (newPack != null) viewModel.setSelectedIconPackPackage(newPack)
                                 }
-                            } else {
-                                when (surface) {
-                                    0 -> viewModel.setShowIcons(true)
-                                    1 -> viewModel.setDrawerShowIcons(true)
-                                    else -> viewModel.setHubShowIcons(true)
+                                1 -> if (newMode == -1) viewModel.setDrawerShowIcons(false) else {
+                                    viewModel.setDrawerShowIcons(true)
+                                    viewModel.setDrawerIconSourceMode(newMode)
+                                    if (newPack != null) viewModel.setDrawerIconPack(newPack)
                                 }
-                                when {
-                                    idx <= 5 -> viewModel.setIconSourceMode(iconStyleModes[idx - 1])
-                                    else -> iconsPacks.getOrNull(idx - 6)?.let { pack ->
-                                        viewModel.setIconSourceMode(3)
-                                        viewModel.setSelectedIconPackPackage(pack.first)
-                                    }
+                                else -> if (newMode == -1) viewModel.setHubShowIcons(false) else {
+                                    viewModel.setHubShowIcons(true)
+                                    viewModel.setHubIconSourceMode(newMode)
+                                    if (newPack != null) viewModel.setHubIconPack(newPack)
                                 }
                             }
+                            if (surface == 2) {
+                                hubIcons = prefs.hubShowIcons
+                                hubMode = prefs.hubIconSourceMode
+                                hubPack = prefs.hubIconPack
+                            }
+                        },
+                        onShapeSelect = { newShape ->
+                            when (surface) {
+                                0 -> viewModel.setIconShape(newShape)
+                                1 -> viewModel.setDrawerIconShape(newShape)
+                                else -> viewModel.setHubIconShape(newShape)
+                            }
+                            if (surface == 2) hubShape = newShape
                         }
                     )
                 }
-                SettingsSelect(title = stringResource(R.string.icons_homepage), option = if (uiState.showIcons) currentIconLabel else iconDisabled,
+                SettingsSelect(title = stringResource(R.string.icons_homepage),
+                    option = styleLabel(uiState.showIcons, uiState.iconSourceMode, uiState.selectedIconPackPackage),
                     description = stringResource(R.string.desc_show_icons),
-                    fontSize = titleFontSize, onClick = { pickIconsFor(0) })
-                SettingsSelect(title = stringResource(R.string.app_drawer), option = if (drawerIconsEnabled) currentIconLabel else iconDisabled,
+                    fontSize = titleFontSize, onClick = { openIconSheet(0) })
+                SettingsSelect(title = stringResource(R.string.app_drawer),
+                    option = styleLabel(drawerState.drawerShowIcons, drawerState.iconSourceMode, drawerState.selectedIconPackPackage),
                     description = stringResource(R.string.desc_drawer_icons),
-                    fontSize = titleFontSize, onClick = { pickIconsFor(1) })
-                SettingsSelect(title = stringResource(R.string.icons_hub_tray), option = if (uiState.hubShowIcons) currentIconLabel else iconDisabled,
+                    fontSize = titleFontSize, onClick = { openIconSheet(1) })
+                SettingsSelect(title = stringResource(R.string.icons_hub),
+                    option = styleLabel(hubIcons, hubMode, hubPack),
                     description = stringResource(R.string.desc_hub_icons),
-                    fontSize = titleFontSize, onClick = { pickIconsFor(2) })
-                val iconShapeLabels = listOf(stringResource(R.string.option_pill), stringResource(R.string.option_rounded), stringResource(R.string.option_square))
-                SettingsSelect(title = stringResource(R.string.icon_shape), option = iconShapeLabels.getOrElse(uiState.iconShape) { stringResource(R.string.option_pill) },
-                    description = stringResource(R.string.desc_icon_shape),
-                    fontSize = titleFontSize, onClick = { viewModel.setIconShape((uiState.iconShape + 1) % 3) })
-                if (uiState.iconSourceMode == 4) {
+                    fontSize = titleFontSize, onClick = { openIconSheet(2) })
+                if (uiState.iconSourceMode == 4 || drawerState.iconSourceMode == 4 || hubMode == 4) {
                     SettingsSelect(
                         title = stringResource(R.string.icon_tint_contrast),
                         option = String.format("%.1f×", uiState.iconTintContrast / 10f),
@@ -1859,6 +1880,7 @@ class SettingsFragment : Fragment() {
                         }
                     )
                 }
+                val iconShapeLabels = listOf(stringResource(R.string.option_pill), stringResource(R.string.option_rounded), stringResource(R.string.option_square))
                 SettingsSelect(title = stringResource(R.string.button_corners), option = iconShapeLabels.getOrElse(uiState.textIslandsShape) { stringResource(R.string.option_pill) },
                     description = stringResource(R.string.desc_button_corners),
                     fontSize = titleFontSize, onClick = { viewModel.setTextIslandsShape((uiState.textIslandsShape + 1) % 3) })

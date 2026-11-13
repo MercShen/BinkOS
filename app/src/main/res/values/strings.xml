@@ -995,5 +995,6 @@
     <string name="icons_homepage">Homepage</string>
     <string name="icons_hub_tray">Hub / Simple Tray</string>
     <string name="icon_disabled">Disabled</string>
-    <string name="desc_hub_icons">Show app icons in Hub and Simple Tray</string>
+    <string name="desc_hub_icons">Show app icons in the Hub</string>
+    <string name="icons_hub">Hub</string>
 </resources>

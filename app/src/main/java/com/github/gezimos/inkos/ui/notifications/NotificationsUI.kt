@@ -424,9 +424,9 @@ fun HubScreen(
 
     val screenScale = rememberScreenScale()
 
-    val resolvedIconShape = remember(prefs.iconShape) { IconShape.fromPreference(prefs.iconShape) }
-    val iconSourceMode = prefs.iconSourceMode
-    val selectedIconPack = prefs.selectedIconPackPackage
+    val resolvedIconShape = remember(prefs.hubIconShape) { IconShape.fromPreference(prefs.hubIconShape) }
+    val iconSourceMode = prefs.hubIconSourceMode
+    val selectedIconPack = prefs.hubIconPack
     val tintColor = Theme.colors.text
     val tintArgb = remember(tintColor, iconSourceMode) {
         if (IconShapeUtility.isTintedMode(iconSourceMode)) tintColor.toArgb() else 0
@@ -1007,7 +1007,7 @@ private fun HubNotificationItem(
     val imageBitmap = if (prefs.hubShowIcons && iconSourceMode != 0) {
         rememberAppIconBitmap(
             context, packageName, iconSourceMode, selectedIconPack, iconSizePx,
-            tintArgb = tintArgb, iconShapeId = prefs.iconShape,
+            tintArgb = tintArgb, iconShapeId = prefs.hubIconShape,
             iconTintContrast = prefs.iconTintContrast,
             bgArgb = if (iconSourceMode == 6) Theme.colors.background.toArgb() else 0
         )

@@ -77,7 +77,7 @@ class NotificationWidget : AppWidgetProvider() {
             val prefs = Prefs(context)
             val textColor = prefs.textColor
             val textSize = 18
-            val iconShapePref = prefs.iconShape
+            val iconShapePref = prefs.hubIconShape
 
             val pm = context.packageManager
             val iconSizePx = ((textSize * 1.8f) * context.resources.displayMetrics.density + 10f)

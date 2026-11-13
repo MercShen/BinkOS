@@ -149,6 +149,10 @@ fun ThemePresetPicker(
         if (applyIcons.value) {
             viewModel.setIconSourceMode(preset.iconMode)
             viewModel.setIconShape(preset.iconShape)
+    viewModel.setDrawerIconSourceMode(preset.iconMode)
+    viewModel.setDrawerIconShape(preset.iconShape)
+    viewModel.setHubIconSourceMode(preset.iconMode)
+    viewModel.setHubIconShape(preset.iconShape)
             viewModel.setShowIcons(preset.showIcons)
             viewModel.setDrawerShowIcons(preset.drawerShowIcons ?: preset.showIcons)
         }
@@ -250,6 +254,10 @@ fun ThemePresetPicker(
             if (applyIcons.value) {
                 viewModel.setIconSourceMode(preset.iconMode)
                 viewModel.setIconShape(preset.iconShape)
+    viewModel.setDrawerIconSourceMode(preset.iconMode)
+    viewModel.setDrawerIconShape(preset.iconShape)
+    viewModel.setHubIconSourceMode(preset.iconMode)
+    viewModel.setHubIconShape(preset.iconShape)
                 viewModel.setShowIcons(preset.showIcons)
                 viewModel.setDrawerShowIcons(preset.drawerShowIcons ?: preset.showIcons)
             }

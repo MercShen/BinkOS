@@ -467,10 +467,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         textIslandsShape = prefs.textIslandsShape,
         showIcons = prefs.showIcons,
         hubShowIcons = prefs.hubShowIcons,
-        iconSourceMode = prefs.iconSourceMode,
-        iconShape = prefs.iconShape,
+        iconSourceMode = prefs.homeIconSourceMode,
+        iconShape = prefs.homeIconShape,
         iconTintContrast = prefs.iconTintContrast,
-        selectedIconPackPackage = prefs.selectedIconPackPackage,
+        selectedIconPackPackage = prefs.homeIconPack,
         // Notification Settings
         pushNotificationsEnabled = prefs.pushNotificationsEnabled,
         showNotificationText = prefs.showNotificationText,
@@ -854,10 +854,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         extendHomeAppsArea = prefs.extendHomeAppsArea,
         textIslandsShape = prefs.textIslandsShape,
         drawerShowIcons = prefs.drawerShowIcons,
-        iconSourceMode = prefs.iconSourceMode,
-        iconShape = prefs.iconShape,
+        iconSourceMode = prefs.drawerIconSourceMode,
+        iconShape = prefs.drawerIconShape,
         iconTintContrast = prefs.iconTintContrast,
-        selectedIconPackPackage = prefs.selectedIconPackPackage,
+        selectedIconPackPackage = prefs.drawerIconPack,
         recentsDefaultView = prefs.recentsDefaultView,
         recentsUsageFilter = prefs.recentsUsageFilter,
         recentsUsageUnit = prefs.recentsUsageUnit,
@@ -1087,7 +1087,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             PrefKeys.APP_DRAWER_SEARCH_HIDDEN_APPS -> currentAppsState.copy(appDrawerSearchHiddenAppsEnabled = prefs.appDrawerSearchHiddenAppsEnabled)
             PrefKeys.TEXT_ISLANDS_SHAPE -> currentAppsState.copy(textIslandsShape = prefs.textIslandsShape)
             PrefKeys.DRAWER_SHOW_ICONS -> currentAppsState.copy(drawerShowIcons = prefs.drawerShowIcons)
-            PrefKeys.SHOW_ICONS -> currentAppsState.copy(iconSourceMode = prefs.iconSourceMode, selectedIconPackPackage = prefs.selectedIconPackPackage)
+            PrefKeys.SHOW_ICONS -> currentAppsState.copy(iconSourceMode = prefs.drawerIconSourceMode, selectedIconPackPackage = prefs.drawerIconPack)
             else -> currentAppsState
         }
     }
@@ -1925,10 +1925,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
      */
     private suspend fun preWarmDrawerIcons() {
         if (!prefs.drawerShowIcons) return
-        val iconMode = prefs.iconSourceMode
+        val iconMode = prefs.drawerIconSourceMode
         if (iconMode == 0) return
 
-        val iconPack = prefs.selectedIconPackPackage
+        val iconPack = prefs.drawerIconPack
         val customFontPath = try { prefs.getCustomFontPathForContext("apps") } catch (_: Exception) { null }
 
         val sizePx = prefs.cachedDrawerIconSizePx.let { cached ->
@@ -2120,18 +2120,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _homeUiState.value = _homeUiState.value.copy(hubShowIcons = enabled)
     }
 
-    fun setIconSourceMode(mode: Int) {
-        prefs.iconSourceMode = mode
-        _homeUiState.value = _homeUiState.value.copy(iconSourceMode = mode)
-        _appsDrawerUiState.value = _appsDrawerUiState.value.copy(iconSourceMode = mode)
-        IconUtility.clearCache()
-    }
+    fun setIconSourceMode(mode: Int) = setSurfaceIconSourceMode(0, mode)
+    fun setIconShape(shape: Int) = setSurfaceIconShape(0, shape)
+    fun setSelectedIconPackPackage(pkg: String) = setSurfaceIconPack(0, pkg)
 
-    fun setIconShape(shape: Int) {
-        prefs.iconShape = shape
-        _homeUiState.value = _homeUiState.value.copy(iconShape = shape)
-        _appsDrawerUiState.value = _appsDrawerUiState.value.copy(iconShape = shape)
-    }
+    fun setDrawerIconSourceMode(mode: Int) = setSurfaceIconSourceMode(1, mode)
+    fun setDrawerIconShape(shape: Int) = setSurfaceIconShape(1, shape)
+    fun setDrawerIconPack(pkg: String) = setSurfaceIconPack(1, pkg)
 
     fun setIconTintContrast(value: Int) {
         prefs.iconTintContrast = value
@@ -2142,10 +2137,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.triggerForceRefreshHome()
     }
 
-    fun setSelectedIconPackPackage(pkg: String) {
-        prefs.selectedIconPackPackage = pkg
-        _homeUiState.value = _homeUiState.value.copy(selectedIconPackPackage = pkg)
-        _appsDrawerUiState.value = _appsDrawerUiState.value.copy(selectedIconPackPackage = pkg)
+    fun setHubIconSourceMode(mode: Int) = setSurfaceIconSourceMode(2, mode)
+    fun setHubIconShape(shape: Int) = setSurfaceIconShape(2, shape)
+    fun setHubIconPack(pkg: String) = setSurfaceIconPack(2, pkg)
+
+    private fun setSurfaceIconSourceMode(surface: Int, mode: Int) {
+        when (surface) {
+            0 -> { prefs.homeIconSourceMode = mode; _homeUiState.value = _homeUiState.value.copy(iconSourceMode = mode) }
+            1 -> { prefs.drawerIconSourceMode = mode; _appsDrawerUiState.value = _appsDrawerUiState.value.copy(iconSourceMode = mode) }
+            else -> prefs.hubIconSourceMode = mode
+        }
+        IconUtility.clearCache()
+    }
+
+    private fun setSurfaceIconShape(surface: Int, shape: Int) {
+        when (surface) {
+            0 -> { prefs.homeIconShape = shape; _homeUiState.value = _homeUiState.value.copy(iconShape = shape) }
+            1 -> { prefs.drawerIconShape = shape; _appsDrawerUiState.value = _appsDrawerUiState.value.copy(iconShape = shape) }
+            else -> prefs.hubIconShape = shape
+        }
+    }
+
+    private fun setSurfaceIconPack(surface: Int, pkg: String) {
+        when (surface) {
+            0 -> { prefs.homeIconPack = pkg; _homeUiState.value = _homeUiState.value.copy(selectedIconPackPackage = pkg) }
+            1 -> { prefs.drawerIconPack = pkg; _appsDrawerUiState.value = _appsDrawerUiState.value.copy(selectedIconPackPackage = pkg) }
+            else -> prefs.hubIconPack = pkg
+        }
         IconUtility.clearCache()
     }
 
