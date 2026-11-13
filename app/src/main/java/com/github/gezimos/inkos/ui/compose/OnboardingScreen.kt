@@ -183,21 +183,33 @@ object OnboardingScreen {
             else -> p + 2
         }
 
+        // onboarding 内的翻页动画：上一步从左到右，下一步从右到左
+        fun playOnboardingTurn(forward: Boolean) {
+            if (!com.github.gezimos.inkos.helper.BigmeEink.isAvailable) return
+            try {
+                val direction =
+                    if (forward) com.github.gezimos.inkos.helper.BigmeEink.Direction.R2L
+                    else com.github.gezimos.inkos.helper.BigmeEink.Direction.L2R
+                com.github.gezimos.inkos.helper.BigmeEink.onScreenOpened(context, direction)
+            } catch (_: Throwable) {
+            }
+        }
+
         fun onboardingNext() {
             when {
-                page == 3 && supportsBigmeTweaks -> page = 7
-                page == 7 -> page = 4
+                page == 3 && supportsBigmeTweaks -> { playOnboardingTurn(true); page = 7 }
+                page == 7 -> { playOnboardingTurn(true); page = 4 }
                 page == 6 -> onFinish()
-                else -> page++
+                else -> { playOnboardingTurn(true); page++ }
             }
         }
 
         fun onboardingPrev() {
             when {
                 page == 5 && showThemePicker -> showThemePicker = false
-                page == 7 -> page = 3
-                page == 4 && supportsBigmeTweaks -> page = 7
-                page > 0 -> page--
+                page == 7 -> { playOnboardingTurn(false); page = 3 }
+                page == 4 && supportsBigmeTweaks -> { playOnboardingTurn(false); page = 7 }
+                page > 0 -> { playOnboardingTurn(false); page-- }
             }
         }
         SettingsTheme(isDark = isDark) {
@@ -423,6 +435,14 @@ object OnboardingScreen {
                                         } catch (_: Throwable) {}
                                     }
                                 }
+                            )
+                            Text(
+                                text = stringResource(R.string.onboarding_eink_animation_scope),
+                                style = SettingsTheme.typography.body,
+                                fontSize = (bodyFontSize.value * 0.72f).sp,
+                                lineHeight = (bodyFontSize.value * 1.15f).sp,
+                                color = textColor.copy(alpha = 0.75f),
+                                modifier = Modifier.padding(top = 6.dp.scaled(screenScale))
                             )
                         }
 
