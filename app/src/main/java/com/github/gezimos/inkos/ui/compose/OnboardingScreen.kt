@@ -136,13 +136,15 @@ object OnboardingScreen {
             Constants.Theme.Light -> false
             Constants.Theme.System -> systemDark
         }
-        var page by remember { mutableStateOf(prefs.onboardingPage.coerceIn(0, 6)) }
+        var page by remember { mutableStateOf(prefs.onboardingPage.coerceIn(0, 7)) }
         var showThemePicker by remember { mutableStateOf(false) }
         var privacyAgreed by remember { mutableStateOf(false) }
         var privacyToastShown by remember { mutableStateOf(false) }
         var settingsConfirmed by remember { mutableStateOf(false) }
         var settingsToastShown by remember { mutableStateOf(false) }
-        val totalPages = 7
+        // 大我专属能力检测：只有真正支持厂商 e-ink 接口的机型才插入额外引导页
+        val supportsBigmeTweaks = remember { com.github.gezimos.inkos.helper.BigmeEink.isAvailable }
+        val totalPages = if (supportsBigmeTweaks) 8 else 7
 
         // Persist page so onboarding resumes
         LaunchedEffect(page) {
@@ -169,6 +171,35 @@ object OnboardingScreen {
             }
         }
 
+
+        // 大我专属开关：打开即刻生效（全刷立即触发 GC16，动画立即播放一次演示）
+        var bigmeFullRefresh by remember { mutableStateOf(prefs.einkSystemFullRefresh) }
+        var bigmePageTurnAnim by remember { mutableStateOf(prefs.einkPageTurnAnimation) }
+
+        // 插入额外页后，页码显示需要重排：0,1,2,3,[大我页],4,5,6
+        fun onboardingPosition(p: Int): Int = if (!supportsBigmeTweaks) p + 1 else when {
+            p == 7 -> 5
+            p <= 3 -> p + 1
+            else -> p + 2
+        }
+
+        fun onboardingNext() {
+            when {
+                page == 3 && supportsBigmeTweaks -> page = 7
+                page == 7 -> page = 4
+                page == 6 -> onFinish()
+                else -> page++
+            }
+        }
+
+        fun onboardingPrev() {
+            when {
+                page == 5 && showThemePicker -> showThemePicker = false
+                page == 7 -> page = 3
+                page == 4 && supportsBigmeTweaks -> page = 7
+                page > 0 -> page--
+            }
+        }
         SettingsTheme(isDark = isDark) {
             val textColor = Theme.colors.text
             val bgColor = Theme.colors.background
@@ -178,9 +209,7 @@ object OnboardingScreen {
             }
 
             androidx.activity.compose.BackHandler(enabled = true) {
-                if (page == 5 && showThemePicker) showThemePicker = false
-                else if (page > 0) page--
-                // page 0: swallow back, don't exit onboarding
+                onboardingPrev()
             }
 
             var einkMode by remember { mutableStateOf(com.github.gezimos.inkos.helper.device.DeviceHelper.isEinkDevice()) }
@@ -318,6 +347,7 @@ object OnboardingScreen {
                                 4 -> stringResource(R.string.onboarding_settings)
                                 5 -> stringResource(R.string.onboarding_theme)
                                 6 -> stringResource(R.string.onboarding_home_apps)
+                                7 -> stringResource(R.string.onboarding_eink_title)
                                 else -> ""
                             },
                             style = SettingsTheme.typography.title,
@@ -347,6 +377,7 @@ object OnboardingScreen {
                                 4 -> stringResource(R.string.onboarding_desc_4)
                                 5 -> stringResource(R.string.onboarding_desc_5)
                                 6 -> stringResource(R.string.onboarding_desc_6)
+                                7 -> stringResource(R.string.onboarding_eink_desc)
                                 else -> ""
                             },
                             style = SettingsTheme.typography.body,
@@ -354,6 +385,46 @@ object OnboardingScreen {
                             lineHeight = (bodyFontSize.value * 1.6f).sp,
                             color = textColor
                         )
+
+                        // Bigme vendor switches (page 7): toggling applies immediately
+                        if (page == 7) {
+                            Spacer(modifier = Modifier.height(24.dp.scaled(screenScale)))
+                            SettingsComposable.SettingsSwitch(
+                                text = stringResource(R.string.settings_system_full_refresh),
+                                fontSize = (bodyFontSize.value * 0.9f).sp,
+                                description = stringResource(R.string.settings_desc_system_full_refresh),
+                                defaultState = bigmeFullRefresh,
+                                horizontalPadding = 0.dp,
+                                onCheckedChange = { enabled ->
+                                    bigmeFullRefresh = enabled
+                                    prefs.einkSystemFullRefresh = enabled
+                                    if (enabled) {
+                                        try {
+                                            com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEinkForced(
+                                                context, prefs, null, 100, useActivityRoot = true
+                                            )
+                                        } catch (_: Throwable) {}
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
+                            SettingsComposable.SettingsSwitch(
+                                text = stringResource(R.string.settings_page_turn_animation),
+                                fontSize = (bodyFontSize.value * 0.9f).sp,
+                                description = stringResource(R.string.settings_desc_page_turn_animation),
+                                defaultState = bigmePageTurnAnim,
+                                horizontalPadding = 0.dp,
+                                onCheckedChange = { enabled ->
+                                    bigmePageTurnAnim = enabled
+                                    prefs.einkPageTurnAnimation = enabled
+                                    if (enabled) {
+                                        try {
+                                            com.github.gezimos.inkos.helper.BigmeEink.onHomePageTurn(context, true)
+                                        } catch (_: Throwable) {}
+                                    }
+                                }
+                            )
+                        }
 
                         // Pinch animation on settings page
                         if (page == 4) {
@@ -681,7 +752,7 @@ object OnboardingScreen {
                                 enabled = page > 0,
                                 interactionSource = backInteraction,
                                 indication = null
-                            ) { if (page == 5 && showThemePicker) showThemePicker = false else if (page > 0) page-- },
+                            ) { onboardingPrev() },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -708,7 +779,7 @@ object OnboardingScreen {
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "${page + 1}/$totalPages",
+                            text = "${onboardingPosition(page)}/$totalPages",
                             style = SettingsTheme.typography.body,
                             fontSize = (titleFontSize.value * 0.7f).sp,
                             color = textColor
@@ -761,12 +832,12 @@ object OnboardingScreen {
                                     themeSelectAction.value?.invoke()
                                     showThemePicker = false
                                 }
-                                if (page < totalPages - 1) page++ else onFinish()
+                                onboardingNext()
                             },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (page == 5 && !showThemePicker) stringResource(R.string.btn_skip) else if (page == 5 && showThemePicker) stringResource(R.string.btn_select) else if (page < totalPages - 1) stringResource(R.string.btn_next) else stringResource(R.string.btn_finish),
+                            text = if (page == 5 && !showThemePicker) stringResource(R.string.btn_skip) else if (page == 5 && showThemePicker) stringResource(R.string.btn_select) else if (page != 6) stringResource(R.string.btn_next) else stringResource(R.string.btn_finish),
                             style = SettingsTheme.typography.title,
                             fontSize = titleFontSize,
                             fontWeight = FontWeight.Bold,
