@@ -1504,9 +1504,6 @@ class SettingsFragment : Fragment() {
                 fontSize = titleFontSize, description = stringResource(R.string.desc_drawer_alignment),
                 onClick = { viewModel.setAppDrawerAlignment((uiState.appDrawerAlignment + 1) % 3) }
             )
-            SettingsSwitch(text = stringResource(R.string.show_icons), fontSize = titleFontSize,
-                description = stringResource(R.string.desc_drawer_icons),
-                defaultState = drawerState.drawerShowIcons, onCheckedChange = { viewModel.setDrawerShowIcons(it) })
             SettingsTitle(text = stringResource(R.string.filtering), fontSize = titleFontSize)
             SettingsSwitch(text = stringResource(R.string.az_filter), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_az_filter),
@@ -1637,6 +1634,7 @@ class SettingsFragment : Fragment() {
     private fun LookFeelContent(fontSize: TextUnit) {
         val titleFontSize = if (fontSize.isSpecified) (fontSize.value * 1.5).sp else fontSize
         val uiState by viewModel.homeUiState.collectAsState()
+        val drawerState by viewModel.appsDrawerUiState.collectAsState()
         val isDarkParam = prefs.getResolvedTheme() == Dark
         val navController = findNavController()
 
@@ -1772,43 +1770,74 @@ class SettingsFragment : Fragment() {
                             viewModel.setBackgroundOpacity(255 - (value * 255 / 100))
                         }
                     })
-                SettingsTitle(text = stringResource(R.string.icons_buttons), fontSize = titleFontSize)
-                SettingsSwitch(text = stringResource(R.string.show_icons), fontSize = titleFontSize, description = stringResource(R.string.desc_show_icons), defaultState = uiState.showIcons, onCheckedChange = { viewModel.setShowIcons(it) })
-                val currentStyleName = when (uiState.iconSourceMode) {
-                    0 -> stringResource(R.string.icon_letters); 2 -> stringResource(R.string.icon_system)
-                    3 -> { val packs = IconPackUtility.getInstalledIconPacks(requireContext()); packs.firstOrNull { it.first == uiState.selectedIconPackPackage }?.second ?: stringResource(R.string.settings_icon_pack_fallback) }
-                    4 -> stringResource(R.string.icon_inkos); 5 -> stringResource(R.string.icon_minimal); 6 -> stringResource(R.string.icon_filled); else -> stringResource(R.string.icon_letters)
+                SettingsTitle(text = stringResource(R.string.icons_section), fontSize = titleFontSize)
+                val iconsPacks = remember { IconPackUtility.getInstalledIconPacks(requireContext()) }
+                val iconStyles = listOf(
+                    stringResource(R.string.icon_letters),
+                    stringResource(R.string.icon_inkos),
+                    stringResource(R.string.icon_minimal),
+                    stringResource(R.string.icon_filled),
+                    stringResource(R.string.icon_system)
+                ) + iconsPacks.map { it.second }
+                val iconStyleModes = listOf(0, 4, 5, 6, 2)
+                val iconDisabled = stringResource(R.string.icon_disabled)
+                val packFallback = stringResource(R.string.settings_icon_pack_fallback)
+                val currentPackName = iconsPacks.firstOrNull { it.first == uiState.selectedIconPackPackage }?.second ?: packFallback
+                val currentIconLabel = when (uiState.iconSourceMode) {
+                    0 -> iconStyles[0]; 2 -> iconStyles[4]; 3 -> currentPackName
+                    4 -> iconStyles[1]; 5 -> iconStyles[2]; 6 -> iconStyles[3]; else -> iconStyles[0]
                 }
-                SettingsSelect(title = stringResource(R.string.icon_style), option = currentStyleName, fontSize = titleFontSize,
-                    description = stringResource(R.string.desc_icon_pack),
-                    onClick = {
-                        val packs = IconPackUtility.getInstalledIconPacks(requireContext())
-                        val allOptions = mutableListOf(getString(R.string.icon_letters), getString(R.string.icon_inkos), getString(R.string.icon_minimal), getString(R.string.icon_filled), getString(R.string.icon_system))
-                        packs.forEach { allOptions.add(it.second) }
-                        val selectedIdx = when (uiState.iconSourceMode) {
-                            0 -> 0; 4 -> 1; 5 -> 2; 6 -> 3; 2 -> 4
-                            3 -> { val packIdx = packs.indexOfFirst { it.first == uiState.selectedIconPackPackage }; if (packIdx >= 0) 5 + packIdx else 0 }
-                            else -> 0
-                        }
-                        dialogBuilder.showSingleChoiceDialog(
-                            context = requireContext(), options = allOptions.toTypedArray(),
-                            titleResId = R.string.show_icons, selectedIndex = selectedIdx,
-                            onItemSelected = { selected ->
-                                val idx = allOptions.indexOf(selected)
+                val drawerIconsEnabled = drawerState.drawerShowIcons
+                fun pickIconsFor(surface: Int) {
+                    val options = mutableListOf(iconDisabled)
+                    options += iconStyles
+                    val enabled = when (surface) {
+                        0 -> uiState.showIcons; 1 -> drawerIconsEnabled; else -> uiState.hubShowIcons
+                    }
+                    val selected = if (!enabled) 0 else when (uiState.iconSourceMode) {
+                        4 -> 2; 5 -> 3; 6 -> 4; 2 -> 5
+                        3 -> iconsPacks.indexOfFirst { it.first == uiState.selectedIconPackPackage }.let { if (it >= 0) 6 + it else 1 }
+                        else -> 1
+                    }
+                    dialogBuilder.showSingleChoiceDialog(
+                        context = requireContext(),
+                        options = options.toTypedArray(),
+                        titleResId = when (surface) { 0 -> R.string.icons_homepage; 1 -> R.string.app_drawer; else -> R.string.icons_hub_tray },
+                        selectedIndex = selected,
+                        onItemSelected = { value ->
+                            val idx = options.indexOf(value)
+                            if (idx == 0) {
+                                when (surface) {
+                                    0 -> viewModel.setShowIcons(false)
+                                    1 -> viewModel.setDrawerShowIcons(false)
+                                    else -> viewModel.setHubShowIcons(false)
+                                }
+                            } else {
+                                when (surface) {
+                                    0 -> viewModel.setShowIcons(true)
+                                    1 -> viewModel.setDrawerShowIcons(true)
+                                    else -> viewModel.setHubShowIcons(true)
+                                }
                                 when {
-                                    idx == 0 -> viewModel.setIconSourceMode(0)
-                                    idx == 1 -> viewModel.setIconSourceMode(4)
-                                    idx == 2 -> viewModel.setIconSourceMode(5)
-                                    idx == 3 -> viewModel.setIconSourceMode(6)
-                                    idx == 4 -> viewModel.setIconSourceMode(2)
-                                    idx >= 5 && packs.isNotEmpty() -> {
-                                        val packIdx = idx - 5
-                                        if (packIdx in packs.indices) { viewModel.setIconSourceMode(3); viewModel.setSelectedIconPackPackage(packs[packIdx].first) }
+                                    idx <= 5 -> viewModel.setIconSourceMode(iconStyleModes[idx - 1])
+                                    else -> iconsPacks.getOrNull(idx - 6)?.let { pack ->
+                                        viewModel.setIconSourceMode(3)
+                                        viewModel.setSelectedIconPackPackage(pack.first)
                                     }
                                 }
                             }
-                        )
-                    })
+                        }
+                    )
+                }
+                SettingsSelect(title = stringResource(R.string.icons_homepage), option = if (uiState.showIcons) currentIconLabel else iconDisabled,
+                    description = stringResource(R.string.desc_show_icons),
+                    fontSize = titleFontSize, onClick = { pickIconsFor(0) })
+                SettingsSelect(title = stringResource(R.string.app_drawer), option = if (drawerIconsEnabled) currentIconLabel else iconDisabled,
+                    description = stringResource(R.string.desc_drawer_icons),
+                    fontSize = titleFontSize, onClick = { pickIconsFor(1) })
+                SettingsSelect(title = stringResource(R.string.icons_hub_tray), option = if (uiState.hubShowIcons) currentIconLabel else iconDisabled,
+                    description = stringResource(R.string.desc_hub_icons),
+                    fontSize = titleFontSize, onClick = { pickIconsFor(2) })
                 val iconShapeLabels = listOf(stringResource(R.string.option_pill), stringResource(R.string.option_rounded), stringResource(R.string.option_square))
                 SettingsSelect(title = stringResource(R.string.icon_shape), option = iconShapeLabels.getOrElse(uiState.iconShape) { stringResource(R.string.option_pill) },
                     description = stringResource(R.string.desc_icon_shape),

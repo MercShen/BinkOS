@@ -991,4 +991,9 @@
     <string name="apps_header_hidden">已隐藏应用</string>
     <string name="apps_header_count_fmt">%1$d/%2$d 个应用</string>
     <string name="apps_header_hidden_count_fmt">已隐藏 %1$d 个</string>
+    <string name="icons_section">图标</string>
+    <string name="icons_homepage">主屏</string>
+    <string name="icons_hub_tray">中枢 / 简易托盘</string>
+    <string name="icon_disabled">关闭</string>
+    <string name="desc_hub_icons">在中枢与简易托盘中显示应用图标</string>
 </resources>

@@ -107,6 +107,7 @@ data class HomeUiState(
     val textIslandsInverted: Boolean = false,
     val textIslandsShape: Int = 0,
     val showIcons: Boolean = false,
+    val hubShowIcons: Boolean = false,
     val iconSourceMode: Int = 0,
     val iconShape: Int = 0,
     val iconTintContrast: Int = 10,
@@ -465,6 +466,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         textIslandsInverted = prefs.textIslandsInverted,
         textIslandsShape = prefs.textIslandsShape,
         showIcons = prefs.showIcons,
+        hubShowIcons = prefs.hubShowIcons,
         iconSourceMode = prefs.iconSourceMode,
         iconShape = prefs.iconShape,
         iconTintContrast = prefs.iconTintContrast,
@@ -2111,9 +2113,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _homeUiState.value = _homeUiState.value.copy(showIcons = enabled)
         val labels = _homeUiState.value.homeApps.map { it.label }
         appsRepository.updateIconCodes(labels, enabled)
-        if (enabled && !prefs.drawerShowIcons) {
-            setDrawerShowIcons(true)
-        }
+    }
+
+    fun setHubShowIcons(enabled: Boolean) {
+        prefs.hubShowIcons = enabled
+        _homeUiState.value = _homeUiState.value.copy(hubShowIcons = enabled)
     }
 
     fun setIconSourceMode(mode: Int) {

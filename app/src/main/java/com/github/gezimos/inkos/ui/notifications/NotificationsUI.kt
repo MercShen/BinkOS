@@ -1004,7 +1004,7 @@ private fun HubNotificationItem(
     val appsFontFamily = remember(appsTypeface) { appsTypeface?.let { FontFamily(it) } ?: FontFamily.Default }
 
     val iconSizePx = with(LocalDensity.current) { 32.dp.toPx().toInt() }
-    val imageBitmap = if (iconSourceMode != 0) {
+    val imageBitmap = if (prefs.hubShowIcons && iconSourceMode != 0) {
         rememberAppIconBitmap(
             context, packageName, iconSourceMode, selectedIconPack, iconSizePx,
             tintArgb = tintArgb, iconShapeId = prefs.iconShape,
@@ -1087,6 +1087,7 @@ private fun HubNotificationItem(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (prefs.hubShowIcons) {
             AppIconBox(
                 iconSourceMode = iconSourceMode,
                 iconShape = iconShape,
@@ -1114,6 +1115,7 @@ private fun HubNotificationItem(
                         modifier = Modifier.fillMaxSize()
                     )
                 }
+            }
             }
 
             Spacer(modifier = Modifier.width(12.dp.scaled(screenScale)))

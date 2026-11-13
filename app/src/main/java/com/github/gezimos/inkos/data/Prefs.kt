@@ -123,6 +123,7 @@ private const val TEXT_ISLANDS_INVERTED = "TEXT_ISLANDS_INVERTED"
 private const val TEXT_ISLANDS_SHAPE = "TEXT_ISLANDS_SHAPE"
 private const val SHOW_ICONS = "SHOW_ICONS"
 private const val DRAWER_SHOW_ICONS = "DRAWER_SHOW_ICONS"
+private const val HUB_SHOW_ICONS = "HUB_SHOW_ICONS"
 private const val ICON_SOURCE_MODE = "ICON_SOURCE_MODE"
 private const val ICON_SHAPE = "ICON_SHAPE"
 private const val ICON_TINT_CONTRAST = "ICON_TINT_CONTRAST"
@@ -1800,6 +1801,11 @@ class Prefs(val context: Context) {
     var drawerShowIcons: Boolean
         get() = prefs.getBoolean(DRAWER_SHOW_ICONS, false)
         set(value) = prefs.edit { putBoolean(DRAWER_SHOW_ICONS, value) }
+
+    /** Hub（中枢）里是否显示应用图标；默认关闭，保持文字优先 */
+    var hubShowIcons: Boolean
+        get() = prefs.getBoolean(HUB_SHOW_ICONS, false)
+        set(value) = prefs.edit { putBoolean(HUB_SHOW_ICONS, value) }
 
     var iconSourceMode: Int
         get() = prefs.getInt(ICON_SOURCE_MODE, 0)

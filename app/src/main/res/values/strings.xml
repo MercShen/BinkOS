@@ -991,4 +991,9 @@
     <string name="apps_header_hidden">HIDDEN APPS</string>
     <string name="apps_header_count_fmt">%1$d/%2$d apps</string>
     <string name="apps_header_hidden_count_fmt">%1$d hidden</string>
+    <string name="icons_section">Icons</string>
+    <string name="icons_homepage">Homepage</string>
+    <string name="icons_hub_tray">Hub / Simple Tray</string>
+    <string name="icon_disabled">Disabled</string>
+    <string name="desc_hub_icons">Show app icons in Hub and Simple Tray</string>
 </resources>
