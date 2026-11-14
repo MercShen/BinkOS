@@ -2022,6 +2022,15 @@ class Prefs(val context: Context) {
                     mutableListOf()
                 }
             }
+            // 迁移：老版本可能把绝对路径存进列表；统一成相对 filesDir 的路径，
+            // 否则 File(filesDir, absolute) 会解析到错误位置（删不掉、也应用不了）。
+            val filesPrefix = context.filesDir.absolutePath.trimEnd('/') + "/"
+            val normalized = list.map { entry ->
+                if (entry.startsWith(filesPrefix)) entry.removePrefix(filesPrefix) else entry
+            }.distinct()
+            list.clear()
+            list.addAll(normalized)
+
             // 迁移：老版本只有 filesDir/inkos_wallpaper.png，没有画廊条目
             if (list.isEmpty()) {
                 val legacy = java.io.File(context.filesDir, "inkos_wallpaper.png")

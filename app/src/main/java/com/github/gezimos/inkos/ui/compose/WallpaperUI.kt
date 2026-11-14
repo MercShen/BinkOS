@@ -198,15 +198,29 @@ fun WallpaperUI(
 
     /** 删除自定义壁纸：文件 + 画廊条目；如果它正是当前壁纸，顺带清掉指针。 */
     fun deleteCustomWallpaper(relPath: String) {
-        runCatching { wallpaperUtility.customWallpaperFile(relPath).delete() }
+        // 老版本可能存过绝对路径；三种解析都试一遍，避免“删了画廊但文件还在”。
+        val candidates = listOf(
+            wallpaperUtility.customWallpaperFile(relPath),
+            java.io.File(relPath),
+            java.io.File(context.filesDir, relPath)
+        ).distinctBy { it.absolutePath }
+        var deleted = false
+        candidates.forEach { file ->
+            runCatching {
+                if (file.exists() && file.delete()) deleted = true
+            }.onFailure { android.util.Log.w("WallpaperUI", "delete failed: ${file.absolutePath}", it) }
+        }
         val updated = prefs.customWallpapers.toMutableList().also { it.remove(relPath) }
         prefs.customWallpapers = updated
         customNames = updated.toList()
         val active = prefs.inkosWallpaperPath
-        if (active != null && active.endsWith("/" + relPath)) {
+        if (active != null && (candidates.any { it.absolutePath == active } || active.endsWith("/" + relPath))) {
             prefs.inkosWallpaperPath = null
             prefs.inkosWallpaperResourceId = 0
+            // 旧版 apply 会额外落一份整图副本，一并清掉
+            runCatching { java.io.File(context.filesDir, "inkos_wallpaper.png").delete() }
         }
+        if (!deleted) android.util.Log.w("WallpaperUI", "no file removed for $relPath")
         removalMode = false
         selectedIndex = 0
     }
