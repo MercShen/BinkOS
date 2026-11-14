@@ -998,6 +998,7 @@
     <string name="desc_hub_icons">在中枢中显示应用图标</string>
     <string name="icons_hub">中枢</string>
     <string name="wallpaper_delete">删除</string>
-    <string name="wallpaper_delete_title">删除这张壁纸？</string>
-    <string name="wallpaper_delete_message">图片会从设备和壁纸画廊中删除，无法恢复。</string>
+    <string name="wallpaper_delete_title">从画廊中移除？</string>
+    <string name="wallpaper_delete_message">只会从 Bink OS 壁纸画廊中移除，设备上的原图不会被删除。</string>
+    <string name="wallpaper_remove">移除</string>
 </resources>

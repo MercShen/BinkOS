@@ -998,6 +998,7 @@
     <string name="desc_hub_icons">Show app icons in the Hub</string>
     <string name="icons_hub">Hub</string>
     <string name="wallpaper_delete">Delete</string>
-    <string name="wallpaper_delete_title">Delete this wallpaper?</string>
-    <string name="wallpaper_delete_message">The image is removed from the device and from the wallpaper gallery. This cannot be undone.</string>
+    <string name="wallpaper_delete_title">Remove from gallery?</string>
+    <string name="wallpaper_delete_message">This only removes the image from the Bink OS gallery. The original file stays on your device.</string>
+    <string name="wallpaper_remove">Remove</string>
 </resources>
