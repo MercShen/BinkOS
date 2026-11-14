@@ -8,7 +8,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.DeleteOutline
+import com.github.gezimos.inkos.ui.dialogs.ConfirmSheet
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -90,8 +97,14 @@ fun WallpaperUI(
             customNames.map { WallpaperEntry(null, it) }
     }
     var selectedIndex by remember { mutableIntStateOf(0) }
+    var removalMode by remember { mutableStateOf(false) }
+    var trashArmed by remember { mutableStateOf(false) }
     val safeIndex = selectedIndex.coerceIn(0, entries.lastIndex)
     val selectedEntry = entries[safeIndex]
+    LaunchedEffect(safeIndex) {
+        removalMode = false
+        trashArmed = false
+    }
 
     @Composable
     fun entryTitle(entry: WallpaperEntry): String =
@@ -186,6 +199,22 @@ fun WallpaperUI(
         }
     }
 
+
+    /** 删除自定义壁纸：文件 + 画廊条目；如果它正是当前壁纸，顺带清掉指针。 */
+    fun deleteCustomWallpaper(relPath: String) {
+        runCatching { wallpaperUtility.customWallpaperFile(relPath).delete() }
+        val updated = prefs.customWallpapers.toMutableList().also { it.remove(relPath) }
+        prefs.customWallpapers = updated
+        customNames = updated.toList()
+        val active = prefs.inkosWallpaperPath
+        if (active != null && active.endsWith("/" + relPath)) {
+            prefs.inkosWallpaperPath = null
+            prefs.inkosWallpaperResourceId = 0
+        }
+        removalMode = false
+        trashArmed = false
+        selectedIndex = 0
+    }
     /** 相册导入：fit → 存 filesDir/wallpapers/ → 追加画廊条目并选中（不立即应用）。 */
     fun importFromUri(uri: Uri) {
         isLoading = true
@@ -286,6 +315,22 @@ fun WallpaperUI(
                     .padding(top = 12.dp.scaled(screenScale), bottom = 12.dp.scaled(screenScale))
                     .clip(cardShape)
                     .border(1.5.dp.scaled(screenScale), textColor, cardShape)
+                    .pointerInput(selectedEntry.customRelPath) {
+                        detectTapGestures(
+                            onLongPress = {
+                                if (selectedEntry.customRelPath != null) {
+                                    removalMode = true
+                                    trashArmed = false
+                                }
+                            },
+                            onTap = {
+                                if (removalMode) {
+                                    removalMode = false
+                                    trashArmed = false
+                                }
+                            }
+                        )
+                    }
                     .pointerInput(entries.size) {
                         detectHorizontalDragGestures(
                             onHorizontalDrag = { _, dragAmount -> previewDragX += dragAmount },
@@ -309,6 +354,63 @@ fun WallpaperUI(
                     textColor = textColor,
                     modifier = Modifier.fillMaxSize()
                 )
+
+                if (removalMode && selectedEntry.customRelPath != null) {
+                    if (!trashArmed) {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(6.dp.scaled(screenScale))
+                                .size(30.dp.scaled(screenScale))
+                                .background(textColor, CircleShape)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) { trashArmed = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.wallpaper_remove),
+                                tint = bgColor,
+                                modifier = Modifier.size(18.dp.scaled(screenScale))
+                            )
+                        }
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomEnd)
+                                .padding(6.dp.scaled(screenScale))
+                                .size(44.dp.scaled(screenScale))
+                                .background(bgColor)
+                                .border(1.5.dp.scaled(screenScale), textColor, RoundedCornerShape(6.dp.scaled(screenScale)))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null
+                                ) {
+                                    val rel = selectedEntry.customRelPath ?: return@clickable
+                                    showSheet {
+                                        ConfirmSheet(
+                                            title = context.getString(R.string.wallpaper_delete_title),
+                                            message = context.getString(R.string.wallpaper_delete_message),
+                                            confirmText = context.getString(R.string.delete),
+                                            cancelText = context.getString(R.string.cancel),
+                                            onConfirm = { deleteCustomWallpaper(rel) },
+                                            onDismiss = { dismissSheet() }
+                                        )
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.DeleteOutline,
+                                contentDescription = stringResource(R.string.wallpaper_delete),
+                                tint = textColor,
+                                modifier = Modifier.size(24.dp.scaled(screenScale))
+                            )
+                        }
+                    }
+                }
             }
 
             // Paged thumbnail strip with swipe
@@ -354,10 +456,18 @@ fun WallpaperUI(
                                 textColor,
                                 cardShape
                             )
-                            .clickable(
+                            .combinedClickable(
                                 interactionSource = interactionSource,
-                                indication = null
-                            ) { selectedIndex = globalIndex }
+                                indication = null,
+                                onClick = { selectedIndex = globalIndex },
+                                onLongClick = {
+                                    if (entry.customRelPath != null) {
+                                        selectedIndex = globalIndex
+                                        removalMode = true
+                                        trashArmed = false
+                                    }
+                                }
+                            )
                     ) {
                         Box(Modifier.fillMaxSize().clip(cardShape)) {
                             WallpaperEntryPreview(
