@@ -11,9 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.DeleteOutline
 import com.github.gezimos.inkos.ui.dialogs.ConfirmSheet
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -98,12 +96,10 @@ fun WallpaperUI(
     }
     var selectedIndex by remember { mutableIntStateOf(0) }
     var removalMode by remember { mutableStateOf(false) }
-    var trashArmed by remember { mutableStateOf(false) }
     val safeIndex = selectedIndex.coerceIn(0, entries.lastIndex)
     val selectedEntry = entries[safeIndex]
     LaunchedEffect(safeIndex) {
         removalMode = false
-        trashArmed = false
     }
 
     @Composable
@@ -212,7 +208,6 @@ fun WallpaperUI(
             prefs.inkosWallpaperResourceId = 0
         }
         removalMode = false
-        trashArmed = false
         selectedIndex = 0
     }
     /** 相册导入：fit → 存 filesDir/wallpapers/ → 追加画廊条目并选中（不立即应用）。 */
@@ -320,13 +315,11 @@ fun WallpaperUI(
                             onLongPress = {
                                 if (selectedEntry.customRelPath != null) {
                                     removalMode = true
-                                    trashArmed = false
                                 }
                             },
                             onTap = {
                                 if (removalMode) {
                                     removalMode = false
-                                    trashArmed = false
                                 }
                             }
                         )
@@ -356,59 +349,37 @@ fun WallpaperUI(
                 )
 
                 if (removalMode && selectedEntry.customRelPath != null) {
-                    if (!trashArmed) {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(6.dp.scaled(screenScale))
-                                .size(30.dp.scaled(screenScale))
-                                .background(textColor, CircleShape)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) { trashArmed = true },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Close,
-                                contentDescription = stringResource(R.string.wallpaper_remove),
-                                tint = bgColor,
-                                modifier = Modifier.size(18.dp.scaled(screenScale))
-                            )
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.BottomEnd)
-                                .padding(6.dp.scaled(screenScale))
-                                .size(44.dp.scaled(screenScale))
-                                .background(bgColor)
-                                .border(1.5.dp.scaled(screenScale), textColor, RoundedCornerShape(6.dp.scaled(screenScale)))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null
-                                ) {
-                                    val rel = selectedEntry.customRelPath ?: return@clickable
-                                    showSheet {
-                                        ConfirmSheet(
-                                            title = context.getString(R.string.wallpaper_delete_title),
-                                            message = context.getString(R.string.wallpaper_delete_message),
-                                            confirmText = context.getString(R.string.delete),
-                                            cancelText = context.getString(R.string.cancel),
-                                            onConfirm = { deleteCustomWallpaper(rel) },
-                                            onDismiss = { dismissSheet() }
-                                        )
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.DeleteOutline,
-                                contentDescription = stringResource(R.string.wallpaper_delete),
-                                tint = textColor,
-                                modifier = Modifier.size(24.dp.scaled(screenScale))
-                            )
-                        }
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(6.dp.scaled(screenScale))
+                            .size(44.dp.scaled(screenScale))
+                            .background(bgColor)
+                            .border(1.5.dp.scaled(screenScale), textColor, RoundedCornerShape(6.dp.scaled(screenScale)))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null
+                            ) {
+                                val rel = selectedEntry.customRelPath ?: return@clickable
+                                showSheet {
+                                    ConfirmSheet(
+                                        title = context.getString(R.string.wallpaper_delete_title),
+                                        message = context.getString(R.string.wallpaper_delete_message),
+                                        confirmText = context.getString(R.string.delete),
+                                        cancelText = context.getString(R.string.cancel),
+                                        onConfirm = { deleteCustomWallpaper(rel) },
+                                        onDismiss = { dismissSheet() }
+                                    )
+                                }
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.DeleteOutline,
+                            contentDescription = stringResource(R.string.wallpaper_delete),
+                            tint = textColor,
+                            modifier = Modifier.size(24.dp.scaled(screenScale))
+                        )
                     }
                 }
             }
@@ -464,7 +435,6 @@ fun WallpaperUI(
                                     if (entry.customRelPath != null) {
                                         selectedIndex = globalIndex
                                         removalMode = true
-                                        trashArmed = false
                                     }
                                 }
                             )
