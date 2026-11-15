@@ -294,6 +294,10 @@ class Prefs(val context: Context) {
         if (!prefs.contains(DARK_BACKGROUND_COLOR)) {
             prefs.edit { putInt(DARK_BACKGROUND_COLOR, android.graphics.Color.BLACK) }
         }
+        // 一次性清理：旧版「记住上次选过的组件 App」已废弃
+        if (prefs.contains("LAST_WIDGET_APP_PACKAGE")) {
+            prefs.edit { remove("LAST_WIDGET_APP_PACKAGE") }
+        }
     }
 
     var initialLaunchCompleted: Boolean
