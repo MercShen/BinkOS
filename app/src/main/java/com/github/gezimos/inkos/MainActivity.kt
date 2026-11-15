@@ -309,6 +309,16 @@ class MainActivity : AppCompatActivity() {
                         com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this).showFontLicenseSheet()
                     }
                     // --- 测试状态开关（一键设置，省去在设置页里找开关） ---
+                    "home_next" -> {
+                        Log.d(TAG, "home_next before: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
+                        viewModel.nextPage()
+                        Log.d(TAG, "home_next after: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
+                    }
+                    "home_prev" -> {
+                        Log.d(TAG, "home_prev before: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
+                        viewModel.previousPage()
+                        Log.d(TAG, "home_prev after: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
+                    }
                     "pager_on" -> viewModel.setPageIndicatorVisible(true)
                     "pager_off" -> viewModel.setPageIndicatorVisible(false)
                     "bottomwidget", "bottom_widget" -> {
