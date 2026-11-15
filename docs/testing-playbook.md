@@ -156,4 +156,4 @@ $ADB shell am start -n $APP/$MAIN --es dest editmode_on
 | 点小组件**本体** | 打开小组件设置面板（WIDGET / FUNCTION / STYLE / GESTURES） |
 | 面板里 `Choose App`（显示当前 App 名） | 打开 CHOOSE APP 应用列表 |
 | 面板里 `Choose Widget`（显示当前组件名） | 打开**当前 App** 的组件列表 |
-| 选择器里 `CHOOSE APP` 左侧的返回箭头 | 回到小组件设置面板 |
+| `CHOOSE APP` / 组件列表左侧的返回箭头 | 都回到小组件设置面板 |
