@@ -95,6 +95,9 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -181,6 +184,8 @@ fun HomeUI(
 
     val bgAlpha = (state.backgroundOpacity.coerceIn(0, 255).toFloat() / 255f)
     val screenScale = rememberScreenScale()
+    var homeRootSize by remember { mutableStateOf(IntSize.Zero) }
+    var homeAppsAreaBounds by remember { mutableStateOf(Rect.Zero) }
 
     
     val density = LocalDensity.current
@@ -202,6 +207,7 @@ fun HomeUI(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .onSizeChanged { homeRootSize = it }
     ) {
         if (!isPreview) {
             val inkosBitmap: Bitmap? = remember(prefs.inkosWallpaperPath) {
@@ -343,6 +349,7 @@ fun HomeUI(
                 )
                 // 边距定义的是 App 的「显示区域」，超出的行裁掉，方便做主题区域
                 .clipToBounds()
+                .onGloballyPositioned { homeAppsAreaBounds = it.boundsInRoot() }
                 .align(Alignment.Center),
             contentAlignment = Alignment.Center
         ) {
@@ -378,6 +385,21 @@ fun HomeUI(
             && !(state.shortcutPageDots && state.bottomWidgetType == Constants.BottomWidgetType.Shortcuts.value)
             && state.bottomWidgetType != Constants.BottomWidgetType.PageDots.value
         ) {
+            val leftAlign = state.pageIndicatorAlignment == 0
+            val dotSizePx = with(density) { (state.pageIndicatorDotSize.dp.scaled(screenScale) + 4.dp).toPx() }
+            val gapPx = with(density) { 4.dp.toPx() }
+            val area = homeAppsAreaBounds
+            val screenW = homeRootSize.width.toFloat()
+            val dotLeftPx = when {
+                area.width <= 0f || screenW <= 0f -> if (leftAlign) gapPx else screenW - dotSizePx - gapPx
+                leftAlign -> (((area.left - gapPx) / 2f) - dotSizePx / 2f)
+                    .coerceAtMost(area.left - gapPx - dotSizePx)
+                    .coerceAtLeast(gapPx)
+                else -> (((area.right + gapPx + screenW) / 2f) - dotSizePx / 2f)
+                    .coerceAtLeast(area.right + gapPx)
+                    .coerceAtMost(screenW - dotSizePx - gapPx)
+            }
+            val dotLeftDp = with(density) { dotLeftPx.toDp() }
             PageIndicator(
                 currentPage = state.currentPage,
                 totalPages = state.totalPages,
@@ -389,10 +411,10 @@ fun HomeUI(
                 dotSpacing = (state.pageIndicatorDotSize * 0.8f).dp.scaled(screenScale),
                 borderWidth = (state.pageIndicatorDotSize / 6f).dp.scaled(screenScale),
                 modifier = Modifier
-                    .align(if (state.pageIndicatorAlignment == 0) Alignment.CenterStart else Alignment.CenterEnd)
-                    // 离屏幕边缘留出安全边距，避免压到编辑模式的虚线安全框
+                    .align(Alignment.CenterStart)
+                    // 贴着 App 显示区域的边框外侧留 4dp 安全边距，再取剩余空间的中点
                     .offset(
-                        x = if (state.pageIndicatorAlignment == 0) 16.dp else (-16).dp,
+                        x = dotLeftDp,
                         y = ((state.homeAppsInsetTop - state.homeAppsInsetBottom) / 2 + state.homeAppsYOffset).dp
                     )
             )
