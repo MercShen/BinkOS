@@ -13,6 +13,16 @@ class BackupCompatTestActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
+            val extras = intent.extras?.let { bundle ->
+                bundle.keySet().associateWith { key ->
+                    @Suppress("DEPRECATION")
+                    bundle.get(key)
+                }
+            }.orEmpty()
+            DebugProbeContract.rejection(extras)?.let { reason ->
+                Log.w("BackupTest", "rejected: $reason")
+                return finish()
+            }
             intent.getStringExtra("alias")?.let { pkg ->
                 Prefs(applicationContext).setAppAlias(pkg, "测试别名")
                 Log.d("BackupTest", "alias=" + pkg)

@@ -42,7 +42,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 onEditFavorites = onEditFavorites,
                 onLookFeel = onLookFeel,
                 onAbout = onAbout,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -67,7 +67,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 onSelect = onSelect,
                 onShapeSelect = onShapeSelect,
                 unavailableHint = unavailableHint,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -138,7 +138,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 step = step,
                 valueFormatter = valueFormatter,
                 onValueSelected = onValueSelected,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -172,7 +172,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 isBuiltInFont = isBuiltInFont ?: { false },
                 onInfoClick = onInfoClick,
                 onSelect = { option, _ -> onItemSelected(option) },
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -206,26 +206,26 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 onAddCustomFont = onAddCustomFont,
                 onSelect = onItemSelected,
                 onDelete = onItemDeleted,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
 
     fun showFontLicenseSheet() {
         sheetHost.show {
-            FontLicenseSheet(onDismiss = sheetHost::dismiss)
+            FontLicenseSheet(onDismiss = { sheetHost.dismiss() })
         }
     }
 
     fun showGestureVsPageConflictSheet() {
         sheetHost.show {
-            GestureVsPageConflictSheet(onDismiss = sheetHost::dismiss)
+            GestureVsPageConflictSheet(onDismiss = { sheetHost.dismiss() })
         }
     }
 
     fun showPrivacyPolicySheet() {
         sheetHost.show {
-            PrivacyPolicySheet(onDismiss = sheetHost::dismiss)
+            PrivacyPolicySheet(onDismiss = { sheetHost.dismiss() })
         }
     }
 
@@ -248,7 +248,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 currentAppLabel = currentAppLabel,
                 viewModel = viewModel,
                 onSelect = onSelect,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -269,7 +269,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 items = items.toList(),
                 initialChecked = initialChecked,
                 onConfirm = onConfirm,
-                onDismiss = sheetHost::dismiss,
+                onDismiss = { sheetHost.dismiss() },
                 showSelectAll = showSelectAll,
                 iconPackages = iconPackages
             )
@@ -291,7 +291,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 appGroups = appGroups,
                 selectedKeys = selectedKeys,
                 onSelectionChanged = onSelectionChanged,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -312,7 +312,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 pinnedItems = pinnedItems,
                 selectedKeys = selectedKeys,
                 onSelectionChanged = onSelectionChanged,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -328,7 +328,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 title = title,
                 initialValue = initialValue,
                 onConfirm = onValueEntered,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -353,7 +353,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                     )
                     onItemSelected(androidColor)
                 },
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -363,7 +363,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
             ErrorSheet(
                 title = title,
                 message = message,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -377,7 +377,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 onClearAllData = {
                     activity.window.decorView.post { confirmClearData() }
                 },
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -388,7 +388,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
             ThemeSheet(
                 onExportTheme = { storeFile(mainActivity.themeBackupWriteLauncher, Constants.BackupType.Theme) },
                 onImportTheme = { loadFile(activity, mainActivity.themeBackupReadLauncher) },
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -405,7 +405,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                     prefs.clear()
                     AppReloader.restartApp(context)
                 },
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }
@@ -430,7 +430,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 onHideShow = onHideShow,
                 onLock = onLock,
                 onInfo = onInfo,
-                onDismiss = sheetHost::dismiss
+                onDismiss = { sheetHost.dismiss() }
             )
         }
     }

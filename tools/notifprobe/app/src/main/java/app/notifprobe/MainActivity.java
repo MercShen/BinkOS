@@ -16,6 +16,11 @@ public class MainActivity extends Activity {
         NotificationManager nm = getSystemService(NotificationManager.class);
         NotificationChannel ch = new NotificationChannel(CHANNEL_ID, "Probe", NotificationManager.IMPORTANCE_HIGH);
         nm.createNotificationChannel(ch);
+
+        // 先清掉本 App 上一轮的通知，再用同一批 ID 重发：
+        // 反复 am start 不会叠加通知，也不会因为 ID 变化而残留旧条目。
+        nm.cancelAll();
+
         String label = BuildConfig.PROBE_LABEL;
         for (int i = 1; i <= BuildConfig.NOTIF_COUNT; i++) {
             Notification n = new Notification.Builder(this, CHANNEL_ID)

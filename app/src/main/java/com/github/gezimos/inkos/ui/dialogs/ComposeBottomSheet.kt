@@ -149,6 +149,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 class ComposeBottomSheetHost(private val activity: Activity) {
     private var composeView: ComposeView? = null
+    private val showHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pendingShow: Runnable? = null
     private var insetsListener: View.OnApplyWindowInsetsListener? = null
 
     /** Fired once after a visible sheet is dismissed (Back, swipe, or explicit). */
@@ -165,7 +167,7 @@ class ComposeBottomSheetHost(private val activity: Activity) {
             val snapshot = synchronized(activeHosts) { activeHosts.toList() }
             activeHosts.clear()
             snapshot.forEach { ref ->
-                try { ref.get()?.dismiss() } catch (_: Exception) {}
+                try { ref.get()?.dismiss(suppressCallback = true) } catch (_: Exception) {}
             }
         }
     }
@@ -174,16 +176,19 @@ class ComposeBottomSheetHost(private val activity: Activity) {
         activeHosts.add(java.lang.ref.WeakReference(this))
         (activity as? LifecycleOwner)?.lifecycle?.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP || event == Lifecycle.Event.ON_DESTROY) {
-                isAnySheetShowing = false
-                try { dismiss() } catch (_: Exception) { composeView = null }
+                try { dismiss(suppressCallback = true) } catch (_: Exception) { composeView = null }
             }
         })
     }
 
-    fun dismiss() {
+    fun dismiss(suppressCallback: Boolean = false) {
+        pendingShow?.let { showHandler.removeCallbacks(it) }
+        pendingShow = null
+        if (suppressCallback) onDismissed = null
         activeHosts.removeAll { it.get() == this || it.get() == null }
         val wasShowing = composeView != null
-        isAnySheetShowing = false
+        // Dismissing an idle/queued host must not clear another host's visible guard.
+        if (wasShowing) isAnySheetShowing = false
         if (insetsListener != null) {
             try { activity.window.decorView.setOnApplyWindowInsetsListener(null) } catch (_: Exception) {}
             insetsListener = null
@@ -200,19 +205,24 @@ class ComposeBottomSheetHost(private val activity: Activity) {
         }
     }
 
-    /**
-     * 排到下一帧再真正弹出：先 dismiss 旧面板，给旧 dialog 窗口一帧时间销毁，
-     * 避免两个 sheet 窗口同帧并存（表现为旧面板残影/底部断痕）。
-     */
+    /** Queue a cancellable presentation on the main loop; this is not a frame/detach guarantee. */
     fun show(
         skipPartiallyExpanded: Boolean = true,
         content: @Composable () -> Unit
     ) {
         if (isAnySheetShowing) return
         dismiss()
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
-            present(skipPartiallyExpanded, content)
+        // Pending hosts are included in dismissAllSheets, not just already visible ones.
+        activeHosts.add(java.lang.ref.WeakReference(this))
+        val task = Runnable {
+            pendingShow = null
+            if (!activity.isFinishing && !activity.isDestroyed &&
+                ((activity as? LifecycleOwner)?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.STARTED) != false)) {
+                present(skipPartiallyExpanded, content)
+            } else dismiss(suppressCallback = true)
         }
+        pendingShow = task
+        showHandler.post(task)
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
@@ -221,11 +231,13 @@ class ComposeBottomSheetHost(private val activity: Activity) {
         content: @Composable () -> Unit
     ) {
         if (isAnySheetShowing) return
+        val root = activity.window.decorView.findViewById<ViewGroup>(android.R.id.content) ?: run {
+            dismiss(suppressCallback = true)
+            return
+        }
         activeHosts.removeAll { it.get() == null || it.get() === this }
         activeHosts.add(java.lang.ref.WeakReference(this))
         isAnySheetShowing = true
-        
-        val root = activity.window.decorView.findViewById<ViewGroup>(android.R.id.content) ?: return
         val prefs = Prefs(activity)
         val isDark = prefs.appTheme == Constants.Theme.Dark
         val shouldHideStatusBar = !prefs.showStatusBar

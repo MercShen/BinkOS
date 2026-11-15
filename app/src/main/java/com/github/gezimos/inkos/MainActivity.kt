@@ -240,181 +240,201 @@ class MainActivity : AppCompatActivity() {
         return walk(supportFragmentManager.findFragmentById(R.id.nav_host_fragment))
     }
 
+    private val automationHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var pendingAutomation: Runnable? = null
+    private var pendingAutomationCancelled: (() -> Unit)? = null
+
+    private fun automationResult(requestId: String, dest: String, status: String, message: String) {
+        val result = org.json.JSONObject()
+            .put("requestId", requestId).put("dest", dest).put("status", status).put("message", message)
+        Log.i(TAG, "automation_result: $result")
+    }
+
+    private fun cancelPendingAutomation() {
+        pendingAutomation?.let { automationHandler.removeCallbacks(it) }
+        pendingAutomation = null
+        val cancelled = pendingAutomationCancelled
+        pendingAutomationCancelled = null
+        cancelled?.invoke()
+    }
+
+    private fun automationState(): String {
+        val state = viewModel.homeUiState.value
+        return org.json.JSONObject()
+            .put("page", state.currentPage).put("pageCount", state.homePagesNum)
+            .put("editMode", EditModeHelper.isEditMode()).put("bottomWidget", state.bottomWidgetType)
+            .put("pagerVisible", prefs.homePager).put("pagerMargin", prefs.pageIndicatorMargin)
+            .put("homeReset", prefs.homeReset).put("currentDestination", navController.currentDestination?.id?.let {
+                resources.getResourceEntryName(it)
+            })
+            .toString()
+    }
+
     private fun handleAutomationIntent(intent: Intent?): Boolean {
         intent ?: return false
-        if (!::navController.isInitialized) return false
-
-        if (intent.getBooleanExtra(EXTRA_AUTOMATION_SKIP_ONBOARDING, false)) {
-            prefs.firstOpen = false
+        val keys = listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
+            "tab", "value", "type", "confirm_write", "request_id")
+        // Ordinary launcher intents are not automation requests. Never consume their product extras.
+        if (!listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
+                "request_id").any { intent.hasExtra(it) }) return false
+        val extras = try {
+            keys.filter { intent.hasExtra(it) }.associateWith { key ->
+                @Suppress("DEPRECATION")
+                intent.extras?.get(key)
+            }
+        } catch (_: Exception) {
+            keys.forEach { intent.removeExtra(it) }
+            automationResult("", "", "rejected", "Unreadable extras")
+            return true
         }
-
-        val dest = intent.getStringExtra(EXTRA_AUTOMATION_DEST)?.trim()?.lowercase()
-        Log.i(TAG, "automation: dest=$dest action=${intent.action}")
-        if (!dest.isNullOrEmpty()) {
-            try {
-                when (dest) {
-                    "home" -> navController.popBackStack(R.id.mainFragment, false)
-                    "drawer", "apps", "applist" -> navController.navigate(R.id.appListFragment)
-                    "recents" -> navController.navigate(R.id.recentsFragment)
-                    "tray", "simpletray" -> navController.navigate(R.id.simpleTrayFragment)
-                    "hub" -> navController.navigate(R.id.hubFragment)
-                    "letters", "notifications" -> navController.navigate(R.id.lettersFragment)
-                    "settings" -> navController.navigate(R.id.settingsFragment)
-                    "lookfeel" -> navController.navigate(
-                        R.id.settingsFragment,
-                        androidx.core.os.bundleOf("initialRoute" to "LookFeel")
-                    )
-                    "fonts", "typography" -> navController.navigate(
-                        R.id.settingsFragment,
-                        androidx.core.os.bundleOf("initialRoute" to "Fonts")
-                    )
-                    "gestures", "gesture" -> navController.navigate(
-                        R.id.settingsFragment,
-                        androidx.core.os.bundleOf("initialRoute" to "Gestures")
-                    )
-                    "notifsettings", "notification_settings" -> navController.navigate(
-                        R.id.settingsFragment,
-                        androidx.core.os.bundleOf("initialRoute" to "Notifications")
-                    )
-                    "advanced" -> navController.navigate(
-                        R.id.settingsFragment,
-                        androidx.core.os.bundleOf("initialRoute" to "Advanced")
-                    )
-                    "drawersettings", "drawer_settings" -> navController.navigate(
-                        R.id.settingsFragment,
-                        androidx.core.os.bundleOf("initialRoute" to "Drawer")
-                    )
-                    "about", "support" -> navController.navigate(
-                        R.id.settingsFragment,
-                        androidx.core.os.bundleOf("initialRoute" to "Support")
-                    )
-                    "wallpaper" -> navController.navigate(R.id.wallpaperFragment)
-                    "colors", "coloreditor" -> navController.navigate(R.id.colorEditorFragment)
-                    "themes", "themepresets" -> navController.navigate(R.id.themePresetsFragment)
-                    "guide" -> navController.navigate(R.id.guideFragment)
-                    "onboarding" -> navController.navigate(R.id.onboardingFragment)
-                    "editmode", "edit_mode" -> com.github.gezimos.inkos.helper.EditModeHelper.toggleEditMode()
-                    "quick_menu" -> {
-                        val home = findHomeFragment()
-                        home?.automationShowQuickMenu()
-                    }
-                    "edit_bg", "edit_background" -> {
-                        val tab = intent.getIntExtra("tab", 0)
-                        val home = findHomeFragment()
-                        home?.automationShowBackgroundSettings(tab)
-                    }
-                    "edit_bg_theme" -> {
-                        findHomeFragment()?.automationShowBackgroundSettings(0)
-                    }
-                    "edit_bg_align" -> {
-                        findHomeFragment()?.automationShowBackgroundSettings(1)
-                    }
-                    "edit_bg_islands" -> {
-                        findHomeFragment()?.automationShowBackgroundSettings(2)
-                    }
-                    "edit_bg_gestures" -> {
-                        findHomeFragment()?.automationShowBackgroundSettings(3)
-                    }
-                    "edit_clock" -> findHomeFragment()?.automationShowClockSettings(intent.getIntExtra("tab", 0))
-                    "edit_date" -> findHomeFragment()?.automationShowDateSettings(intent.getIntExtra("tab", 0))
-                    "edit_apps" -> findHomeFragment()?.automationShowAppSettings(intent.getIntExtra("tab", 0))
-                    "editmode_on", "edit_on" -> window.decorView.postDelayed({
-                        com.github.gezimos.inkos.helper.EditModeHelper.setEditMode(true)
-                    }, 600)
-                    "editmode_off", "edit_off" -> com.github.gezimos.inkos.helper.EditModeHelper.setEditMode(false)
-                    "shortswipe", "short_swipe", "zone" ->
-                        com.github.gezimos.inkos.ui.compose.showShortSwipeZoneEditor(this, prefs) {}
-                    "editfavorites", "edit_favorites" -> navController.navigate(
-                        R.id.appsFragment,
-                        androidx.core.os.bundleOf("flag" to "EditFavorites", "n" to 0)
-                    )
-                    "shortcuticon", "shortcut_icon" -> {
-                        val dm = com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this)
-                        dm.showShortcutIconPicker(prefs.shortcutLeftIcon) {}
-                    }
-                    "badgeindicator", "badge_indicator" -> {
-                        val dm = com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this)
-                        dm.showBadgeIndicatorPicker(
-                            com.github.gezimos.inkos.data.Constants.NotificationIndicator.fromOrdinal(prefs.notificationIndicatorStyle)
-                        ) {}
-                    }
-                    "privacy", "privacypolicy" -> {
-                        com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this).showPrivacyPolicySheet()
-                    }
-                    "fontlicense", "font_license" -> {
-                        com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this).showFontLicenseSheet()
-                    }
-                    // --- 测试状态开关（一键设置，省去在设置页里找开关） ---
-                    "home_next" -> {
-                        Log.d(TAG, "home_next before: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
-                        viewModel.nextPage()
-                        Log.d(TAG, "home_next after: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
-                    }
-                    "home_prev" -> {
-                        Log.d(TAG, "home_prev before: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
-                        viewModel.previousPage()
-                        Log.d(TAG, "home_prev after: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
-                    }
-                    "home_reset_off" -> viewModel.setHomeReset(false)
-                    "home_reset_on" -> viewModel.setHomeReset(true)
-                    "pager_margin" -> viewModel.setPageIndicatorMargin(intent.getIntExtra("value", 0))
-                    "pager_on" -> viewModel.setPageIndicatorVisible(true)
-                    "pager_off" -> viewModel.setPageIndicatorVisible(false)
-                    "bottomwidget", "bottom_widget" -> {
-                        val type = intent.getStringExtra("type")?.trim()?.lowercase()
-                        val mapped = when (type) {
-                            "android", "android_widget" -> Constants.BottomWidgetType.AndroidWidget.value
-                            "shortcuts", "search" -> Constants.BottomWidgetType.Shortcuts.value
-                            "quote" -> Constants.BottomWidgetType.Quote.value
-                            "events" -> Constants.BottomWidgetType.Events.value
-                            "usage", "total_usage" -> Constants.BottomWidgetType.TotalUsage.value
-                            "pagedots", "page_dots" -> Constants.BottomWidgetType.PageDots.value
-                            "off", "disabled" -> Constants.BottomWidgetType.Disabled.value
-                            else -> null
-                        }
-                        if (mapped != null) viewModel.setBottomWidgetType(mapped)
-                            else Log.w(TAG, "automation: bottomwidget needs --es type android|shortcuts|quote|events|usage|pagedots|off")
-                    }
-                    "bottom_android" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.AndroidWidget.value)
-                    "bottom_shortcuts" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Shortcuts.value)
-                    "bottom_quote" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Quote.value)
-                    "bottom_events" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Events.value)
-                    "bottom_usage" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.TotalUsage.value)
-                    "bottom_pagedots" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.PageDots.value)
-                    "bottom_off" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Disabled.value)
-                    "allowlist_tray_clear" -> viewModel.setAllowedSimpleTrayApps(emptySet())
-                    "allowlist_hub_clear" -> viewModel.setAllowedHubApps(emptySet())
-                    "allowlist_clear" -> {
-                        viewModel.setAllowedSimpleTrayApps(emptySet())
-                        viewModel.setAllowedHubApps(emptySet())
-                    }
-                    else -> Log.w(TAG, "automation: unknown dest '$dest'")
+        // Consume before dispatch: recreate must not replay writes or editor requests.
+        keys.forEach { intent.removeExtra(it) }
+        setIntent(intent)
+        val rawId = extras["request_id"]
+        val requestId = rawId as? String ?: java.util.UUID.randomUUID().toString()
+        val rawDest = (extras["dest"] as? String).orEmpty()
+        if (rawId != null && (rawId !is String || rawId.length > 128 || rawId.any { it.isISOControl() })) {
+            automationResult("", rawDest.take(64), "rejected", "request_id must be a short printable string")
+            return true
+        }
+        val validation = com.github.gezimos.inkos.helper.AutomationContract.validate(extras, BuildConfig.DEBUG)
+        if (validation is com.github.gezimos.inkos.helper.AutomationContract.Validation.Rejected) {
+            automationResult(requestId, rawDest.take(64), "rejected", validation.message)
+            return true
+        }
+        val request = (validation as com.github.gezimos.inkos.helper.AutomationContract.Validation.Accepted).request
+        if (!::navController.isInitialized || !::viewModel.isInitialized) {
+            automationResult(requestId, request.dest, "rejected", "Activity is not ready")
+            return true
+        }
+        if (request.dest == "status") {
+            automationResult(requestId, request.dest, "applied", automationState())
+            return true
+        }
+        cancelPendingAutomation()
+        if (request.needsHome || request.dest == "home") {
+            // Navigation is not user dismissal: suppress parent-reopen callbacks.
+            com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.dismissAllSheets()
+            navController.popBackStack(R.id.mainFragment, false)
+        } else if (!request.writesPreferences) {
+            com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.dismissAllSheets()
+        }
+        val startedAt = android.os.SystemClock.uptimeMillis()
+        val task = object : Runnable {
+            override fun run() {
+                if (isFinishing || isDestroyed) {
+                    cancelPendingAutomation()
+                    return
                 }
-            } catch (t: Throwable) {
-                Log.w(TAG, "automation: navigate '$dest' failed: ${t.javaClass.simpleName}: ${t.message}")
+                val active = lifecycle.currentState.isAtLeast(androidx.lifecycle.Lifecycle.State.RESUMED)
+                val homeReady = !request.needsHome ||
+                    (navController.currentDestination?.id == R.id.mainFragment &&
+                        findHomeFragment()?.let { it.isAdded && it.view != null && it.isResumed } == true)
+                val editorDelayReady = request.dest != "editmode_on" ||
+                    android.os.SystemClock.uptimeMillis() - startedAt >= 600L
+                if (!active || !homeReady || !editorDelayReady) {
+                    if (android.os.SystemClock.uptimeMillis() - startedAt > 3_000L) {
+                        pendingAutomation = null
+                        pendingAutomationCancelled = null
+                        automationResult(requestId, request.dest, "rejected", "Timed out waiting for resumed Activity/Home")
+                    } else automationHandler.postDelayed(this, 50L)
+                    return
+                }
+                pendingAutomation = null
+                pendingAutomationCancelled = null
+                try {
+                    dispatchAutomation(request)
+                    if (request.skipOnboarding) prefs.firstOpen = false
+                    automationResult(requestId, request.dest,
+                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev")) "applied" else "dispatched",
+                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev")) automationState()
+                        else "Dispatched; verify the target UI (authentication/loading may still be pending)")
+                } catch (e: Exception) {
+                    automationResult(requestId, request.dest, "rejected", "Dispatch failed: ${e.javaClass.simpleName}")
+                }
             }
         }
+        pendingAutomation = task
+        pendingAutomationCancelled = { automationResult(requestId, request.dest, "cancelled", "Superseded or Activity left foreground") }
+        automationHandler.post(task)
+        return true
+    }
 
-        if (intent.getBooleanExtra(EXTRA_AUTOMATION_REFRESH, false)) {
-            try {
-                com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEinkForced(
-                    this, prefs, null, 100, useActivityRoot = true
-                )
-            } catch (_: Throwable) {
+    private fun dispatchAutomation(request: com.github.gezimos.inkos.helper.AutomationContract.Request) {
+        fun home() = requireNotNull(findHomeFragment()) { "Home is not available" }
+        when (request.dest) {
+            "home" -> backToHomeScreen()
+            "drawer" -> navController.navigate(R.id.appListFragment)
+            "recents" -> navController.navigate(R.id.recentsFragment)
+            "tray" -> navController.navigate(R.id.simpleTrayFragment)
+            "hub" -> navController.navigate(R.id.hubFragment)
+            "letters" -> navController.navigate(R.id.lettersFragment)
+            "settings" -> navController.navigate(R.id.settingsFragment)
+            "lookfeel", "fonts", "gestures", "notifsettings", "advanced", "drawersettings", "about" -> {
+                val route = when (request.dest) {
+                    "lookfeel" -> "LookFeel"
+                    "fonts" -> "Fonts"
+                    "gestures" -> "Gestures"
+                    "notifsettings" -> "Notifications"
+                    "advanced" -> "Advanced"
+                    "drawersettings" -> "Drawer"
+                    else -> "Support"
+                }
+                navController.navigate(R.id.settingsFragment, androidx.core.os.bundleOf("initialRoute" to route))
             }
+            "wallpaper" -> navController.navigate(R.id.wallpaperFragment)
+            "colors" -> navController.navigate(R.id.colorEditorFragment)
+            "themes" -> navController.navigate(R.id.themePresetsFragment)
+            "guide" -> navController.navigate(R.id.guideFragment)
+            "onboarding" -> navController.navigate(R.id.onboardingFragment)
+            "editmode" -> EditModeHelper.toggleEditMode()
+            "editmode_on" -> EditModeHelper.setEditMode(true)
+            "editmode_off" -> EditModeHelper.setEditMode(false)
+            "quick_menu" -> home().automationShowQuickMenu()
+            "edit_bg" -> home().automationShowBackgroundSettings(request.tab)
+            "edit_bg_theme" -> home().automationShowBackgroundSettings(0)
+            "edit_bg_align" -> home().automationShowBackgroundSettings(1)
+            "edit_bg_islands" -> home().automationShowBackgroundSettings(2)
+            "edit_bg_gestures" -> home().automationShowBackgroundSettings(3)
+            "edit_clock" -> home().automationShowClockSettings(request.tab)
+            "edit_date" -> home().automationShowDateSettings(request.tab)
+            "edit_apps" -> home().automationShowAppSettings(request.tab)
+            "shortswipe" -> com.github.gezimos.inkos.ui.compose.showShortSwipeZoneEditor(this, prefs) {}
+            "editfavorites" -> navController.navigate(R.id.appsFragment, androidx.core.os.bundleOf("flag" to "EditFavorites", "n" to 0))
+            "shortcuticon" -> ComposeDialogManager(this, this).showShortcutIconPicker(prefs.shortcutLeftIcon) {}
+            "badgeindicator" -> ComposeDialogManager(this, this).showBadgeIndicatorPicker(Constants.NotificationIndicator.fromOrdinal(prefs.notificationIndicatorStyle)) {}
+            "privacy" -> ComposeDialogManager(this, this).showPrivacyPolicySheet()
+            "fontlicense" -> ComposeDialogManager(this, this).showFontLicenseSheet()
+            "home_next" -> viewModel.nextPage()
+            "home_prev" -> viewModel.previousPage()
+            "home_reset_off" -> viewModel.setHomeReset(false)
+            "home_reset_on" -> viewModel.setHomeReset(true)
+            "pager_margin" -> viewModel.setPageIndicatorMargin(requireNotNull(request.value))
+            "pager_on" -> viewModel.setPageIndicatorVisible(true)
+            "pager_off" -> viewModel.setPageIndicatorVisible(false)
+            "bottomwidget", "bottom_android", "bottom_shortcuts", "bottom_quote", "bottom_events", "bottom_usage", "bottom_pagedots", "bottom_off" -> {
+                val type = request.type ?: request.dest.removePrefix("bottom_")
+                viewModel.setBottomWidgetType(when (type) {
+                    "android" -> Constants.BottomWidgetType.AndroidWidget.value
+                    "shortcuts" -> Constants.BottomWidgetType.Shortcuts.value
+                    "quote" -> Constants.BottomWidgetType.Quote.value
+                    "events" -> Constants.BottomWidgetType.Events.value
+                    "usage" -> Constants.BottomWidgetType.TotalUsage.value
+                    "pagedots" -> Constants.BottomWidgetType.PageDots.value
+                    else -> Constants.BottomWidgetType.Disabled.value
+                })
+            }
+            "allowlist_tray_clear" -> viewModel.setAllowedSimpleTrayApps(emptySet())
+            "allowlist_hub_clear" -> viewModel.setAllowedHubApps(emptySet())
+            "allowlist_clear" -> {
+                viewModel.setAllowedSimpleTrayApps(emptySet())
+                viewModel.setAllowedHubApps(emptySet())
+            }
+            else -> error("No dispatcher for validated dest")
         }
-
-        // 自动化的 extras 用过即清：Activity 因语言切换等重建时会复用同一个 launch intent，
-        // 不清掉会在重建后把对话框/编辑器再弹一次。
-        try {
-            intent.removeExtra(EXTRA_AUTOMATION_DEST)
-            intent.removeExtra(EXTRA_AUTOMATION_SKIP_ONBOARDING)
-            intent.removeExtra(EXTRA_AUTOMATION_REFRESH)
-            setIntent(intent)
-        } catch (_: Throwable) {
+        if (request.refreshEink) {
+            com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEinkForced(this, prefs, null, 100, useActivityRoot = true)
         }
-
-        return !dest.isNullOrEmpty()
     }
 
     private val onBackPressedCallback = object : OnBackPressedCallback(true) {
@@ -625,6 +645,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun backToHomeScreen() {
+        cancelPendingAutomation()
         if (!::navController.isInitialized) return
         // Home 手势/按键回主页时，先关掉仍打开的底部弹窗（如 App Shortcuts 选择器）
         try {
@@ -917,6 +938,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onPause() {
+        cancelPendingAutomation()
         super.onPause()
         try {
             wasInBackground = true
@@ -1040,6 +1062,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        cancelPendingAutomation()
         // 编辑器覆盖层挂在 decorView 上，随 Activity 一起销毁；顺手清掉标志位，避免下次进来还隐藏拖动条
         com.github.gezimos.inkos.helper.EditModeHelper.zoneEditorVisible.value = false
         super.onDestroy()

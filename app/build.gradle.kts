@@ -172,6 +172,9 @@ dependencies {
     // Biometric support
     implementation(libs.biometric)
 
+    // Pure request-contract tests run without Android or a device.
+    testImplementation("junit:junit:4.13.2")
+
     // AndroidX Test - Espresso
     androidTestImplementation(libs.espresso.core)
     androidTestImplementation(libs.espresso.contrib)
