@@ -2872,7 +2872,7 @@ internal fun WidgetAppListContent(
                                 Box(
                                     modifier = Modifier
                                         .padding(horizontal = dotSpacing / 2)
-                                        .size(dotSize)
+                                        .size(if (selected) dotSize else dotSize * (10f / 12f))
                                         .background(if (selected) Theme.colors.text else Theme.colors.background, dotShape)
                                         .then(
                                             if (!selected) Modifier.border(dotBorder, Theme.colors.text, dotShape)

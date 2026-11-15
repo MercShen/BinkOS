@@ -969,7 +969,6 @@ fun PageIndicator(
             modifier = Modifier
                 .padding(all = if (showTextIslands) 2.dp else 0.dp),
             verticalArrangement = Arrangement.spacedBy(dotSpacing),
-            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             val dotShape = remember(textIslandsShape) {
                 when (textIslandsShape) {
@@ -992,7 +991,7 @@ fun PageIndicator(
                 } else {
                     Box(
                         modifier = Modifier
-                            .size(dotSize)
+                            .size(dotSize * (10f / 12f))
                             .background(color = inactiveBackgroundColor, shape = dotShape)
                             .border(width = borderWidth, color = borderColor, shape = dotShape)
                     )

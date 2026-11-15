@@ -1425,7 +1425,7 @@ fun MultiChoiceSheet(
                                 Box(
                                     modifier = Modifier
                                         .padding(horizontal = dotSpacing / 2)
-                                        .size(dotSize)
+                                        .size(if (selected) dotSize else dotSize * (10f / 12f))
                                         .background(if (selected) textColor else bgColor, dotShape)
                                         .then(if (!selected) Modifier.border(dotBorder, textColor, dotShape) else Modifier)
                                 )
@@ -3282,7 +3282,7 @@ fun BadgeIndicatorPickerSheet(
                         Box(
                             modifier = Modifier
                                 .padding(horizontal = dotSpacing / 2)
-                                .size(dotSize)
+                                .size(if (selected) dotSize else dotSize * (10f / 12f))
                                 .background(if (selected) textColor else bgColor, dotShape)
                                 .then(
                                     if (!selected) Modifier.border(dotBorder, textColor, dotShape)
