@@ -663,6 +663,26 @@ fun HubScreen(
                     )
                 }
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = (categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All").uppercase(),
+                    color = Theme.colors.text,
+                    fontSize = (prefs.notificationsTextSize + 2).sp.scaled(screenScale),
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = notifFontFamilyGlobal,
+                    modifier = Modifier.weight(1f)
+                )
+                NotificationPageIndicator(
+                    prefs = prefs,
+                    currentPage = pagerState.currentPage,
+                    pageCount = pagerState.pageCount
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
+
             HubCategoryTabsRow(
                 prefs = prefs,
                 tabs = categoryTabs,
@@ -697,19 +717,7 @@ fun HubScreen(
                 )
             }
 
-            Row(
-                modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged { containerSize = it },
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (pagerState.pageCount > 1 && prefs.homePagerAlign == 0) {
-                    NotificationPageIndicator(
-                        prefs = prefs,
-                        currentPage = pagerState.currentPage,
-                        pageCount = pagerState.pageCount,
-                        modifier = Modifier.padding(end = 6.dp.scaled(screenScale))
-                    )
-                }
-                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Box(modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged { containerSize = it }) {
                 if (filteredNotifications.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -766,15 +774,6 @@ fun HubScreen(
                             expandedNotificationKey = null
                         },
                         modifier = Modifier.fillMaxWidth()
-                    )
-                }
-                }
-                if (pagerState.pageCount > 1 && prefs.homePagerAlign != 0) {
-                    NotificationPageIndicator(
-                        prefs = prefs,
-                        currentPage = pagerState.currentPage,
-                        pageCount = pagerState.pageCount,
-                        modifier = Modifier.padding(start = 6.dp.scaled(screenScale))
                     )
                 }
             }
@@ -2103,6 +2102,19 @@ fun SimpleTrayScreen(
                     )
                 }
         ) {
+            if (pagerState.pageCount > 1) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    NotificationPageIndicator(
+                        prefs = prefs,
+                        currentPage = pagerState.currentPage,
+                        pageCount = pagerState.pageCount
+                    )
+                }
+            }
+
             QuickSettingsRow(
                 prefs = prefs,
                 isDpadMode = isDpadMode,
@@ -2257,37 +2269,18 @@ fun SimpleTrayScreen(
                     }
                 }
             } else {
-                Row(
-                    modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged { trayContainerSize = it },
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged { trayContainerSize = it }
                 ) {
-                    if (pagerState.pageCount > 1 && prefs.homePagerAlign == 0) {
-                        NotificationPageIndicator(
-                            prefs = prefs,
-                            currentPage = pagerState.currentPage,
-                            pageCount = pagerState.pageCount,
-                            modifier = Modifier.padding(end = 6.dp.scaled(screenScale))
-                        )
-                    }
-                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                        MergedNotificationCards(
-                            prefs = prefs,
-                            notifications = displayNotifications,
-                            isDpadMode = isDpadMode,
-                            focusZone = focusZone.value,
-                            selectedNotificationIndex = selectedNotificationIndex.intValue,
-                            isEditMode = isEditMode,
-                            onEditModeTap = onNotificationEditModeClick
-                        )
-                    }
-                    if (pagerState.pageCount > 1 && prefs.homePagerAlign != 0) {
-                        NotificationPageIndicator(
-                            prefs = prefs,
-                            currentPage = pagerState.currentPage,
-                            pageCount = pagerState.pageCount,
-                            modifier = Modifier.padding(start = 6.dp.scaled(screenScale))
-                        )
-                    }
+                    MergedNotificationCards(
+                        prefs = prefs,
+                        notifications = displayNotifications,
+                        isDpadMode = isDpadMode,
+                        focusZone = focusZone.value,
+                        selectedNotificationIndex = selectedNotificationIndex.intValue,
+                        isEditMode = isEditMode,
+                        onEditModeTap = onNotificationEditModeClick
+                    )
                 }
             }
         }
