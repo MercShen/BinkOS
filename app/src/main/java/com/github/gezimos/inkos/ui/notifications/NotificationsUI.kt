@@ -711,14 +711,7 @@ fun HubScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (pagerState.pageCount > 1 && prefs.homePagerAlign == 0) {
-                    NotificationPageIndicator(
-                        prefs = prefs,
-                        currentPage = pagerState.currentPage,
-                        pageCount = pagerState.pageCount,
-                        modifier = Modifier.width(20.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(20.dp))
                 Box(modifier = Modifier.weight(1f).fillMaxHeight().onSizeChanged { containerSize = it }) {
                 if (filteredNotifications.isEmpty()) {
                     Box(
@@ -779,17 +772,26 @@ fun HubScreen(
                     )
                 }
             }
-                if (pagerState.pageCount > 1 && prefs.homePagerAlign != 0) {
-                    NotificationPageIndicator(
-                        prefs = prefs,
-                        currentPage = pagerState.currentPage,
-                        pageCount = pagerState.pageCount,
-                        modifier = Modifier.width(20.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(20.dp))
             }
         }
 
+        if (pagerState.pageCount > 1) {
+            Box(
+                modifier = Modifier
+                    .align(if (prefs.homePagerAlign == 0) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(
+                        start = if (prefs.homePagerAlign == 0) 12.dp.scaled(screenScale) else 0.dp,
+                        end = if (prefs.homePagerAlign == 0) 0.dp else 12.dp.scaled(screenScale)
+                    )
+            ) {
+                NotificationPageIndicator(
+                    prefs = prefs,
+                    currentPage = pagerState.currentPage,
+                    pageCount = pagerState.pageCount
+                )
+            }
+        }
         if (isEditMode) {
             Box(
                 modifier = Modifier
@@ -2236,14 +2238,7 @@ fun SimpleTrayScreen(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (pagerState.pageCount > 1 && prefs.homePagerAlign == 0) {
-                    NotificationPageIndicator(
-                        prefs = prefs,
-                        currentPage = pagerState.currentPage,
-                        pageCount = pagerState.pageCount,
-                        modifier = Modifier.width(20.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(20.dp))
                 Box(
                     modifier = Modifier.weight(1f).fillMaxHeight().onSizeChanged { trayContainerSize = it }
                 ) {
@@ -2293,17 +2288,26 @@ fun SimpleTrayScreen(
                         )
                     }
                 }
-                if (pagerState.pageCount > 1 && prefs.homePagerAlign != 0) {
-                    NotificationPageIndicator(
-                        prefs = prefs,
-                        currentPage = pagerState.currentPage,
-                        pageCount = pagerState.pageCount,
-                        modifier = Modifier.width(20.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(20.dp))
             }
         }
 
+        if (pagerState.pageCount > 1) {
+            Box(
+                modifier = Modifier
+                    .align(if (prefs.homePagerAlign == 0) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(
+                        start = if (prefs.homePagerAlign == 0) 12.dp.scaled(screenScale) else 0.dp,
+                        end = if (prefs.homePagerAlign == 0) 0.dp else 12.dp.scaled(screenScale)
+                    )
+            ) {
+                NotificationPageIndicator(
+                    prefs = prefs,
+                    currentPage = pagerState.currentPage,
+                    pageCount = pagerState.pageCount
+                )
+            }
+        }
         if (isEditMode) {
             EditModeOverlay()
         }
