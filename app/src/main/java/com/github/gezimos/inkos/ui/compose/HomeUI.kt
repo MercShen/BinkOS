@@ -390,7 +390,16 @@ fun HomeUI(
             val gapPx = with(density) { 4.dp.toPx() }
             val area = homeAppsAreaBounds
             val screenW = homeRootSize.width.toFloat()
+            val marginDp = state.pageIndicatorMargin
+            val marginRawPx = with(density) { marginDp.dp.toPx() }
+            // 留白最多到 App 显示区域外侧，超出会被夹住，避免压到图标
+            val marginPx = if (area.width > 0f && screenW > 0f) {
+                val maxSafe = if (leftAlign) area.left - dotSizePx - gapPx else screenW - area.right - dotSizePx - gapPx
+                marginRawPx.coerceIn(gapPx, maxSafe.coerceAtLeast(gapPx))
+            } else marginRawPx
             val dotLeftPx = when {
+                marginRawPx > 0f && leftAlign -> marginPx
+                marginRawPx > 0f -> screenW - marginPx - dotSizePx
                 area.width <= 0f || screenW <= 0f -> if (leftAlign) gapPx else screenW - dotSizePx - gapPx
                 leftAlign -> (((area.left - gapPx) / 2f) - dotSizePx / 2f)
                     .coerceAtMost(area.left - gapPx - dotSizePx)
@@ -4413,6 +4422,7 @@ data class HomeUiRenderState(
     val topWidgetMargin: Int,
     val pageIndicatorVisible: Boolean,
     val pageIndicatorAlignment: Int = 1,
+    val pageIndicatorMargin: Int = 0,
     val pageIndicatorColor: Int,
     val pageIndicatorDotSize: Float = 12f,
     val appPadding: Int,

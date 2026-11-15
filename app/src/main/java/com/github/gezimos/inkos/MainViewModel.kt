@@ -103,6 +103,7 @@ data class HomeUiState(
     val vibrationScale: Int = 100,
     val pageIndicatorVisible: Boolean = false,
     val pageIndicatorAlignment: Int = 1,
+    val pageIndicatorMargin: Int = 0,
     val textIslands: Boolean = false,
     val textIslandsInverted: Boolean = false,
     val textIslandsShape: Int = 0,
@@ -463,6 +464,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         vibrationScale = prefs.vibrationScale,
         pageIndicatorVisible = prefs.homePager,
         pageIndicatorAlignment = prefs.homePagerAlign,
+                    pageIndicatorMargin = prefs.pageIndicatorMargin,
         textIslands = prefs.textIslands,
         textIslandsInverted = prefs.textIslandsInverted,
         textIslandsShape = prefs.textIslandsShape,
@@ -655,6 +657,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             topWidgetMargin = homeUi.topWidgetMargin,
             pageIndicatorVisible = homeUi.pageIndicatorVisible,
             pageIndicatorAlignment = homeUi.pageIndicatorAlignment,
+            pageIndicatorMargin = homeUi.pageIndicatorMargin,
             pageIndicatorColor = homeUi.textColor,
             appPadding = homeUi.textPaddingSize,
             textIslands = homeUi.textIslands,
@@ -1042,6 +1045,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             PrefKeys.VIBRATION_SCALE -> currentState.copy(vibrationScale = prefs.vibrationScale)
             PrefKeys.HOME_PAGER -> currentState.copy(pageIndicatorVisible = prefs.homePager)
             PrefKeys.HOME_PAGER_ALIGN -> currentState.copy(pageIndicatorAlignment = prefs.homePagerAlign)
+            PrefKeys.PAGE_INDICATOR_MARGIN -> currentState.copy(pageIndicatorMargin = prefs.pageIndicatorMargin)
             PrefKeys.TEXT_ISLANDS -> currentState.copy(textIslands = prefs.textIslands)
             PrefKeys.TEXT_ISLANDS_INVERTED -> currentState.copy(textIslandsInverted = prefs.textIslandsInverted)
             PrefKeys.TEXT_ISLANDS_SHAPE -> currentState.copy(textIslandsShape = prefs.textIslandsShape)
@@ -2093,6 +2097,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val a = alignment.coerceIn(0, 1)
         prefs.homePagerAlign = a
         _homeUiState.value = _homeUiState.value.copy(pageIndicatorAlignment = a)
+    }
+
+    fun setPageIndicatorMargin(margin: Int) {
+        prefs.pageIndicatorMargin = margin
+        _homeUiState.value = _homeUiState.value.copy(pageIndicatorMargin = margin.coerceIn(0, 32))
     }
 
     fun setPageIndicatorVisible(visible: Boolean) {

@@ -1051,6 +1051,23 @@ class SettingsFragment : Fragment() {
             SettingsSwitch(text = stringResource(R.string.enable_home_pager), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_page_indicator),
                 defaultState = homeUiState.pageIndicatorVisible, onCheckedChange = { viewModel.setPageIndicatorVisible(it) })
+            var pagerMargin by remember { mutableIntStateOf(Prefs(requireContext()).pageIndicatorMargin) }
+            SettingsSelect(
+                title = stringResource(R.string.page_indicator_margin),
+                option = if (pagerMargin == 0) stringResource(R.string.option_auto) else "$pagerMargin",
+                fontSize = titleFontSize,
+                description = stringResource(R.string.desc_page_indicator_margin),
+                onClick = {
+                    dialogBuilder.showSliderDialog(
+                        requireContext(),
+                        getString(R.string.page_indicator_margin),
+                        0, 32, pagerMargin
+                    ) { margin ->
+                        pagerMargin = margin
+                        viewModel.setPageIndicatorMargin(margin)
+                    }
+                }
+            )
             SettingsSwitch(text = stringResource(R.string.home_page_reset), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_page_reset),
                 defaultState = homeUiState.homeReset, onCheckedChange = { viewModel.setHomeReset(it) })

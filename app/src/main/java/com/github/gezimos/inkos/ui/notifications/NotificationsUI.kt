@@ -239,11 +239,23 @@ private fun BoxScope.NotificationPageIndicatorOverlay(
     if (pageCount <= 1 || rootWidthPx <= 0 || listBounds.width <= 0f) return
     val leftAlign = prefs.homePagerAlign == 0
     val dotWidthPx = with(LocalDensity.current) { 12.dp.toPx() }
-    val centerX = if (leftAlign) listBounds.left / 2f else (listBounds.right + rootWidthPx) / 2f
+    val marginDp = prefs.pageIndicatorMargin
+    val gapPx = with(LocalDensity.current) { 4.dp.toPx() }
+    val leftPx = if (marginDp > 0) {
+        val rawMargin = with(LocalDensity.current) { marginDp.dp.toPx() }
+        // 最多到消息框外侧，超出夹住，避免压到列表内容
+        val maxSafe = if (leftAlign) listBounds.left - dotWidthPx - gapPx
+                      else rootWidthPx - listBounds.right - dotWidthPx - gapPx
+        val marginPx = rawMargin.coerceIn(gapPx, maxSafe.coerceAtLeast(gapPx))
+        if (leftAlign) marginPx else rootWidthPx - marginPx - dotWidthPx
+    } else {
+        val centerX = if (leftAlign) listBounds.left / 2f else (listBounds.right + rootWidthPx) / 2f
+        centerX - dotWidthPx / 2f
+    }
     Box(
         modifier = Modifier
             .align(Alignment.CenterStart)
-            .offset { IntOffset((centerX - dotWidthPx / 2f).roundToInt(), 0) }
+            .offset { IntOffset(leftPx.roundToInt(), 0) }
     ) {
         NotificationPageIndicator(
             prefs = prefs,

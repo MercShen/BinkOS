@@ -114,6 +114,7 @@ private const val HOME_HANDLE_STYLE = "HOME_HANDLE_STYLE"
 private const val SHORT_SWIPE_ZONE_TOP = "SHORT_SWIPE_ZONE_TOP"
 private const val SHORT_SWIPE_ZONE_BOTTOM = "SHORT_SWIPE_ZONE_BOTTOM"
 private const val HOME_PAGER_ALIGN = "HOME_PAGER_ALIGN"
+private const val PAGE_INDICATOR_MARGIN = "PAGE_INDICATOR_MARGIN"
 private const val EINK_SYSTEM_FULL_REFRESH = "EINK_SYSTEM_FULL_REFRESH"
 private const val EINK_PAGE_TURN_ANIMATION = "EINK_PAGE_TURN_ANIMATION"
 private const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
@@ -1628,6 +1629,11 @@ class Prefs(val context: Context) {
     var homePagerAlign: Int
         get() = prefs.getInt(HOME_PAGER_ALIGN, 1)
         set(value) = prefs.edit { putInt(HOME_PAGER_ALIGN, value.coerceIn(0, 1)) }
+
+/** 页码指示器与屏幕边缘的留白（dp）；0 = 自动（主页/Hub/托盘按显示区域取中点） */
+var pageIndicatorMargin: Int
+    get() = prefs.getInt(PAGE_INDICATOR_MARGIN, 0)
+    set(value) = prefs.edit { putInt(PAGE_INDICATOR_MARGIN, value.coerceIn(0, 32)) }
     /** 打开/关闭界面时播放大我系统翻页动画 */
     var einkPageTurnAnimation: Boolean
         get() = prefs.getBoolean(EINK_PAGE_TURN_ANIMATION, false)

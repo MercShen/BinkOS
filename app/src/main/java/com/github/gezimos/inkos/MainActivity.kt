@@ -319,6 +319,7 @@ class MainActivity : AppCompatActivity() {
                         viewModel.previousPage()
                         Log.d(TAG, "home_prev after: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
                     }
+                    "pager_margin" -> viewModel.setPageIndicatorMargin(intent.getIntExtra("value", 0))
                     "pager_on" -> viewModel.setPageIndicatorVisible(true)
                     "pager_off" -> viewModel.setPageIndicatorVisible(false)
                     "bottomwidget", "bottom_widget" -> {
