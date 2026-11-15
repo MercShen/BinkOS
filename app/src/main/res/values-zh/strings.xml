@@ -1020,4 +1020,5 @@
     <string name="shortcut_icon_camera">相机</string>
     <string name="badge_indicator_filled_circle">实心圆</string>
     <string name="badge_indicator_filled_diamond">实心菱形</string>
+    <string name="no_matching_items">没有匹配项</string>
 </resources>

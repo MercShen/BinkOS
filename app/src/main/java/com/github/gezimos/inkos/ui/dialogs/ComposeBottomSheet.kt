@@ -51,6 +51,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -1279,49 +1280,167 @@ fun MultiChoiceSheet(
         }
     }
 
-    SheetTitle(title)
-    if (showSelectAll) {
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val screenScale = rememberScreenScale()
-        val buttonShape = remember { ShapeHelper.getRoundedCornerShape(Prefs(context).textIslandsShape, pillRadius = 50.dp, roundedRadius = 4.dp) }
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            SelectAllToggleButton(
-                label = stringResource(R.string.select_all),
-                textColor = textColor,
-                bgColor = bgColor,
-                shape = buttonShape,
-                screenScale = screenScale,
-                onClick = {
-                    for (i in checkedList.indices) checkedList[i] = true
-                    try { com.github.gezimos.inkos.helper.utils.VibrationHelper.trigger(com.github.gezimos.inkos.helper.utils.VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                }
-            )
-            SelectAllToggleButton(
-                label = stringResource(R.string.deselect_all),
-                textColor = textColor,
-                bgColor = bgColor,
-                shape = buttonShape,
-                screenScale = screenScale,
-                onClick = {
-                    for (i in checkedList.indices) checkedList[i] = false
-                    try { com.github.gezimos.inkos.helper.utils.VibrationHelper.trigger(com.github.gezimos.inkos.helper.utils.VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                }
-            )
+        val reserved = 190.dp.scaled(screenScale)
+        val rowHeight = 56.dp.scaled(screenScale)
+        val rowsPerPage = ((maxHeight - reserved) / rowHeight).toInt().coerceIn(4, 16)
+        var query by remember { mutableStateOf("") }
+        val visibleIndices = remember(items, query) {
+            val q = query.trim()
+            items.indices.filter { q.isEmpty() || items[it].contains(q, ignoreCase = true) }
         }
-    }
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        items(items.size, key = { it }) { index ->
-            MultiChoiceRow(
-                label = items[index],
-                checked = checkedList[index],
-                textColor = textColor,
-                bgColor = bgColor,
-                checkShape = checkShape,
-                onToggle = { checkedList[index] = it }
-            )
+        val pages = remember(visibleIndices, rowsPerPage) { visibleIndices.chunked(rowsPerPage) }
+        val pageCount = pages.size.coerceAtLeast(1)
+        var pageIndex by remember { mutableStateOf(0) }
+        LaunchedEffect(query, visibleIndices.size, rowsPerPage) {
+            pageIndex = pageIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+            if (query.isNotEmpty()) pageIndex = 0
+        }
+        var dragX by remember { mutableStateOf(0f) }
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            SheetTitle(title)
+            if (showSelectAll) {
+                val buttonShape = remember { ShapeHelper.getRoundedCornerShape(Prefs(context).textIslandsShape, pillRadius = 50.dp, roundedRadius = 4.dp) }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SelectAllToggleButton(
+                        label = stringResource(R.string.select_all),
+                        textColor = textColor,
+                        bgColor = bgColor,
+                        shape = buttonShape,
+                        screenScale = screenScale,
+                        onClick = {
+                            for (i in checkedList.indices) checkedList[i] = true
+                            try { com.github.gezimos.inkos.helper.utils.VibrationHelper.trigger(com.github.gezimos.inkos.helper.utils.VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
+                        }
+                    )
+                    SelectAllToggleButton(
+                        label = stringResource(R.string.deselect_all),
+                        textColor = textColor,
+                        bgColor = bgColor,
+                        shape = buttonShape,
+                        screenScale = screenScale,
+                        onClick = {
+                            for (i in checkedList.indices) checkedList[i] = false
+                            try { com.github.gezimos.inkos.helper.utils.VibrationHelper.trigger(com.github.gezimos.inkos.helper.utils.VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
+                        }
+                    )
+                }
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .border(1.5.dp, textColor, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                if (query.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.search_apps_hint),
+                        style = SettingsTheme.typography.item,
+                        color = textColor.copy(alpha = 0.5f)
+                    )
+                }
+                androidx.compose.foundation.text.BasicTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = textColor,
+                        fontSize = 16.sp.scaled(screenScale)
+                    ),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            if (visibleIndices.isEmpty()) {
+                Spacer(modifier = Modifier.height(rowHeight * rowsPerPage))
+                Text(
+                    text = stringResource(R.string.no_matching_items),
+                    style = SettingsTheme.typography.item,
+                    color = textColor.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(pageCount) {
+                            detectHorizontalDragGestures(
+                                onHorizontalDrag = { _, dragAmount -> dragX += dragAmount },
+                                onDragEnd = {
+                                    if (dragX > 48f && pageIndex > 0) pageIndex--
+                                    else if (dragX < -48f && pageIndex < pageCount - 1) pageIndex++
+                                    dragX = 0f
+                                },
+                                onDragCancel = { dragX = 0f }
+                            )
+                        }
+                ) {
+                    val pageIndices = pages.getOrNull(pageIndex).orEmpty()
+                    pageIndices.forEach { index ->
+                        MultiChoiceRow(
+                            label = items[index],
+                            checked = checkedList[index],
+                            textColor = textColor,
+                            bgColor = bgColor,
+                            checkShape = checkShape,
+                            minHeight = rowHeight,
+                            onToggle = { checkedList[index] = it }
+                        )
+                    }
+                    repeat(rowsPerPage - pageIndices.size) {
+                        Spacer(modifier = Modifier.height(rowHeight))
+                    }
+                    if (pageCount > 1) {
+                        val dotSize = 12.dp.scaled(screenScale)
+                        val dotSpacing = (12f * 0.8f).dp.scaled(screenScale)
+                        val dotBorder = (12f / 6f).dp.scaled(screenScale)
+                        val dotShape = if (Prefs(context).textIslandsShape == 0) CircleShape
+                            else ShapeHelper.getRoundedCornerShape(Prefs(context).textIslandsShape, roundedRadius = 4.dp.scaled(screenScale))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronLeft,
+                                contentDescription = stringResource(R.string.btn_back),
+                                tint = if (pageIndex > 0) textColor else textColor.copy(alpha = 0.3f),
+                                modifier = Modifier
+                                    .size(28.dp.scaled(screenScale))
+                                    .clickable { if (pageIndex > 0) pageIndex-- }
+                            )
+                            Spacer(Modifier.width(12.dp.scaled(screenScale)))
+                            for (i in 0 until pageCount) {
+                                val selected = i == pageIndex
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = dotSpacing / 2)
+                                        .size(dotSize)
+                                        .background(if (selected) textColor else bgColor, dotShape)
+                                        .then(if (!selected) Modifier.border(dotBorder, textColor, dotShape) else Modifier)
+                                )
+                            }
+                            Spacer(Modifier.width(12.dp.scaled(screenScale)))
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronRight,
+                                contentDescription = stringResource(R.string.home_tooltip_next),
+                                tint = if (pageIndex < pageCount - 1) textColor else textColor.copy(alpha = 0.3f),
+                                modifier = Modifier
+                                    .size(28.dp.scaled(screenScale))
+                                    .clickable { if (pageIndex < pageCount - 1) pageIndex++ }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -1365,6 +1484,7 @@ private fun MultiChoiceRow(
     textColor: Color,
     bgColor: Color,
     checkShape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(4.dp),
+    minHeight: androidx.compose.ui.unit.Dp = 0.dp,
     onToggle: (Boolean) -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -1374,6 +1494,7 @@ private fun MultiChoiceRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = minHeight)
             .padding(vertical = 8.dp)
             .then(with(SettingsComposable) { Modifier.pillHighlight(isFocused, 6.dp, textColor, outerVertical = 6.dp) })
             .clickable(

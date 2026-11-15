@@ -1020,4 +1020,5 @@
     <string name="shortcut_icon_camera">Camera</string>
     <string name="badge_indicator_filled_circle">Filled circle</string>
     <string name="badge_indicator_filled_diamond">Filled diamond</string>
+    <string name="no_matching_items">No matches</string>
 </resources>
