@@ -1748,11 +1748,6 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
                         )
                     }
 
-                    ToggleRow(stringResource(R.string.edit_menu_enable_audio_widget), uiState.showAudioWidget) { checked ->
-                        vm.setShowAudioWidget(checked)
-                        onUpdate()
-                    }
-
                     // Link to full notification settings fragment
                     SettingRow(label = stringResource(R.string.edit_menu_all_notification_settings), value = "") {
                         currentSheet?.dismiss()
