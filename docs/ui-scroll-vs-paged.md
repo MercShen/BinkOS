@@ -10,8 +10,8 @@
 | 界面 | 实现 | 截图 | 备注 |
 |---|---|---|---|
 | 组件列表（选具体小组件，第二级） | `LazyColumn` 固定 400dp，`EditModeHelper.kt` `WidgetListContent` | [widget-list-scroll.png](images/scroll-audit/widget-list-scroll.png) | 与上一级应用列表（已分页）不一致，优先级最高 |
-| 快捷方式图标选择 | `LazyRow` 横向滚动，`ComposeBottomSheet.kt` `ShortcutIconPickerSheet` | [shortcut-icon-picker.png](images/scroll-audit/shortcut-icon-picker.png) | 原仅编辑模式可达，已加 `dest shortcuticon` |
-| 角标样式选择 | `LazyRow` 横向滚动，`ComposeBottomSheet.kt` `BadgeIndicatorPickerSheet` | [badge-indicator-picker.png](images/scroll-audit/badge-indicator-picker.png) | 同上，已加 `dest badgeindicator` |
+
+
 | 单选列表（语言等） | `LazyColumn`，`SingleChoiceSheet` | [single-choice-language.png](images/scroll-audit/single-choice-language.png) | 项数少，滚动压力低 |
 | ~~多选列表（标注通知应用等）~~ | 已改为按可用高度分页 + 搜索（`MultiChoiceSheet`，v0.2.6） | [multi-choice.png](images/scroll-audit/multi-choice.png) | 见下方「已翻页」 |
 | 分组多选 / 分组快捷方式 | `LazyColumn`，`GroupedMultiChoiceSheet` / `TabbedShortcutsSheet` | — | 分组头 + 子项，暂未单独截图 |
@@ -37,11 +37,12 @@
 | 图标样式选择 sheet | `BoxWithConstraints` 计算每页卡片数 |
 | 多选列表（标注通知应用） | 按可用高度分页 + 搜索框（`MultiChoiceSheet`） |
 | 角标样式选择 | 按宽度分页 + 页码圆点（`BadgeIndicatorPickerSheet`） |
+| 快捷方式图标选择 | 按宽度分页 + 页码圆点（`ShortcutIconPickerSheet`） |
 
 ## 三、建议顺序
 
 1. 组件列表（第二级）改分页 —— 和第一级割裂最明显。
-2. 两个 `LazyRow`（快捷方式图标、角标样式）改整页左右切换 —— 横向半行卡住最难受。
+2. ~~两个 `LazyRow`（快捷方式图标、角标样式）改整页左右切换~~ —— 均已完成。
 3. 多选/分组列表 —— 条目多，可考虑「每页 N 项 + 页码」。
 4. 长文本 sheet（隐私政策、字体许可）、颜色编辑器、通知详情 —— 保留滚动更自然。
 
