@@ -827,12 +827,10 @@ class HomeFragmentCompose : Fragment() {
             }
             Constants.BottomWidgetType.AndroidWidget.value -> {
                 if (prefs.androidWidgetId == -1) {
-                    EditModeHelper.showWidgetPickerSheet(
+                    EditModeHelper.showBottomWidgetSettings(
                         context = requireContext(),
                         fragment = this,
                         prefs = prefs,
-                        appWidgetHelper = appWidgetHelper,
-                        vm = viewModel,
                         onUpdate = { viewModel.refreshHomeAppsUiState(requireContext()) }
                     )
                 }

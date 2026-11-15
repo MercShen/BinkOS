@@ -330,7 +330,6 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .nestedScroll(swallowDragConnection)
-                                    .heightIn(max = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp - 24).dp)
 .padding(start = 24.dp.scaled(screenScale), end = 24.dp.scaled(screenScale), top = 6.dp.scaled(screenScale))
                             ) {
                                 val sheetOpenTime = remember { System.currentTimeMillis() }

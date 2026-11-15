@@ -664,6 +664,36 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
         val vm = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
         val appWidgetHelper = AppWidgetHelper.getInstance(context)
 
+        fun pickAndroidWidget(providerInfo: android.appwidget.AppWidgetProviderInfo, dismissSheet: () -> Unit) {
+            dismissSheet()
+            appWidgetHelper.pickWidgetFromProvider(
+                providerInfo = providerInfo,
+                onSuccess = { widgetId ->
+                    vm.setAndroidWidgetId(widgetId)
+                    onUpdate()
+                },
+                onNeedsPermission = { widgetId, bindIntent ->
+                    val homeFragment = fragment as? com.github.gezimos.inkos.ui.HomeFragmentCompose
+                    if (homeFragment != null) {
+                        homeFragment.pendingWidgetId = widgetId
+                        homeFragment.widgetBindLauncher.launch(bindIntent)
+                    }
+                },
+                onNeedsConfigure = { widgetId, configIntent ->
+                    val homeFragment = fragment as? com.github.gezimos.inkos.ui.HomeFragmentCompose
+                    if (homeFragment != null) {
+                        homeFragment.pendingWidgetId = widgetId
+                        try {
+                            homeFragment.widgetConfigureLauncher.launch(configIntent)
+                        } catch (e: SecurityException) {
+                            android.util.Log.e("EditModeHelper", "Widget configure activity not exported", e)
+                            context.showLongToast(context.getString(R.string.toast_widget_config_unavailable))
+                        }
+                    }
+                }
+            )
+        }
+
         // 预热组件列表：进入面板时后台枚举一次，Choose App 打开即可直接显示
         android.os.Handler(android.os.Looper.getMainLooper()).post {
             try {
@@ -694,6 +724,36 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
             val selectedTabIndex = remember { mutableStateOf(0) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
+            // 在同一面板内切换「应用列表 / 组件列表」，避免关掉再开导致旧面板残留
+            var wizardMode by remember { mutableStateOf(0) } // 0=面板 1=应用列表 2=组件列表
+            var wizardApp by remember { mutableStateOf<AppWidgetHelper.WidgetApp?>(null) }
+            if (wizardMode != 0) {
+                val widgetApps = remember(wizardMode == 1) { appWidgetHelper.getInstalledWidgetsByApp() }
+                val chosen = wizardApp
+                if (wizardMode == 1 || chosen == null) {
+                    WidgetAppListContent(
+                        context = context,
+                        widgetApps = widgetApps,
+                        onAppSelected = {
+                            wizardApp = it
+                            wizardMode = 2
+                        },
+                        onClose = { currentSheet?.dismiss() },
+                        onBack = { wizardMode = 0 },
+                        textIslandsShape = prefs.textIslandsShape
+                    )
+                } else {
+                    WidgetListContent(
+                        app = chosen,
+                        appWidgetHelper = appWidgetHelper,
+                        onBack = { wizardMode = 0 },
+                        onWidgetPicked = { providerInfo ->
+                            pickAndroidWidget(providerInfo) { currentSheet?.dismiss() }
+                        }
+                    )
+                }
+                return@showDialog
+            }
             val widgetTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_widget_function); 1 -> stringResource(R.string.edit_panel_desc_widget_style); else -> stringResource(R.string.edit_panel_desc_widget_gestures) }
             SheetTitle(stringResource(R.string.edit_panel_widget), fontScale = 1.35f)
             Text(
@@ -791,16 +851,14 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                                 } ?: stringResource(R.string.option_none_widget)
                                 val currentLabel = appWidgetHelper.getCurrentWidgetLabel() ?: stringResource(R.string.option_none_widget)
                                 SettingRow(label = stringResource(R.string.choose_app_title), value = currentAppLabel) {
-                                    currentSheet?.dismiss()
-                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                        showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate)
-                                    }, 280)
+                                    wizardApp = null
+                                    wizardMode = 1
                                 }
                                 SettingRow(label = stringResource(R.string.choose_android_widget), value = currentLabel) {
-                                    currentSheet?.dismiss()
-                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                                        showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate, initialAppPackage = currentProviderPkg)
-                                    }, 280)
+                                    val target = appWidgetHelper.getInstalledWidgetsByApp()
+                                        .firstOrNull { it.packageName == currentProviderPkg }
+                                    wizardApp = target
+                                    wizardMode = if (target != null) 2 else 1
                                 }
                                 if (uiState.androidWidgetId != -1) {
                                     SettingRow(label = stringResource(R.string.remove_android_widget), value = "") {
@@ -1414,124 +1472,6 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
                         }
                     }
                 }
-            }
-        }
-    }
-    fun showWidgetPickerSheet(
-        context: Context,
-        fragment: Fragment,
-        prefs: Prefs,
-        appWidgetHelper: AppWidgetHelper,
-        vm: com.github.gezimos.inkos.MainViewModel,
-        onUpdate: () -> Unit,
-        initialAppPackage: String? = null
-    ) {
-
-        showDialog(context, prefs) {
-            var loadedApps by remember { mutableStateOf<List<AppWidgetHelper.WidgetApp>?>(null) }
-            androidx.compose.runtime.LaunchedEffect(Unit) {
-                val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    appWidgetHelper.getInstalledWidgetsByApp()
-                }
-                if (result.isEmpty()) {
-                    android.widget.Toast.makeText(context, context.getString(R.string.toast_no_widgets_available), android.widget.Toast.LENGTH_SHORT).show()
-                    currentSheet?.dismiss()
-                } else {
-                    loadedApps = result
-                }
-            }
-            val widgetApps = loadedApps
-            if (widgetApps == null) {
-                Text(
-                    text = stringResource(R.string.choose_app),
-                    style = SettingsTheme.typography.header,
-                    fontWeight = FontWeight.Bold,
-                    color = Theme.colors.text,
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                )
-                // 固定高度占位：避免加载完成时内容突然变高，sheet 停在半开状态
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(
-                            (((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp - 200) / 56)
-                                .coerceIn(3, 11) * 56 + 172).dp
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.loading_generic),
-                        style = SettingsTheme.typography.item,
-                        color = Theme.colors.text.copy(alpha = 0.6f)
-                    )
-                }
-                return@showDialog
-            }
-            val startPackage = initialAppPackage
-            val initialApp = remember(widgetApps, startPackage) {
-                widgetApps.firstOrNull { it.packageName == startPackage }
-            }
-            val selectedApp = remember { mutableStateOf(initialApp) }
-            val app = selectedApp.value
-
-            if (app == null) {
-                WidgetAppListContent(
-                    context = context,
-                    widgetApps = widgetApps,
-                    onAppSelected = { 
-                        // 不记忆上次选择的应用，由调用方（笔图标）决定初始列表
-                        selectedApp.value = it
-                    },
-                    onClose = { currentSheet?.dismiss() },
-                    onBack = {
-                        currentSheet?.dismiss()
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            showBottomWidgetSettings(context, fragment, prefs, onUpdate)
-                        }, 350)
-                    },
-                    textIslandsShape = prefs.textIslandsShape
-                )
-            } else {
-                WidgetListContent(
-                    app = app,
-                    appWidgetHelper = appWidgetHelper,
-                    onBack = {
-                        // 真正返回：回到小组件设置面板；换 App 走面板里的 Choose App
-                        currentSheet?.dismiss()
-                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                            showBottomWidgetSettings(context, fragment, prefs, onUpdate)
-                        }, 280)
-                    },
-                    onWidgetPicked = { providerInfo ->
-                        currentSheet?.dismiss()
-                        appWidgetHelper.pickWidgetFromProvider(
-                            providerInfo = providerInfo,
-                            onSuccess = { widgetId ->
-                                vm.setAndroidWidgetId(widgetId)
-                                onUpdate()
-                            },
-                            onNeedsPermission = { widgetId, bindIntent ->
-                                val homeFragment = fragment as? com.github.gezimos.inkos.ui.HomeFragmentCompose
-                                if (homeFragment != null) {
-                                    homeFragment.pendingWidgetId = widgetId
-                                    homeFragment.widgetBindLauncher.launch(bindIntent)
-                                }
-                            },
-                            onNeedsConfigure = { widgetId, configIntent ->
-                                val homeFragment = fragment as? com.github.gezimos.inkos.ui.HomeFragmentCompose
-                                if (homeFragment != null) {
-                                    homeFragment.pendingWidgetId = widgetId
-                                    try {
-                                        homeFragment.widgetConfigureLauncher.launch(configIntent)
-                                    } catch (e: SecurityException) {
-                                        android.util.Log.e("EditModeHelper", "Widget configure activity not exported", e)
-                                        context.showLongToast(context.getString(R.string.toast_widget_config_unavailable))
-                                    }
-                                }
-                            }
-                        )
-                    }
-                )
             }
         }
     }
