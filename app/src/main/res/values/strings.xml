@@ -848,6 +848,9 @@
     <string name="edit_panel_desc_apps_font">Font used for app names</string>
     <string name="edit_panel_desc_apps_size">Icon size and gap</string>
     <string name="edit_panel_desc_apps_name">Letter case of app names</string>
+    <string name="edit_panel_desc_apps_style">Font, size and name style</string>
+    <string name="edit_panel_desc_apps_icons">Icon shape and source</string>
+    <string name="edit_panel_desc_apps_function">Apps per page, paging and tap area</string>
     <string name="edit_panel_desc_apps_type">Badges and labels on app icons</string>
     <string name="edit_panel_desc_theme">Theme, colours and wallpaper</string>
     <string name="edit_panel_desc_alignment">Where clock, apps and widget sit</string>

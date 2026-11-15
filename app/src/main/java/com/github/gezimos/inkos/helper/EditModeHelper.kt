@@ -1468,7 +1468,7 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
         showDialog(context, prefs) {
         val selectedTabIndex = remember { mutableStateOf(initialTabIndex.coerceIn(0, 3)) }
         val uiState by vm.homeUiState.collectAsState()
-            val appTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_apps_font); 1 -> stringResource(R.string.edit_panel_desc_apps_size); 2 -> stringResource(R.string.edit_panel_desc_apps_name); else -> stringResource(R.string.edit_panel_desc_apps_type) }
+            val appTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_apps_style); 1 -> stringResource(R.string.edit_panel_desc_apps_icons); 2 -> stringResource(R.string.edit_panel_desc_apps_function); else -> stringResource(R.string.edit_panel_desc_apps_type) }
             SheetTitle(stringResource(R.string.edit_panel_apps), fontScale = 1.35f)
             Text(
                 text = appTabDesc,

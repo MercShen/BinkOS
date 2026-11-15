@@ -848,6 +848,9 @@
     <string name="edit_panel_desc_apps_font">应用名称使用的字体</string>
     <string name="edit_panel_desc_apps_size">图标大小与间距</string>
     <string name="edit_panel_desc_apps_name">应用名称大小写</string>
+    <string name="edit_panel_desc_apps_style">字体、字号与名称样式</string>
+    <string name="edit_panel_desc_apps_icons">图标形状与来源</string>
+    <string name="edit_panel_desc_apps_function">每页应用数、分页与点击区域</string>
     <string name="edit_panel_desc_apps_type">应用图标上的角标与标签</string>
     <string name="edit_panel_desc_theme">主题、颜色与壁纸</string>
     <string name="edit_panel_desc_alignment">时钟、应用与组件的位置</string>
