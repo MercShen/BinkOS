@@ -2947,11 +2947,12 @@ fun ShortcutIconPickerSheet(
 
 
 @Composable
-fun SheetTitle(text: String) {
+fun SheetTitle(text: String, fontScale: Float = 1f) {
     val screenScale = rememberScreenScale()
     Text(
         text = text.uppercase(),
         style = SettingsTheme.typography.header,
+        fontSize = (SettingsTheme.typography.header.fontSize.value * fontScale).sp,
         fontWeight = FontWeight.Bold,
         color = Theme.colors.text,
         modifier = Modifier
