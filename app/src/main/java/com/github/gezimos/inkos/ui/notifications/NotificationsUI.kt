@@ -194,10 +194,10 @@ private fun NotificationPageIndicator(
         else ShapeHelper.getRoundedCornerShape(islandsShape, pillRadius = 50.dp, roundedRadius = 4.dp)
     val color = Theme.colors.text
     val bg = Theme.colors.background
-    Column(
+    Row(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp.scaled(screenScale)),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalArrangement = Arrangement.spacedBy(8.dp.scaled(screenScale)),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         for (i in 0 until pageCount) {
             val selected = i == currentPage
