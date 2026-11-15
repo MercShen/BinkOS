@@ -308,6 +308,37 @@ class MainActivity : AppCompatActivity() {
                     "fontlicense", "font_license" -> {
                         com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this).showFontLicenseSheet()
                     }
+                    // --- 测试状态开关（一键设置，省去在设置页里找开关） ---
+                    "pager_on" -> viewModel.setPageIndicatorVisible(true)
+                    "pager_off" -> viewModel.setPageIndicatorVisible(false)
+                    "bottomwidget", "bottom_widget" -> {
+                        val type = intent.getStringExtra("type")?.trim()?.lowercase()
+                        val mapped = when (type) {
+                            "android", "android_widget" -> Constants.BottomWidgetType.AndroidWidget.value
+                            "shortcuts", "search" -> Constants.BottomWidgetType.Shortcuts.value
+                            "quote" -> Constants.BottomWidgetType.Quote.value
+                            "events" -> Constants.BottomWidgetType.Events.value
+                            "usage", "total_usage" -> Constants.BottomWidgetType.TotalUsage.value
+                            "pagedots", "page_dots" -> Constants.BottomWidgetType.PageDots.value
+                            "off", "disabled" -> Constants.BottomWidgetType.Disabled.value
+                            else -> null
+                        }
+                        if (mapped != null) viewModel.setBottomWidgetType(mapped)
+                            else Log.w(TAG, "automation: bottomwidget needs --es type android|shortcuts|quote|events|usage|pagedots|off")
+                    }
+                    "bottom_android" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.AndroidWidget.value)
+                    "bottom_shortcuts" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Shortcuts.value)
+                    "bottom_quote" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Quote.value)
+                    "bottom_events" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Events.value)
+                    "bottom_usage" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.TotalUsage.value)
+                    "bottom_pagedots" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.PageDots.value)
+                    "bottom_off" -> viewModel.setBottomWidgetType(Constants.BottomWidgetType.Disabled.value)
+                    "allowlist_tray_clear" -> viewModel.setAllowedSimpleTrayApps(emptySet())
+                    "allowlist_hub_clear" -> viewModel.setAllowedHubApps(emptySet())
+                    "allowlist_clear" -> {
+                        viewModel.setAllowedSimpleTrayApps(emptySet())
+                        viewModel.setAllowedHubApps(emptySet())
+                    }
                     else -> Log.w(TAG, "automation: unknown dest '$dest'")
                 }
             } catch (t: Throwable) {

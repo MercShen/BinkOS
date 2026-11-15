@@ -46,6 +46,11 @@ adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity \
 | `badgeindicator` / `badge_indicator` | 角标样式选择（LazyRow，原仅编辑模式可达） |
 | `privacy` / `privacypolicy` | 隐私政策弹窗 |
 | `fontlicense` / `font_license` | 开放字体许可弹窗 |
+| `pager_on` / `pager_off` | 主页页码指示器开关 |
+| `bottomwidget` | 底部小部件类型，需 `--es type android|shortcuts|quote|events|usage|pagedots|off` |
+| `bottom_android` `bottom_shortcuts` `bottom_quote` `bottom_events` `bottom_usage` `bottom_pagedots` `bottom_off` | 直接切到对应底部小部件 |
+| `allowlist_clear` | 清空托盘与 Hub 白名单（测试通知过滤前用） |
+| `allowlist_tray_clear` / `allowlist_hub_clear` | 分别清空托盘 / Hub 白名单 |
 
 ## 附加开关
 
@@ -77,3 +82,7 @@ adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity --es dest
 `MainActivity` 原本就处理 `Constants.ACTION_OPEN_*`（小部件/快捷方式用），
 `dest` 是它的超集：新增了 `lookfeel` / `about` / `wallpaper` / `colors` / `themes` / `guide`，
 并且不需要预先在主屏。
+
+## 测试流程
+
+跑一次 UI 验证的标准步骤、探针 App 与踩坑记录见 [testing-playbook.md](testing-playbook.md)。
