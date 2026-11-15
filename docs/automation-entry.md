@@ -31,10 +31,21 @@ adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity \
 | `colors` / `coloreditor` | 颜色编辑器 |
 | `themes` / `themepresets` | 主题预设 |
 | `guide` | 使用引导 |
-| `editmode` | 切换编辑模式（等同快捷菜单里的 Edit mode） |
 | `editfavorites` | 编辑收藏（应用列表 EditFavorites） |
 | `shortswipe` / `zone` | 短滑生效区域编辑器（原编辑模式 → 手势 → Short swipe area） |
 | `onboarding` | 首启引导 |
+| `editmode` / `edit_mode` | 切换编辑模式 |
+| `editmode_on` / `edit_on` | 进入编辑模式（延迟 600ms 等布局就绪） |
+| `editmode_off` / `edit_off` | 退出编辑模式 |
+| `fonts` / `typography` | 设置 → 字体排印 |
+| `gestures` / `gesture` | 设置 → 手势 |
+| `notifsettings` / `notification_settings` | 设置 → 通知 |
+| `advanced` | 设置 → 高级 |
+| `drawersettings` / `drawer_settings` | 设置 → 应用抽屉 |
+| `shortcuticon` / `shortcut_icon` | 快捷方式图标选择（LazyRow，原仅编辑模式可达） |
+| `badgeindicator` / `badge_indicator` | 角标样式选择（LazyRow，原仅编辑模式可达） |
+| `privacy` / `privacypolicy` | 隐私政策弹窗 |
+| `fontlicense` / `font_license` | 开放字体许可弹窗 |
 
 ## 附加开关
 

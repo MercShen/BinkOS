@@ -252,6 +252,26 @@ class MainActivity : AppCompatActivity() {
                         R.id.settingsFragment,
                         androidx.core.os.bundleOf("initialRoute" to "LookFeel")
                     )
+                    "fonts", "typography" -> navController.navigate(
+                        R.id.settingsFragment,
+                        androidx.core.os.bundleOf("initialRoute" to "Fonts")
+                    )
+                    "gestures", "gesture" -> navController.navigate(
+                        R.id.settingsFragment,
+                        androidx.core.os.bundleOf("initialRoute" to "Gestures")
+                    )
+                    "notifsettings", "notification_settings" -> navController.navigate(
+                        R.id.settingsFragment,
+                        androidx.core.os.bundleOf("initialRoute" to "Notifications")
+                    )
+                    "advanced" -> navController.navigate(
+                        R.id.settingsFragment,
+                        androidx.core.os.bundleOf("initialRoute" to "Advanced")
+                    )
+                    "drawersettings", "drawer_settings" -> navController.navigate(
+                        R.id.settingsFragment,
+                        androidx.core.os.bundleOf("initialRoute" to "Drawer")
+                    )
                     "about", "support" -> navController.navigate(
                         R.id.settingsFragment,
                         androidx.core.os.bundleOf("initialRoute" to "Support")
@@ -272,6 +292,22 @@ class MainActivity : AppCompatActivity() {
                         R.id.appsFragment,
                         androidx.core.os.bundleOf("flag" to "EditFavorites", "n" to 0)
                     )
+                    "shortcuticon", "shortcut_icon" -> {
+                        val dm = com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this)
+                        dm.showShortcutIconPicker(prefs.shortcutLeftIcon) {}
+                    }
+                    "badgeindicator", "badge_indicator" -> {
+                        val dm = com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this)
+                        dm.showBadgeIndicatorPicker(
+                            com.github.gezimos.inkos.data.Constants.NotificationIndicator.fromOrdinal(prefs.notificationIndicatorStyle)
+                        ) {}
+                    }
+                    "privacy", "privacypolicy" -> {
+                        com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this).showPrivacyPolicySheet()
+                    }
+                    "fontlicense", "font_license" -> {
+                        com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager(this, this).showFontLicenseSheet()
+                    }
                     else -> Log.w(TAG, "automation: unknown dest '$dest'")
                 }
             } catch (t: Throwable) {
