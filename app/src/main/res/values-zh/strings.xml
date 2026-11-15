@@ -187,6 +187,7 @@
     <string name="android_widget_alignment">小部件对齐</string>
     <string name="choose_android_widget">选择小部件</string>
     <string name="remove_android_widget">移除小部件</string>
+    <string name="loading_generic">加载中…</string>
     <string name="loading_widget">正在加载小部件…</string>
 
     <!-- Calendar events -->

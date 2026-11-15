@@ -187,6 +187,7 @@
     <string name="android_widget_alignment">Widget Alignment</string>
     <string name="choose_android_widget">Choose Widget</string>
     <string name="remove_android_widget">Remove Widget</string>
+    <string name="loading_generic">Loading…</string>
     <string name="loading_widget">Loading widget…</string>
 
     <!-- Calendar events -->

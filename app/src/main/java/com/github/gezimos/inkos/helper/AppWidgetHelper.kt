@@ -38,6 +38,38 @@ class AppWidgetHelper private constructor(private val context: Context) {
     private val appWidgetManager = AppWidgetManager.getInstance(context)
     private val prefs = Prefs(context)
 
+    // 组件列表缓存：installedProviders + 应用名查询较慢，面板打开时复用结果
+    @Volatile private var cachedWidgetApps: List<WidgetApp>? = null
+    @Volatile private var cacheTimeMs: Long = 0L
+    private var widgetChangeReceiver: android.content.BroadcastReceiver? = null
+
+    private fun ensureCacheInvalidationReceiver() {
+        if (widgetChangeReceiver != null) return
+        val filter = android.content.IntentFilter().apply {
+            addAction(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE)
+            addAction(android.content.Intent.ACTION_PACKAGE_ADDED)
+            addAction(android.content.Intent.ACTION_PACKAGE_REMOVED)
+            addAction(android.content.Intent.ACTION_PACKAGE_CHANGED)
+            addDataScheme("package")
+        }
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
+                invalidateWidgetAppsCache()
+            }
+        }
+        try {
+            context.registerReceiver(receiver, filter)
+            widgetChangeReceiver = receiver
+        } catch (e: Exception) {
+            Log.w(TAG, "register widget receiver failed", e)
+        }
+    }
+
+    fun invalidateWidgetAppsCache() {
+        cachedWidgetApps = null
+        cacheTimeMs = 0L
+    }
+
     private val _widgetView = MutableStateFlow<AppWidgetHostView?>(null)
     val widgetViewState: StateFlow<AppWidgetHostView?> = _widgetView
 
@@ -125,6 +157,7 @@ class AppWidgetHelper private constructor(private val context: Context) {
             prefs.androidWidgetId = -1
         }
         _widgetView.value = null
+        invalidateWidgetAppsCache()
     }
     fun getConfigureIntent(widgetId: Int): Intent? {
         val info = getWidgetInfo(widgetId) ?: return null
@@ -182,7 +215,19 @@ class AppWidgetHelper private constructor(private val context: Context) {
         val appLabel: String,
         val widgets: List<Pair<String, AppWidgetProviderInfo>>
     )
-    fun getInstalledWidgetsByApp(): List<WidgetApp> {
+    fun getInstalledWidgetsByApp(forceRefresh: Boolean = false): List<WidgetApp> {
+        ensureCacheInvalidationReceiver()
+        val now = System.currentTimeMillis()
+        cachedWidgetApps?.let { cached ->
+            if (!forceRefresh && now - cacheTimeMs < 60_000L) return cached
+        }
+        val result = computeInstalledWidgetsByApp()
+        cachedWidgetApps = result
+        cacheTimeMs = now
+        return result
+    }
+
+    private fun computeInstalledWidgetsByApp(): List<WidgetApp> {
         return try {
             val pm = context.packageManager
             appWidgetManager.installedProviders
@@ -248,6 +293,7 @@ class AppWidgetHelper private constructor(private val context: Context) {
         onNeedsPermission: (widgetId: Int, intent: Intent) -> Unit,
         onNeedsConfigure: (widgetId: Int, configIntent: Intent) -> Unit
     ) {
+        invalidateWidgetAppsCache()
         // Clean up old widget
         val oldId = prefs.androidWidgetId
         if (oldId != -1) {

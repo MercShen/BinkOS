@@ -1412,13 +1412,31 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
         onUpdate: () -> Unit,
         initialAppPackage: String? = null
     ) {
-        val widgetApps = appWidgetHelper.getInstalledWidgetsByApp()
-        if (widgetApps.isEmpty()) {
-            android.widget.Toast.makeText(context, context.getString(R.string.toast_no_widgets_available), android.widget.Toast.LENGTH_SHORT).show()
-            return
-        }
 
         showDialog(context, prefs) {
+            var loadedApps by remember { mutableStateOf<List<AppWidgetHelper.WidgetApp>?>(null) }
+            androidx.compose.runtime.LaunchedEffect(Unit) {
+                val result = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    appWidgetHelper.getInstalledWidgetsByApp()
+                }
+                if (result.isEmpty()) {
+                    android.widget.Toast.makeText(context, context.getString(R.string.toast_no_widgets_available), android.widget.Toast.LENGTH_SHORT).show()
+                    currentSheet?.dismiss()
+                } else {
+                    loadedApps = result
+                }
+            }
+            val widgetApps = loadedApps
+            if (widgetApps == null) {
+                SheetTitle(stringResource(R.string.choose_app))
+                Text(
+                    text = stringResource(R.string.loading_generic),
+                    style = SettingsTheme.typography.item,
+                    color = Theme.colors.text.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(vertical = 24.dp)
+                )
+                return@showDialog
+            }
             val startPackage = initialAppPackage
             val initialApp = remember(widgetApps, startPackage) {
                 widgetApps.firstOrNull { it.packageName == startPackage }
