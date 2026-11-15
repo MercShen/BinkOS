@@ -237,7 +237,6 @@ object EditModeHelper {
             selectedIndex = selectedIndex,
             isBuiltInFont = { option -> oflFontOptions.contains(option) },
             onInfoClick = {
-                dialogManager.dismissAll()
                 dialogManager.showFontLicenseSheet()
             },
             addCustomFontLabel = if (hasCustomFontPicker) context.getString(R.string.add_custom_font) else null,
@@ -694,14 +693,7 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
             )
         }
 
-        // 预热组件列表：进入面板时后台枚举一次，Choose App 打开即可直接显示
-        android.os.Handler(android.os.Looper.getMainLooper()).post {
-            try {
-                Thread {
-                    try { appWidgetHelper.getInstalledWidgetsByApp() } catch (_: Exception) {}
-                }.start()
-            } catch (_: Exception) {}
-        }
+        appWidgetHelper.preloadWidgetApps()
         val bottomWidgetLabels = listOf(
             context.getString(R.string.bottom_widget_disabled),
             context.getString(R.string.bottom_widget_quote),
@@ -724,11 +716,17 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
             val selectedTabIndex = remember { mutableStateOf(0) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
+            val availableWidgetApps by appWidgetHelper.widgetAppsState.collectAsState()
+            androidx.compose.runtime.LaunchedEffect(appWidgetHelper) { appWidgetHelper.loadWidgetApps() }
             // 在同一面板内切换「应用列表 / 组件列表」，避免关掉再开导致旧面板残留
             var wizardMode by remember { mutableStateOf(0) } // 0=面板 1=应用列表 2=组件列表
             var wizardApp by remember { mutableStateOf<AppWidgetHelper.WidgetApp?>(null) }
             if (wizardMode != 0) {
-                val widgetApps = remember(wizardMode == 1) { appWidgetHelper.getInstalledWidgetsByApp() }
+                val widgetApps = availableWidgetApps
+                if (widgetApps == null) {
+                    WidgetAppsLoadingContent()
+                    return@showDialog
+                }
                 val chosen = wizardApp
                 if (wizardMode == 1 || chosen == null) {
                     WidgetAppListContent(
@@ -847,7 +845,7 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                                     appWidgetHelper.getWidgetInfo(uiState.androidWidgetId)?.provider?.packageName
                                 } else null
                                 val currentAppLabel = currentProviderPkg?.let { pkg ->
-                                    appWidgetHelper.getInstalledWidgetsByApp().firstOrNull { it.packageName == pkg }?.appLabel ?: pkg
+                                    availableWidgetApps?.firstOrNull { it.packageName == pkg }?.appLabel ?: pkg
                                 } ?: stringResource(R.string.option_none_widget)
                                 val currentLabel = appWidgetHelper.getCurrentWidgetLabel() ?: stringResource(R.string.option_none_widget)
                                 SettingRow(label = stringResource(R.string.choose_app_title), value = currentAppLabel) {
@@ -855,8 +853,7 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                                     wizardMode = 1
                                 }
                                 SettingRow(label = stringResource(R.string.choose_android_widget), value = currentLabel) {
-                                    val target = appWidgetHelper.getInstalledWidgetsByApp()
-                                        .firstOrNull { it.packageName == currentProviderPkg }
+                                    val target = availableWidgetApps?.firstOrNull { it.packageName == currentProviderPkg }
                                     wizardApp = target
                                     wizardMode = if (target != null) 2 else 1
                                 }
@@ -2816,378 +2813,6 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
         currentSheet = host
     }
     
-}
-
-@Composable
-internal fun WidgetAppListContent(
-    context: Context,
-    widgetApps: List<AppWidgetHelper.WidgetApp>,
-    onAppSelected: (AppWidgetHelper.WidgetApp) -> Unit,
-    onClose: () -> Unit,
-    textIslandsShape: Int = 0,
-    onBack: (() -> Unit)? = null,
-) {
-    val screenScale = rememberScreenScale()
-    var query by remember { mutableStateOf("") }
-    val apps = remember(widgetApps, query) {
-        val q = query.trim()
-        widgetApps.filter { app ->
-            app.widgets.isNotEmpty() && (
-                q.isEmpty() ||
-                    app.appLabel.contains(q, ignoreCase = true) ||
-                    app.packageName.contains(q, ignoreCase = true) ||
-                    app.widgets.any { it.first.contains(q, ignoreCase = true) }
-                )
-        }
-    }
-    val rowHeight = 56.dp
-
-    // 按弹窗可用高度算每页行数：不同屏幕尺寸/UI 缩放都能装满一页且不留半行
-    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val reservedForChrome = 172.dp // 标题 + 搜索框 + 页码条 + 间距（关闭按钮已移除）
-        val usable = (maxHeight - reservedForChrome).coerceAtLeast(rowHeight * 3)
-        // 再按整屏高度兜底，避免内容高过屏幕导致底部被裁掉（翻页条看不见）
-        val screenMaxRows = ((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp - 200) / rowHeight.value).toInt().coerceAtLeast(3)
-        val rowsPerPage = (usable / rowHeight).toInt().coerceIn(3, 14).coerceAtMost(screenMaxRows)
-
-        var pageIndex by remember { mutableStateOf(0) }
-        val pages = remember(apps, rowsPerPage) { apps.chunked(rowsPerPage) }
-        val pageCount = pages.size.coerceAtLeast(1)
-        LaunchedEffect(query, apps.size, rowsPerPage) {
-            pageIndex = pageIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
-            if (query.isNotEmpty()) pageIndex = 0
-        }
-        var pageDragX by remember { mutableStateOf(0f) }
-
-        var verticalPull by remember { mutableStateOf(0f) }
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                // 吞掉纵向拖动：列表内下滑不应把整个面板拖走关闭
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures { change, _ -> change.consume() }
-                }
-        ) {
-            // 顶部空白 + 下拉/点击关闭（替代原来的“关闭”按钮）
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(16.dp)
-                    .pointerInput(Unit) {
-                        detectVerticalDragGestures(onVerticalDrag = { _, dragAmount ->
-                            if (dragAmount > 0f) verticalPull += dragAmount
-                        })
-                    }
-                    .pointerInput(Unit) {
-                        detectTapGestures(onTap = { onClose() })
-                    }
-            )
-            androidx.compose.runtime.LaunchedEffect(verticalPull) {
-                if (verticalPull > 40f) {
-                    verticalPull = 0f
-                    onClose()
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (onBack != null) {
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
-                        contentDescription = stringResource(R.string.btn_back),
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable { onBack() }
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                }
-                Text(
-                    text = stringResource(R.string.choose_app),
-                    style = SettingsTheme.typography.header,
-                    fontWeight = FontWeight.Bold,
-                    color = Theme.colors.text,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Start
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .border(1.5.dp, Theme.colors.text, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-            ) {
-                if (query.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.search_apps_hint),
-                        style = SettingsTheme.typography.item,
-                        color = Theme.colors.text.copy(alpha = 0.5f)
-                    )
-                }
-                androidx.compose.foundation.text.BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        color = Theme.colors.text,
-                        fontSize = 16.sp.scaled(screenScale)
-                    ),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(Theme.colors.text),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            if (apps.isEmpty()) {
-                Spacer(modifier = Modifier.height(rowHeight * rowsPerPage))
-                Text(
-                    text = stringResource(R.string.widget_no_matching_app),
-                    style = SettingsTheme.typography.item,
-                    color = Theme.colors.text.copy(alpha = 0.5f),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-                )
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .pointerInput(pageCount) {
-                            detectHorizontalDragGestures(
-                                onHorizontalDrag = { _, dragAmount -> pageDragX += dragAmount },
-                                onDragEnd = {
-                                    val threshold = 48f
-                                    if (pageDragX > threshold) {
-                                        if (pageIndex > 0) pageIndex--
-                                    } else if (pageDragX < -threshold) {
-                                        if (pageIndex < pageCount - 1) pageIndex++
-                                    }
-                                    pageDragX = 0f
-                                },
-                                onDragCancel = { pageDragX = 0f }
-                            )
-                        }
-                ) {
-                    val pageApps = pages.getOrNull(pageIndex).orEmpty()
-                    pageApps.forEach { app ->
-                        WidgetAppRow(
-                            context = context,
-                            app = app,
-                            rowHeight = rowHeight,
-                            onSelect = { onAppSelected(app) }
-                        )
-                    }
-                    // 用等高占位填满整页，保证分页高度稳定、翻页不跳动
-                    repeat(rowsPerPage - pageApps.size) {
-                        Spacer(modifier = Modifier.height(rowHeight))
-                    }
-                    if (pageCount > 1) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronLeft,
-                                contentDescription = stringResource(R.string.btn_back),
-                                tint = if (pageIndex > 0) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clickable { if (pageIndex > 0) pageIndex-- }
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            val dotSize = 12.dp.scaled(screenScale)
-                            val dotSpacing = (12f * 0.8f).dp.scaled(screenScale)
-                            val dotBorder = (12f / 6f).dp.scaled(screenScale)
-                            val dotShape = if (textIslandsShape == 0) CircleShape else ShapeHelper.getRoundedCornerShape(textIslandsShape, roundedRadius = 4.dp.scaled(screenScale))
-                            for (i in 0 until pageCount) {
-                                val selected = i == pageIndex
-                                val thisSize = if (selected) dotSize else dotSize * (10f / 12f)
-                                val thisShape = ShapeHelper.getPageDotShape(textIslandsShape, thisSize)
-                                Box(
-                                    modifier = Modifier.padding(horizontal = dotSpacing / 2).size(dotSize),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(thisSize)
-                                            .background(if (selected) Theme.colors.text else Theme.colors.background, thisShape)
-                                            .then(
-                                                if (!selected) Modifier.border(thisSize * (1f / 6f), Theme.colors.text, thisShape)
-                                                else Modifier
-                                            )
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = stringResource(R.string.home_tooltip_next),
-                                tint = if (pageIndex < pageCount - 1) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clickable { if (pageIndex < pageCount - 1) pageIndex++ }
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun WidgetAppRow(
-    context: Context,
-    app: AppWidgetHelper.WidgetApp,
-    rowHeight: androidx.compose.ui.unit.Dp,
-    onSelect: () -> Unit
-) {
-    val pm = context.packageManager
-    val interactionSource = remember { MutableInteractionSource() }
-    val isFocused = interactionSource.collectIsFocusedAsState().value
-    val isHighlighted = isFocused
-    val prefTextColor = Theme.colors.text
-    val prefBackgroundColor = Theme.colors.background
-    val icon = remember(app.packageName) {
-        try { pm.getApplicationIcon(app.packageName) } catch (_: Exception) { null }
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(rowHeight)
-            .then(with(SettingsComposable) {
-                Modifier.pillHighlight(isHighlighted, 6.dp, prefTextColor)
-            })
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = {
-                    try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
-                    onSelect()
-                }
-            ),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (icon != null) {
-            val bmp = remember(app.packageName) { drawableToBitmap(icon).asImageBitmap() }
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.graphics.painter.BitmapPainter(bmp),
-                contentDescription = app.appLabel,
-                modifier = Modifier
-                    .height(32.dp)
-                    .padding(end = 12.dp)
-            )
-        }
-        Text(
-            text = app.appLabel,
-            style = SettingsTheme.typography.item,
-            color = if (isHighlighted) prefBackgroundColor else prefTextColor,
-            modifier = Modifier.weight(1f)
-        )
-        Text(
-            text = "${app.widgets.size}",
-            style = SettingsTheme.typography.item,
-            color = if (isHighlighted) prefBackgroundColor.copy(alpha = 0.7f) else prefTextColor.copy(alpha = 0.5f)
-        )
-    }
-}
-
-@Composable
-internal fun WidgetListContent(
-    app: AppWidgetHelper.WidgetApp,
-    appWidgetHelper: AppWidgetHelper,
-    onBack: () -> Unit,
-    onWidgetPicked: (android.appwidget.AppWidgetProviderInfo) -> Unit
-) {
-    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        androidx.compose.foundation.Image(
-            painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
-            contentDescription = stringResource(R.string.btn_back),
-            modifier = Modifier
-                .offset(x = (-3).dp)
-                .size(24.dp)
-                .clickable { onBack() }
-        )
-        Text(
-            text = app.appLabel.uppercase(),
-            fontSize = SettingsTheme.typography.item.fontSize,
-            style = SettingsTheme.typography.header,
-            fontWeight = FontWeight.Bold,
-            color = Theme.colors.text,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 56.dp),
-            textAlign = TextAlign.Center
-        )
-    }
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.height(400.dp)
-    ) {
-        items(app.widgets) { widget ->
-            val label = widget.first
-            val providerInfo = widget.second
-            val interactionSource = remember { MutableInteractionSource() }
-            val isFocused = interactionSource.collectIsFocusedAsState().value
-            val isHighlighted = isFocused
-            val prefTextColor = Theme.colors.text
-            val prefBackgroundColor = Theme.colors.background
-
-            val preview = remember(providerInfo.provider.className) {
-                appWidgetHelper.loadWidgetPreview(providerInfo)
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(with(SettingsComposable) {
-                        Modifier.pillHighlight(isHighlighted, 8.dp, prefTextColor)
-                    })
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = {
-                            try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
-                            onWidgetPicked(providerInfo)
-                        }
-                    )
-                    .padding(vertical = 8.dp)
-            ) {
-                Text(
-                    text = label,
-                    style = SettingsTheme.typography.item,
-                    fontSize = SettingsTheme.typography.header.fontSize,
-                    fontWeight = FontWeight.Medium,
-                    color = if (isHighlighted) prefBackgroundColor else prefTextColor
-                )
-                if (preview != null) {
-                    Spacer(modifier = Modifier.height(6.dp))
-                    val bmp = remember(providerInfo.provider.className) {
-                        drawableToBitmap(preview).asImageBitmap()
-                    }
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.graphics.painter.BitmapPainter(bmp),
-                        contentDescription = label,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(120.dp),
-                        contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-                        alpha = if (isHighlighted) 0.9f else 1f
-                    )
-                }
-                val minW = providerInfo.minWidth
-                val minH = providerInfo.minHeight
-                if (minW > 0 && minH > 0) {
-                    Text(
-                        text = "${minW}×${minH} dp",
-                        style = SettingsTheme.typography.item,
-                        color = (if (isHighlighted) prefBackgroundColor else prefTextColor).copy(alpha = 0.5f),
-                        fontSize = 11.sp
-                    )
-                }
-            }
-        }
-    }
 }
 
 internal fun drawableToBitmap(drawable: android.graphics.drawable.Drawable): android.graphics.Bitmap {

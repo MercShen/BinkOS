@@ -18,6 +18,7 @@ import com.github.gezimos.inkos.data.Constants
 import com.github.gezimos.inkos.data.Prefs
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 @SuppressLint("StaticFieldLeak")
 class AppWidgetHelper private constructor(private val context: Context) {
 
@@ -38,36 +39,45 @@ class AppWidgetHelper private constructor(private val context: Context) {
     private val appWidgetManager = AppWidgetManager.getInstance(context)
     private val prefs = Prefs(context)
 
-    // 组件列表缓存：installedProviders + 应用名查询较慢，面板打开时复用结果
-    @Volatile private var cachedWidgetApps: List<WidgetApp>? = null
-    @Volatile private var cacheTimeMs: Long = 0L
-    private var widgetChangeReceiver: android.content.BroadcastReceiver? = null
+    private val widgetScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO)
+    private val widgetAppsCache = SingleFlightSnapshot<List<WidgetApp>>(60_000L) { android.os.SystemClock.elapsedRealtime() }
+    private val _widgetApps = MutableStateFlow<List<WidgetApp>?>(null)
+    val widgetAppsState: StateFlow<List<WidgetApp>?> = _widgetApps
+    private val receiverLock = Any()
+    private var packageReceiver: android.content.BroadcastReceiver? = null
 
-    private fun ensureCacheInvalidationReceiver() {
-        if (widgetChangeReceiver != null) return
+    private fun ensureCacheInvalidationReceiver() = synchronized(receiverLock) {
+        if (packageReceiver != null) return@synchronized
+        val receiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) { invalidateWidgetAppsCache() }
+        }
         val filter = android.content.IntentFilter().apply {
-            addAction(android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE)
-            addAction(android.content.Intent.ACTION_PACKAGE_ADDED)
-            addAction(android.content.Intent.ACTION_PACKAGE_REMOVED)
-            addAction(android.content.Intent.ACTION_PACKAGE_CHANGED)
+            addAction(Intent.ACTION_PACKAGE_ADDED)
+            addAction(Intent.ACTION_PACKAGE_REMOVED)
+            addAction(Intent.ACTION_PACKAGE_CHANGED)
+            addAction(Intent.ACTION_PACKAGE_REPLACED)
             addDataScheme("package")
         }
-        val receiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(context: android.content.Context?, intent: android.content.Intent?) {
-                invalidateWidgetAppsCache()
-            }
-        }
         try {
-            context.registerReceiver(receiver, filter)
-            widgetChangeReceiver = receiver
-        } catch (e: Exception) {
-            Log.w(TAG, "register widget receiver failed", e)
-        }
+            androidx.core.content.ContextCompat.registerReceiver(context, receiver, filter,
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED)
+            packageReceiver = receiver
+        } catch (e: Exception) { Log.w(TAG, "Cannot register package invalidation", e) }
     }
 
     fun invalidateWidgetAppsCache() {
-        cachedWidgetApps = null
-        cacheTimeMs = 0L
+        widgetAppsCache.invalidate()
+        preloadWidgetApps()
+    }
+
+    /** Background-only PM enumeration; UI observes the last good snapshot during refresh. */
+    suspend fun loadWidgetApps(): List<WidgetApp> = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        ensureCacheInvalidationReceiver()
+        widgetAppsCache.get { computeInstalledWidgetsByApp() }.also { _widgetApps.value = it }
+    }
+
+    fun preloadWidgetApps() {
+        widgetScope.launch { loadWidgetApps() }
     }
 
     private val _widgetView = MutableStateFlow<AppWidgetHostView?>(null)
@@ -146,9 +156,11 @@ class AppWidgetHelper private constructor(private val context: Context) {
         }
     }
     fun onWidgetPicked(widgetId: Int) {
+        val view = createWidgetView(widgetId) ?: throw IllegalStateException("New widget is not bound")
+        val previousId = prefs.androidWidgetId
         prefs.androidWidgetId = widgetId
-        val view = createWidgetView(widgetId)
         _widgetView.value = view
+        if (previousId != -1 && previousId != widgetId) deallocateWidgetId(previousId)
     }
     fun removeWidget() {
         val currentId = prefs.androidWidgetId
@@ -215,18 +227,6 @@ class AppWidgetHelper private constructor(private val context: Context) {
         val appLabel: String,
         val widgets: List<Pair<String, AppWidgetProviderInfo>>
     )
-    fun getInstalledWidgetsByApp(forceRefresh: Boolean = false): List<WidgetApp> {
-        ensureCacheInvalidationReceiver()
-        val now = System.currentTimeMillis()
-        cachedWidgetApps?.let { cached ->
-            if (!forceRefresh && now - cacheTimeMs < 60_000L) return cached
-        }
-        val result = computeInstalledWidgetsByApp()
-        cachedWidgetApps = result
-        cacheTimeMs = now
-        return result
-    }
-
     private fun computeInstalledWidgetsByApp(): List<WidgetApp> {
         return try {
             val pm = context.packageManager
@@ -265,7 +265,9 @@ class AppWidgetHelper private constructor(private val context: Context) {
             null
         }
     }
+    @SuppressLint("ResourceType") // previewLayout is supplied by AppWidgetProviderInfo, guarded by API31 below.
     private fun inflatePreviewLayout(info: AppWidgetProviderInfo): android.graphics.drawable.Drawable? {
+        if (android.os.Build.VERSION.SDK_INT < 31) return null
         val layoutId = info.previewLayout
         if (layoutId == 0 || info.provider.packageName != context.packageName) return null
         return try {
@@ -294,12 +296,7 @@ class AppWidgetHelper private constructor(private val context: Context) {
         onNeedsConfigure: (widgetId: Int, configIntent: Intent) -> Unit
     ) {
         invalidateWidgetAppsCache()
-        // Clean up old widget
-        val oldId = prefs.androidWidgetId
-        if (oldId != -1) {
-            removeWidget()
-        }
-
+        // Keep the current widget until the new one is bound and configured successfully.
         val widgetId = allocateWidgetId()
 
         // Try binding directly

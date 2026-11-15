@@ -950,6 +950,49 @@ class SettingsFragment : Fragment() {
         }
     }
 
+    /**
+     * 把已分配的 widgetId + bind/config intent 交给 HomeFragment：由 home 的 launcher 完成，
+     * 取消/失败只释放新 id，旧 widget 保留；找不到 home 时立刻释放新 id 并提示。
+     */
+    private fun handOffWidgetBinding(widgetId: Int, intent: android.content.Intent, configure: Boolean) {
+        val home = findHomeFragmentForWidgetBinding()
+        if (home == null) {
+            try {
+                com.github.gezimos.inkos.helper.AppWidgetHelper.getInstance(requireContext())
+                    .deallocateWidgetId(widgetId)
+            } catch (_: Exception) {
+            }
+            try {
+                android.widget.Toast.makeText(
+                    requireContext(),
+                    "Open the home screen first; widget not bound",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            } catch (_: Exception) {
+            }
+            return
+        }
+        try {
+            findNavController().popBackStack(R.id.mainFragment, false)
+        } catch (_: Exception) {
+        }
+        home.startWidgetBinding(widgetId, intent, configure)
+    }
+
+    private fun findHomeFragmentForWidgetBinding(): HomeFragmentCompose? {
+        val root = requireActivity().supportFragmentManager.findFragmentById(R.id.nav_host_fragment) ?: return null
+        fun walk(fragment: androidx.fragment.app.Fragment?): HomeFragmentCompose? {
+            if (fragment == null) return null
+            if (fragment is HomeFragmentCompose) return fragment
+            for (child in fragment.childFragmentManager.fragments) {
+                val found = walk(child)
+                if (found != null) return found
+            }
+            return null
+        }
+        return walk(root)
+    }
+
     private fun exitLauncher() {
         val intent = Intent(Intent.ACTION_MAIN).apply {
             addCategory(Intent.CATEGORY_HOME)
@@ -1331,14 +1374,17 @@ class SettingsFragment : Fragment() {
                     description = stringResource(R.string.desc_choose_widget),
                     onClick = {
                         val appWidgetHelper = com.github.gezimos.inkos.helper.AppWidgetHelper.getInstance(requireContext())
-                        val widgetApps = appWidgetHelper.getInstalledWidgetsByApp()
-                        if (widgetApps.isEmpty()) {
-                            android.widget.Toast.makeText(requireContext(), getString(R.string.toast_no_widgets_available), android.widget.Toast.LENGTH_SHORT).show()
-                            return@SettingsSelect
-                        }
+                        appWidgetHelper.preloadWidgetApps()
                         val ctx = requireContext()
                         val navController = findNavController()
                         dialogBuilder.showSheet {
+                            val snapshot by appWidgetHelper.widgetAppsState.collectAsState()
+                            androidx.compose.runtime.LaunchedEffect(appWidgetHelper) { appWidgetHelper.loadWidgetApps() }
+                            val widgetApps = snapshot
+                            if (widgetApps == null) {
+                                com.github.gezimos.inkos.helper.WidgetAppsLoadingContent()
+                                return@showSheet
+                            }
                             // 优先定位到“当前正在使用的组件所属 App”，否则直接显示应用列表
                             val currentProviderPkg = if (homeUiState.androidWidgetId != -1) {
                                 appWidgetHelper.getWidgetInfo(homeUiState.androidWidgetId)?.provider?.packageName
@@ -1367,14 +1413,13 @@ class SettingsFragment : Fragment() {
                                         dialogBuilder.dismissAll()
                                         appWidgetHelper.pickWidgetFromProvider(
                                             providerInfo = providerInfo,
+                                            // helper 内部完成 bind/configure 后才会回调成功
                                             onSuccess = { widgetId -> viewModel.setAndroidWidgetId(widgetId) },
-                                            onNeedsPermission = { _, _ ->
-                                                HomeFragmentCompose.pendingWidgetPickerSignal = true
-                                                try { navController.popBackStack(R.id.mainFragment, false) } catch (_: Exception) {}
+                                            onNeedsPermission = { widgetId, bindIntent ->
+                                                handOffWidgetBinding(widgetId, bindIntent, configure = false)
                                             },
-                                            onNeedsConfigure = { _, _ ->
-                                                HomeFragmentCompose.pendingWidgetPickerSignal = false
-                                                try { navController.popBackStack(R.id.mainFragment, false) } catch (_: Exception) {}
+                                            onNeedsConfigure = { widgetId, configIntent ->
+                                                handOffWidgetBinding(widgetId, configIntent, configure = true)
                                             }
                                         )
                                     }

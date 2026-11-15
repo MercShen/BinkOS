@@ -157,13 +157,14 @@ class ComposeBottomSheetHost(private val activity: Activity) {
     var onDismissed: (() -> Unit)? = null
 
     companion object {
-        private var isAnySheetShowing = false
+        private val presentationSlot = com.github.gezimos.inkos.helper.LatestTaskSlot<ComposeBottomSheetHost>()
         private val activeHosts = java.util.Collections.synchronizedList(
             mutableListOf<java.lang.ref.WeakReference<ComposeBottomSheetHost>>()
         )
 
         /** 关闭所有仍显示的底部弹窗（回到主页/系统 HOME 时用）。 */
         fun dismissAllSheets() {
+            presentationSlot.cancelAll()
             val snapshot = synchronized(activeHosts) { activeHosts.toList() }
             activeHosts.clear()
             snapshot.forEach { ref ->
@@ -187,8 +188,7 @@ class ComposeBottomSheetHost(private val activity: Activity) {
         if (suppressCallback) onDismissed = null
         activeHosts.removeAll { it.get() == this || it.get() == null }
         val wasShowing = composeView != null
-        // Dismissing an idle/queued host must not clear another host's visible guard.
-        if (wasShowing) isAnySheetShowing = false
+        presentationSlot.cancel(this)
         if (insetsListener != null) {
             try { activity.window.decorView.setOnApplyWindowInsetsListener(null) } catch (_: Exception) {}
             insetsListener = null
@@ -210,15 +210,18 @@ class ComposeBottomSheetHost(private val activity: Activity) {
         skipPartiallyExpanded: Boolean = true,
         content: @Composable () -> Unit
     ) {
-        if (isAnySheetShowing) return
-        dismiss()
-        // Pending hosts are included in dismissAllSheets, not just already visible ones.
+        // Latest explicit show wins; replacement never fires the old parent's reopen callback.
+        val callback = onDismissed
+        val snapshot = synchronized(activeHosts) { activeHosts.toList() }
+        snapshot.forEach { it.get()?.dismiss(suppressCallback = true) }
+        onDismissed = callback // same-host child replacement keeps its parent return, without firing it now
+        val token = presentationSlot.replace(this)
         activeHosts.add(java.lang.ref.WeakReference(this))
         val task = Runnable {
             pendingShow = null
-            if (!activity.isFinishing && !activity.isDestroyed &&
+            if (presentationSlot.owns(this, token) && !activity.isFinishing && !activity.isDestroyed &&
                 ((activity as? LifecycleOwner)?.lifecycle?.currentState?.isAtLeast(Lifecycle.State.STARTED) != false)) {
-                present(skipPartiallyExpanded, content)
+                present(token, skipPartiallyExpanded, content)
             } else dismiss(suppressCallback = true)
         }
         pendingShow = task
@@ -227,17 +230,17 @@ class ComposeBottomSheetHost(private val activity: Activity) {
 
     @OptIn(ExperimentalMaterial3Api::class)
     private fun present(
+        token: Long,
         skipPartiallyExpanded: Boolean = true,
         content: @Composable () -> Unit
     ) {
-        if (isAnySheetShowing) return
+        if (!presentationSlot.owns(this, token)) return
         val root = activity.window.decorView.findViewById<ViewGroup>(android.R.id.content) ?: run {
             dismiss(suppressCallback = true)
             return
         }
         activeHosts.removeAll { it.get() == null || it.get() === this }
         activeHosts.add(java.lang.ref.WeakReference(this))
-        isAnySheetShowing = true
         val prefs = Prefs(activity)
         val isDark = prefs.appTheme == Constants.Theme.Dark
         val shouldHideStatusBar = !prefs.showStatusBar
@@ -335,14 +338,6 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                             val screenScale = rememberScreenScale()
                             val swallowDragConnection = remember {
                                 object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
-                                    override fun onPreScroll(
-                                        available: Offset,
-                                        source: androidx.compose.ui.input.nestedscroll.NestedScrollSource
-                                    ): Offset {
-                                        // 内容区向下拖时先吃掉手势，避免整个面板被拖走关闭
-                                        return if (available.y > 0) available else Offset.Zero
-                                    }
-
                                     override fun onPostScroll(
                                         consumed: Offset,
                                         available: Offset,

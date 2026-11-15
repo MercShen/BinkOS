@@ -372,6 +372,20 @@ class SimpleTrayFragment : Fragment() {
         val composeView = ComposeView(requireContext())
         val fragment = this
         composeView.setContent {
+            androidx.compose.runtime.LaunchedEffect(trayVm) {
+                trayVm?.torchErrors?.collect { code ->
+                    val safeContext = context?.applicationContext ?: return@collect
+                    val message = when (code) {
+                        "camera_unavailable" -> safeContext.getString(com.github.gezimos.inkos.R.string.toast_camera_permission)
+                        "flashlight_unavailable" -> safeContext.getString(com.github.gezimos.inkos.R.string.toast_no_flashlight)
+                        "set_torch_failed" -> safeContext.getString(com.github.gezimos.inkos.R.string.toast_no_flashlight)
+                        "torch_state_unconfirmed" -> safeContext.getString(com.github.gezimos.inkos.R.string.toast_no_flashlight)
+                        else -> "Flashlight: " + code
+                    }
+                    android.widget.Toast.makeText(safeContext, message, android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }
+
             val isDark = prefs.appTheme == com.github.gezimos.inkos.data.Constants.Theme.Dark
             val isEditMode by EditModeHelper.isEditModeFlow.collectAsState(initial = EditModeHelper.isEditMode())
             val simpleTrayRefreshTrigger = remember { mutableStateOf(0) }

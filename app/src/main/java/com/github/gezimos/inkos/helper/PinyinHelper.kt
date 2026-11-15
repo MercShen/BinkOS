@@ -28,7 +28,7 @@ object PinyinHelper {
     private val cache = ConcurrentHashMap<String, Entry>(256)
 
     private val transliterator: Transliterator? by lazy {
-        try {
+        if (android.os.Build.VERSION.SDK_INT < 29) null else try {
             Transliterator.getInstance("Han-Latin")
         } catch (_: Throwable) {
             null
@@ -49,6 +49,7 @@ object PinyinHelper {
     }
 
     private fun build(text: String): Entry {
+        if (android.os.Build.VERSION.SDK_INT < 29) return EMPTY
         val t = transliterator ?: return EMPTY
 
         // 先把 camelCase 拆开，让拉丁词也能取到多个首字母（WeChat -> W C）

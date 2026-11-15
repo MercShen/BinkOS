@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.database.ContentObserver
+import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.net.ConnectivityManager
 import android.net.Network
@@ -27,8 +28,11 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicReference
 
 sealed interface SimpleTrayUiEvent {
     object OpenWifiPanel : SimpleTrayUiEvent
@@ -74,10 +78,32 @@ class SimpleTrayViewModel(application: Application) : AndroidViewModel(applicati
 
     private val cameraManager = appContext.getSystemService(CameraManager::class.java)
 
+    // 注册对象全部用字段持有，onCleared 里才能对称注销
+    private var wifiReceiver: BroadcastReceiver? = null
+    private var bluetoothReceiver: BroadcastReceiver? = null
+    private var airplaneReceiver: BroadcastReceiver? = null
+    private var simReceiver: BroadcastReceiver? = null
+    private var brightnessObserver: ContentObserver? = null
+    private var networkCallback: ConnectivityManager.NetworkCallback? = null
+    private var torchCallback: CameraManager.TorchCallback? = null
+    private var torchTargetId: String? = null
+
+    private val _torchBusy = MutableStateFlow(false)
+    val torchBusy: StateFlow<Boolean> = _torchBusy.asStateFlow()
+    private val _torchAvailable = MutableStateFlow(true)
+    val torchAvailable: StateFlow<Boolean> = _torchAvailable.asStateFlow()
+    private val _torchErrors = MutableSharedFlow<String>(extraBufferCapacity = 2)
+    val torchErrors = _torchErrors.asSharedFlow()
+
+    /** 等待 TorchCallback 回真值；toggle 不再乐观改状态。 */
+    private val torchAwait = AtomicReference<CompletableDeferred<Boolean?>?>(null)
+    @Volatile private var cleared = false
+
     init {
         viewModelScope.launch {
             prefs.preferenceChangeFlow.collect { key ->
-                if (key == com.github.gezimos.inkos.data.Constants.SIMPLE_TRAY_BRIGHTNESS_BAR) {
+                if (key == com.github.gezimos.inkos.data.Constants.SIMPLE_TRAY_BRIGHTNESS_BAR ||
+                    key == com.github.gezimos.inkos.data.Prefs.ALL_KEYS_CHANGED) {
                     _brightnessBarEnabled.value = prefs.simpleTrayBrightnessBarEnabled
                 }
             }
@@ -122,7 +148,7 @@ class SimpleTrayViewModel(application: Application) : AndroidViewModel(applicati
                 }
             } catch (_: Exception) { false }
 
-            _flashlightEnabled.value = false
+            // 注意：这里不再把 flashlight 置 false；手电筒真值只由 CameraManager.TorchCallback 提供
 
             // Update brightness from system
             val currentBrightness = try {
@@ -145,105 +171,171 @@ class SimpleTrayViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     private fun registerReceiversAndCallbacks() {
+        wifiReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (cleared) return
+                viewModelScope.launch {
+                    _wifiEnabled.value = try {
+                        (appContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager)?.isWifiEnabled == true
+                    } catch (_: Exception) { false }
+                }
+            }
+        }
+        registerSystemReceiver(wifiReceiver, IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION))
+
+        bluetoothReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (cleared) return
+                viewModelScope.launch {
+                    _bluetoothEnabled.value = try {
+                        (appContext.getSystemService(BluetoothManager::class.java))?.adapter?.isEnabled == true
+                    } catch (_: Exception) { false }
+                }
+            }
+        }
+        registerSystemReceiver(bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+
+        airplaneReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (cleared) return
+                refreshStates()
+            }
+        }
+        registerSystemReceiver(airplaneReceiver, IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED))
+
+        simReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                if (cleared) return
+                refreshStates()
+            }
+        }
+        registerSystemReceiver(simReceiver, IntentFilter("android.intent.action.SIM_STATE_CHANGED"))
+
         try {
-            // WiFi
-            val wifiReceiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
-                    viewModelScope.launch { _wifiEnabled.value = try {
-                        val wm = appContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-                        wm?.isWifiEnabled == true
-                    } catch (_: Exception) { false } }
-                }
-            }
-            appContext.registerReceiver(wifiReceiver, IntentFilter(WifiManager.WIFI_STATE_CHANGED_ACTION))
-
-            // Bluetooth
-            val bluetoothReceiver = object : BroadcastReceiver() {
-                override fun onReceive(context: Context?, intent: Intent?) {
+            val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+                override fun onChange(selfChange: Boolean) {
+                    super.onChange(selfChange)
+                    if (cleared) return
                     viewModelScope.launch {
-                        _bluetoothEnabled.value = try {
-                            val btManager = appContext.getSystemService(BluetoothManager::class.java)
-                            btManager?.adapter?.isEnabled == true
-                        } catch (_: Exception) { false }
+                        val current = try {
+                            Settings.System.getInt(appContext.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
+                        } catch (_: Exception) {
+                            return@launch
+                        }
+                        if (current == 1 && _brightnessLevel.value == 0) return@launch
+                        if (_brightnessLevel.value != current) _brightnessLevel.value = current
                     }
                 }
             }
-            appContext.registerReceiver(bluetoothReceiver, IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED))
+            appContext.contentResolver.registerContentObserver(
+                Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS), false, observer
+            )
+            brightnessObserver = observer
+        } catch (_: Exception) {
+        }
 
-            // Connectivity callback
+        try {
             val cm = appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager
-            val networkCallback = object : ConnectivityManager.NetworkCallback() {
+            val callback = object : ConnectivityManager.NetworkCallback() {
                 override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                    viewModelScope.launch {
-                        try { refreshStates() } catch (_: Exception) {}
-                    }
+                    if (cleared) return
+                    refreshStates()
                 }
 
                 override fun onLost(network: Network) {
-                    viewModelScope.launch {
-                        try { refreshStates() } catch (_: Exception) {}
-                    }
+                    if (cleared) return
+                    refreshStates()
                 }
             }
-            try {
-                cm?.registerDefaultNetworkCallback(networkCallback)
-            } catch (_: Exception) {
-                try {
-                    val req = NetworkRequest.Builder().addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET).build()
-                    cm?.registerNetworkCallback(req, networkCallback)
-                } catch (_: Exception) {}
-            }
+            cm?.registerNetworkCallback(NetworkRequest.Builder().build(), callback)
+            networkCallback = callback
+        } catch (_: Exception) {
+        }
 
-            // Torch callback
-            try {
-                val torchCb = object : CameraManager.TorchCallback() {
+        try {
+            val cm = cameraManager
+            if (cm != null) {
+                torchTargetId = findTorchCameraId(cm)
+                val callback = object : CameraManager.TorchCallback() {
                     override fun onTorchModeChanged(cameraId: String, enabled: Boolean) {
-                        viewModelScope.launch { _flashlightEnabled.value = enabled }
+                        if (cleared) return
+                        val target = torchTargetId
+                        if (target != null && cameraId != target) return
+                        _torchAvailable.value = true
+                        _flashlightEnabled.value = enabled
+                        torchAwait.get()?.complete(enabled)
+                    }
+
+                    override fun onTorchModeUnavailable(cameraId: String) {
+                        if (cleared) return
+                        val target = torchTargetId
+                        if (target != null && cameraId != target) return
+                        _torchAvailable.value = false
+                        torchAwait.get()?.complete(null)
                     }
                 }
-                cameraManager?.registerTorchCallback(torchCb, Handler(Looper.getMainLooper()))
-            } catch (_: Exception) {}
+                cm.registerTorchCallback(callback, Handler(Looper.getMainLooper()))
+                torchCallback = callback
+            }
+        } catch (_: Exception) {
+        }
+    }
 
-            try {
-                val airplaneReceiver = object : BroadcastReceiver() {
-                    override fun onReceive(context: Context?, intent: Intent?) {
-                        try { viewModelScope.launch { refreshStates() } } catch (_: Exception) {}
-                    }
-                }
-                appContext.registerReceiver(airplaneReceiver, IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED))
-            } catch (_: Exception) {}
+    private fun registerSystemReceiver(receiver: BroadcastReceiver?, filter: IntentFilter) {
+        if (receiver == null) return
+        try {
+            // 系统保护的广播：API 33+ 需要显式 flag；ContextCompat 在旧版本退化为普通注册。
+            ContextCompat.registerReceiver(appContext, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        } catch (_: Exception) {
+        }
+    }
 
-            try {
-                val simReceiver = object : BroadcastReceiver() {
-                    override fun onReceive(context: Context?, intent: Intent?) {
-                        try { viewModelScope.launch { refreshStates() } } catch (_: Exception) {}
-                    }
-                }
-                appContext.registerReceiver(simReceiver, IntentFilter("android.intent.action.SIM_STATE_CHANGED"))
-            } catch (_: Exception) {}
+    private fun findTorchCameraId(cm: CameraManager): String? {
+        var fallback: String? = null
+        try {
+            for (id in cm.cameraIdList) {
+                val characteristics = try { cm.getCameraCharacteristics(id) } catch (_: Exception) { null } ?: continue
+                val hasFlash = characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+                if (!hasFlash) continue
+                if (fallback == null) fallback = id
+                val facing = characteristics.get(CameraCharacteristics.LENS_FACING)
+                if (facing == CameraCharacteristics.LENS_FACING_BACK) return id
+            }
+        } catch (_: Exception) {
+        }
+        return fallback
+    }
 
-            // Brightness observer
-            try {
-                val brightnessObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
-                    override fun onChange(selfChange: Boolean) {
-                        super.onChange(selfChange)
-                        viewModelScope.launch {
-                            try {
-                                val current = Settings.System.getInt(appContext.contentResolver, Settings.System.SCREEN_BRIGHTNESS)
-                                if (current == 1 && _brightnessLevel.value == 0) {
-                                    return@launch
-                                }
-                                if (_brightnessLevel.value != current) {
-                                    _brightnessLevel.value = current
-                                }
-                            } catch (_: Exception) {}
-                        }
-                    }
-                }
-                appContext.contentResolver.registerContentObserver(Settings.System.getUriFor(Settings.System.SCREEN_BRIGHTNESS), false, brightnessObserver)
-            } catch (_: Exception) {}
+    override fun onCleared() {
+        cleared = true
+        unregisterQuietly { wifiReceiver?.let { appContext.unregisterReceiver(it) } }
+        unregisterQuietly { bluetoothReceiver?.let { appContext.unregisterReceiver(it) } }
+        unregisterQuietly { airplaneReceiver?.let { appContext.unregisterReceiver(it) } }
+        unregisterQuietly { simReceiver?.let { appContext.unregisterReceiver(it) } }
+        unregisterQuietly { brightnessObserver?.let { appContext.contentResolver.unregisterContentObserver(it) } }
+        unregisterQuietly {
+            networkCallback?.let { callback ->
+                (appContext.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager)
+                    ?.unregisterNetworkCallback(callback)
+            }
+        }
+        unregisterQuietly { torchCallback?.let { cameraManager?.unregisterTorchCallback(it) } }
+        wifiReceiver = null
+        bluetoothReceiver = null
+        airplaneReceiver = null
+        simReceiver = null
+        brightnessObserver = null
+        networkCallback = null
+        torchCallback = null
+        torchAwait.set(null)
+        super.onCleared()
+    }
 
-        } catch (_: Exception) {}
+    private inline fun unregisterQuietly(block: () -> Unit) {
+        try {
+            block()
+        } catch (_: Exception) {
+        }
     }
 
     // UI intent emitters
@@ -262,6 +354,11 @@ class SimpleTrayViewModel(application: Application) : AndroidViewModel(applicati
 
     fun toggleBluetooth() {
         viewModelScope.launch {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                ContextCompat.checkSelfPermission(appContext, android.Manifest.permission.BLUETOOTH_CONNECT) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                _permissionRequests.emit(SimpleTrayPermissionRequest.BluetoothConnect)
+                return@launch
+            }
             try {
                 if (Build.VERSION.SDK_INT >= 35) {
                     _uiEvents.emit(SimpleTrayUiEvent.OpenBluetoothSettings)
@@ -298,15 +395,38 @@ class SimpleTrayViewModel(application: Application) : AndroidViewModel(applicati
 
     fun toggleFlashlight() {
         viewModelScope.launch {
+            if (cleared) return@launch
+            val cm = cameraManager ?: run {
+                _torchErrors.tryEmit("camera_unavailable")
+                return@launch
+            }
+            val targetId = torchTargetId ?: findTorchCameraId(cm)?.also { torchTargetId = it }
+            if (targetId == null) {
+                _torchErrors.tryEmit("flashlight_unavailable")
+                return@launch
+            }
+            if (_torchBusy.value) return@launch
+            _torchBusy.value = true
+            val pending = CompletableDeferred<Boolean?>()
+            torchAwait.set(pending)
             try {
-                val cm = cameraManager ?: return@launch
-                val id = cm.cameraIdList.firstOrNull { id0 ->
-                    try { cm.getCameraCharacteristics(id0).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true } catch (_: Exception) { false }
-                } ?: return@launch
-                val current = _flashlightEnabled.value
-                cm.setTorchMode(id, !current)
-                _flashlightEnabled.value = !current
-            } catch (_: Exception) {}
+                // 真值只认 TorchCallback；这里只发起切换请求
+                val desired = !_flashlightEnabled.value
+                try {
+                    cm.setTorchMode(targetId, desired)
+                } catch (e: Exception) {
+                    _torchErrors.tryEmit("set_torch_failed")
+                    return@launch
+                }
+                val confirmed = withTimeoutOrNull(1500L) { pending.await() }
+                if (confirmed == null) {
+                    // null 只表示“没等到真值/不可用”，不乐观改状态；UI 仍以回调为准
+                    _torchErrors.tryEmit("torch_state_unconfirmed")
+                }
+            } finally {
+                torchAwait.set(null)
+                _torchBusy.value = false
+            }
         }
     }
 

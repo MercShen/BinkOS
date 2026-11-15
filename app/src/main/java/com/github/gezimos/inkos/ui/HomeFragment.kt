@@ -122,6 +122,10 @@ class HomeFragmentCompose : Fragment() {
 
     // Widget picker launcher
     var pendingWidgetId: Int = -1
+    /** 绑定成功后要释放的旧 widget（成功后 swap，取消/失败时保持原旧 widget）。 */
+    private var pendingWidgetPreviousId: Int = -1
+    private var pendingWidgetConfigure: Boolean = false
+    private var pendingWidgetStartIntent: Intent? = null
     private lateinit var widgetPickerLauncher: ActivityResultLauncher<Intent>
     private lateinit var calendarPermissionLauncher: ActivityResultLauncher<String>
     lateinit var widgetConfigureLauncher: ActivityResultLauncher<Intent>
@@ -135,44 +139,63 @@ class HomeFragmentCompose : Fragment() {
         super.onCreate(savedInstanceState)
         viewModel = ViewModelProvider(requireActivity())[MainViewModel::class.java]
         prefs = viewModel.getPrefs()
+        if (savedInstanceState != null) {
+            pendingWidgetId = savedInstanceState.getInt("pending_widget_id", -1)
+            pendingWidgetPreviousId = savedInstanceState.getInt("pending_widget_previous", -1)
+            pendingWidgetConfigure = savedInstanceState.getBoolean("pending_widget_configure", false)
+            @Suppress("DEPRECATION")
+            val pending: Intent? = savedInstanceState.getParcelable("pending_widget_intent")
+            pendingWidgetStartIntent = pending
+        }
         vibrator = try {
             requireContext().getSystemService(Vibrator::class.java)
         } catch (_: Exception) {
             null
         }
 
-        // Register widget picker result handler
+        // Widget picker（系统选择器）结果：失败/取消只释放新分配的 id，旧 widget 保留
         widgetPickerLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == android.app.Activity.RESULT_OK) {
                 val widgetId = result.data?.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, -1) ?: -1
                 if (widgetId != -1) {
-                    // Check if widget needs configuration
+                    if (widgetId != pendingWidgetId) {
+                        if (pendingWidgetId != -1) appWidgetHelper.deallocateWidgetId(pendingWidgetId)
+                        pendingWidgetId = widgetId
+                    }
                     val configIntent = appWidgetHelper.getConfigureIntent(widgetId)
                     if (configIntent != null) {
-                        pendingWidgetId = widgetId
+                        pendingWidgetConfigure = true
                         widgetConfigureLauncher.launch(configIntent)
                     } else {
-                        appWidgetHelper.onWidgetPicked(widgetId)
-                        viewModel.setAndroidWidgetId(widgetId)
+                        finalizeWidgetBinding(true)
                     }
+                } else {
+                    finalizeWidgetBinding(false)
                 }
             } else {
-                if (pendingWidgetId != -1) {
-                    appWidgetHelper.deallocateWidgetId(pendingWidgetId)
-                    pendingWidgetId = -1
-                }
+                finalizeWidgetBinding(false)
             }
         }
 
-        // Register widget configure result handler
+        // Configure 结果：只有 RESULT_OK 才记录新的 androidWidgetId 并释放旧 widget
         widgetConfigureLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val ok = result.resultCode == android.app.Activity.RESULT_OK && pendingWidgetId != -1
+            finalizeWidgetBinding(ok)
+        }
+
+        // Bind 权限结果：成功再走 configure 或直接完成
+        widgetBindLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == android.app.Activity.RESULT_OK && pendingWidgetId != -1) {
-                appWidgetHelper.onWidgetPicked(pendingWidgetId)
-                viewModel.setAndroidWidgetId(pendingWidgetId)
-            } else if (pendingWidgetId != -1) {
-                appWidgetHelper.deallocateWidgetId(pendingWidgetId)
+                val configIntent = appWidgetHelper.getConfigureIntent(pendingWidgetId)
+                if (configIntent != null) {
+                    pendingWidgetConfigure = true
+                    widgetConfigureLauncher.launch(configIntent)
+                } else {
+                    finalizeWidgetBinding(true)
+                }
+            } else {
+                finalizeWidgetBinding(false)
             }
-            pendingWidgetId = -1
         }
 
         // Register calendar permission for Events widget
@@ -209,23 +232,6 @@ class HomeFragmentCompose : Fragment() {
             ))
         }
 
-        // Register widget bind permission result handler
-        widgetBindLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == android.app.Activity.RESULT_OK && pendingWidgetId != -1) {
-                // Binding granted — check if configure is needed
-                val configIntent = appWidgetHelper.getConfigureIntent(pendingWidgetId)
-                if (configIntent != null) {
-                    widgetConfigureLauncher.launch(configIntent)
-                } else {
-                    appWidgetHelper.onWidgetPicked(pendingWidgetId)
-                    viewModel.setAndroidWidgetId(pendingWidgetId)
-                    pendingWidgetId = -1
-                }
-            } else if (pendingWidgetId != -1) {
-                appWidgetHelper.deallocateWidgetId(pendingWidgetId)
-                pendingWidgetId = -1
-            }
-        }
     }
 
     override fun onCreateView(
@@ -606,6 +612,8 @@ class HomeFragmentCompose : Fragment() {
             pendingWidgetPickerSignal = false
             launchWidgetPicker()
         }
+        // Settings 交接过来的 bind/config 请求：resume 后按同一套 launcher 走
+        tryLaunchPendingWidgetBinding()
 
         val act = activity as? com.github.gezimos.inkos.MainActivity ?: return
         act.fragmentKeyHandler = object : com.github.gezimos.inkos.MainActivity.FragmentKeyHandler {
@@ -898,12 +906,14 @@ class HomeFragmentCompose : Fragment() {
 
 
     fun launchWidgetPicker() {
-        val oldId = prefs.androidWidgetId
-        if (oldId != -1) {
-            appWidgetHelper.removeWidget()
-            viewModel.setAndroidWidgetId(-1)
+        // 不提前删旧 widget：取消/失败时旧 widget 原样保留
+        if (pendingWidgetId != -1) {
+            appWidgetHelper.deallocateWidgetId(pendingWidgetId)
+            pendingWidgetId = -1
         }
-
+        pendingWidgetPreviousId = prefs.androidWidgetId
+        pendingWidgetConfigure = false
+        pendingWidgetStartIntent = null
         val widgetId = appWidgetHelper.allocateWidgetId()
         pendingWidgetId = widgetId
         val intent = appWidgetHelper.buildPickerIntent(widgetId)
@@ -911,9 +921,83 @@ class HomeFragmentCompose : Fragment() {
             widgetPickerLauncher.launch(intent)
         } catch (_: Exception) {
             appWidgetHelper.deallocateWidgetId(widgetId)
-            pendingWidgetId = -1
+            resetPendingWidgetBinding()
             requireContext().showShortToast("Widget picker not available")
         }
+    }
+
+    /**
+     * Settings 里选定 widget 后交接：先记下旧 widget（成功后才释放），
+     * 等 Activity resumed 再用 bind/config launcher 继续；没有 home 时由调用方先 deallocate。
+     */
+    fun startWidgetBinding(widgetId: Int, intent: Intent, configure: Boolean) {
+        if (widgetId == -1) return
+        if (pendingWidgetId != -1 && pendingWidgetId != widgetId) {
+            appWidgetHelper.deallocateWidgetId(pendingWidgetId)
+        }
+        pendingWidgetId = widgetId
+        pendingWidgetPreviousId = prefs.androidWidgetId
+        pendingWidgetConfigure = configure
+        pendingWidgetStartIntent = intent
+        tryLaunchPendingWidgetBinding()
+    }
+
+    private fun tryLaunchPendingWidgetBinding() {
+        val intent = pendingWidgetStartIntent ?: return
+        val id = pendingWidgetId
+        if (id == -1) return
+        if (!isResumed || view == null) return
+        pendingWidgetStartIntent = null
+        try {
+            if (pendingWidgetConfigure) {
+                widgetConfigureLauncher.launch(intent)
+            } else {
+                widgetBindLauncher.launch(intent)
+            }
+        } catch (e: Exception) {
+            appWidgetHelper.deallocateWidgetId(id)
+            resetPendingWidgetBinding()
+            if (isAdded) requireContext().showShortToast("Widget picker not available")
+        }
+    }
+
+    /** 成功：记录新 id 后再释放旧 id（若 helper 已释放则 getWidgetInfo 为 null，不重复删）。 */
+    private fun finalizeWidgetBinding(success: Boolean) {
+        val id = pendingWidgetId
+        if (id == -1) return
+        try {
+            if (success) {
+                appWidgetHelper.onWidgetPicked(id)
+                viewModel.setAndroidWidgetId(id)
+            } else appWidgetHelper.deallocateWidgetId(id)
+        } catch (e: Exception) {
+            appWidgetHelper.deallocateWidgetId(id)
+            android.util.Log.w("WidgetBinding", "Cannot complete widget binding", e)
+            context?.showShortToast("Widget could not be bound")
+        } finally { resetPendingWidgetBinding() }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        outState.putInt("pending_widget_id", pendingWidgetId)
+        outState.putInt("pending_widget_previous", pendingWidgetPreviousId)
+        outState.putBoolean("pending_widget_configure", pendingWidgetConfigure)
+        outState.putParcelable("pending_widget_intent", pendingWidgetStartIntent)
+        super.onSaveInstanceState(outState)
+    }
+
+    override fun onDestroy() {
+        if (isRemoving && pendingWidgetId != -1) {
+            appWidgetHelper.deallocateWidgetId(pendingWidgetId)
+            resetPendingWidgetBinding()
+        }
+        super.onDestroy()
+    }
+
+    private fun resetPendingWidgetBinding() {
+        pendingWidgetId = -1
+        pendingWidgetPreviousId = -1
+        pendingWidgetConfigure = false
+        pendingWidgetStartIntent = null
     }
 
     private fun handleDoubleTapAction() {

@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import android.os.Handler
+import android.os.Looper
+import com.github.gezimos.inkos.helper.CoalescingFileWriter
 import java.io.File
 
 class NotificationManager private constructor(private val context: Context) {
@@ -47,6 +50,24 @@ class NotificationManager private constructor(private val context: Context) {
 
 
     private val NOTIF_SAVE_FILE = "inkos_notifications.json"
+
+    /** 历史 map 只在主线程变更；所有读写都走 historyLock，后台只做解析与快照。 */
+    private val historyLock = Any()
+    @Volatile private var historyGeneration = 0L
+
+    private val historyWriter = CoalescingFileWriter<Map<String, List<ConversationNotification>>>(
+        threadName = "inkos-notif-history",
+        debounceMillis = 500L,
+        target = { File(context.filesDir, NOTIF_SAVE_FILE) },
+        encode = { snapshot -> Gson().toJson(snapshot).toByteArray(Charsets.UTF_8) }
+    )
+
+    /** restore 期间的写抑制与 tombstone：避免旧磁盘快照覆盖/复活加载期间的新增与删除。 */
+    private val restoreLock = Any()
+    @Volatile private var restoreInFlight = false
+    @Volatile private var restoreCompleted = false
+    private var pendingSaveAfterRestore = false
+    private val removedDuringRestore = mutableSetOf<String>()
 
     companion object {
         private const val TAG = "NotificationManager"
@@ -116,12 +137,15 @@ class NotificationManager private constructor(private val context: Context) {
 
     fun getConversationNotifications(): Map<String, List<ConversationNotification>> {
         // Only filter by allowlist
+        val snapshot = synchronized(historyLock) {
+            conversationNotifications.mapValues { entry -> entry.value.values.toList() }
+        }
         val prefs = com.github.gezimos.inkos.data.Prefs(context)
         val allowed = prefs.allowedNotificationApps
-        return conversationNotifications
+        return snapshot
             .filter { (pkg, _) -> allowed.isEmpty() || pkg in allowed }
             .mapValues { entry ->
-                entry.value.values.sortedByDescending { n -> n.timestamp }
+                entry.value.sortedByDescending { n -> n.timestamp }
             }
     }
 
@@ -129,22 +153,47 @@ class NotificationManager private constructor(private val context: Context) {
         packageName: String,
         conversation: ConversationNotification
     ) {
-        val appMap = conversationNotifications.getOrPut(packageName) { mutableMapOf() }
-        appMap[conversation.conversationId] = conversation
-        _conversationNotificationsState.value = getConversationNotifications()
+        if (!restoreCompleted && !restoreInFlight) restoreConversationNotifications()
+        val snapshot = synchronized(historyLock) {
+            val appMap = conversationNotifications.getOrPut(packageName) { mutableMapOf() }
+            val existingCount = appMap.size
+            appMap[conversation.conversationId] = conversation
+            // Restore preserves all existing rows; new insertions evict the oldest row only above max(500, existingCount).
+            val cap = NotificationHistoryLimits.effectiveCap(existingCount)
+            if (appMap.size > cap) {
+                val rows = appMap.values.map {
+                    NotificationHistoryLimits.Row(it.conversationId, it.timestamp)
+                }
+                val keep = NotificationHistoryLimits.bounded(rows, cap).map { it.id }.toSet()
+                appMap.keys.retainAll(keep)
+            }
+            historyGeneration += 1
+            conversationNotifications.mapValues { it.value.values.toList() }
+        }
         saveConversationNotifications()
+        _conversationNotificationsState.value = getConversationNotifications()
     }
 
     fun removeConversationNotification(packageName: String, conversationId: String) {
-        val appMap = conversationNotifications[packageName]
-        if (appMap != null) {
-            appMap.remove(conversationId)
-            if (appMap.isEmpty()) {
-                conversationNotifications.remove(packageName)
+        if (!restoreCompleted && !restoreInFlight) restoreConversationNotifications()
+        var snapshot: Map<String, List<ConversationNotification>>? = null
+        synchronized(historyLock) {
+            if (restoreInFlight) {
+                removedDuringRestore.add("$packageName|$conversationId")
             }
-            _conversationNotificationsState.value = getConversationNotifications()
-            saveConversationNotifications()
+            val appMap = conversationNotifications[packageName]
+            if (appMap != null) {
+                appMap.remove(conversationId)
+                if (appMap.isEmpty()) {
+                    conversationNotifications.remove(packageName)
+                }
+                historyGeneration += 1
+                snapshot = conversationNotifications.mapValues { it.value.values.toList() }
+            }
         }
+        val toWrite = snapshot ?: return
+        saveConversationNotifications()
+        _conversationNotificationsState.value = getConversationNotifications()
     }
 
     /**
@@ -183,43 +232,137 @@ class NotificationManager private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * 请求落盘：只提交快照，序列化 + AtomicFile 写入在单写线程合并执行（主线程不再做 Gson/文件 IO）。
+     */
     fun saveConversationNotifications() {
-        try {
-            val file = File(context.filesDir, NOTIF_SAVE_FILE)
-            val mapToSave = conversationNotifications.mapValues { it.value.values.toList() }
-            val json = Gson().toJson(mapToSave)
-            file.writeText(json)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to save conversation notifications", e)
+        if (!restoreCompleted && !restoreInFlight) restoreConversationNotifications()
+        synchronized(restoreLock) {
+            if (restoreInFlight) {
+                pendingSaveAfterRestore = true
+                return
+            }
+            val snapshot = synchronized(historyLock) {
+                conversationNotifications.mapValues { it.value.values.toList() }
+            }
+            historyWriter.submit(snapshot)
         }
     }
 
-    fun restoreConversationNotifications() {
+    /** shutdown 契约：等待已提交快照落盘（有超时），由 NotificationService.onDestroy 调用。 */
+    fun flushPendingWrites(timeoutMs: Long = 1000L): Boolean = historyWriter.flushBlocking(timeoutMs)
+
+    /** 异步 flush：排到同一个 writer 线程（不再每次 new Thread），onDestroy 不 join 主线程。 */
+    fun flushAsync() {
         try {
-            val file = File(context.filesDir, NOTIF_SAVE_FILE)
-            if (!file.exists()) return
-            val json = file.readText()
-            val type = object : TypeToken<Map<String, List<ConversationNotification>>>() {}.type
-            val restored: Map<String, List<ConversationNotification>> = Gson().fromJson(json, type)
-            conversationNotifications.clear()
-            restored.forEach { (pkg, list) ->
-                val valid = list.filter { (it.conversationId as String?) != null }
-                if (valid.isNotEmpty()) {
-                    conversationNotifications[pkg] =
-                        valid.associateBy { it.conversationId }.toMutableMap()
-                }
-            }
-            _conversationNotificationsState.value = getConversationNotifications()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to restore conversation notifications", e)
+            historyWriter.flushAsync()
+        } catch (_: Throwable) {
         }
     }
 
     /**
-     * Extracts notification content (sender, group, text, title) from a StatusBarNotification.
-     * Tries multiple Android notification fields to extract meaningful content.
-     * This is shared logic used by both buildNotificationInfo() and buildNotificationInfoForRemaining().
+     * 启动恢复：磁盘解析放后台线程，合并回内存放在主线程。
+     * 若解析期间已有新通知进来（historyGeneration 变化），以内存为准合并（current wins），
+     * 不用旧磁盘快照覆盖更新的运行期数据。
      */
+    /**
+     * 启动恢复：读取排在同一个 writer 线程（AtomicFile.openRead），解析后回主线程合并。
+     * - 同一时刻只允许一次 restore（inflight/completed 守卫）
+     * - 加载期间的新增保留在内存；删除记 tombstone，合并时不得复活
+     * - 加载期间的 save 被抑制，合并完成后再写合并后的快照
+     */
+    fun restoreConversationNotifications() {
+        synchronized(restoreLock) {
+            if (restoreInFlight || restoreCompleted) return
+            restoreInFlight = true
+        }
+        synchronized(historyLock) { removedDuringRestore.clear() }
+        val generationAtStart = historyGeneration
+
+        historyWriter.readOnWriterThread { bytes ->
+            val restored: Map<String, List<ConversationNotification>> = if (bytes == null) {
+                emptyMap()
+            } else {
+                try {
+                    val json = String(bytes, Charsets.UTF_8)
+                    val type = object : TypeToken<Map<String, List<ConversationNotification>>>() {}.type
+                    Gson().fromJson<Map<String, List<ConversationNotification>>>(json, type) ?: emptyMap()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to restore conversation notifications", e)
+                    emptyMap()
+                }
+            }
+
+            Handler(Looper.getMainLooper()).post {
+            try {
+            val tombstones = synchronized(historyLock) { removedDuringRestore.toSet() }
+            val changedWhileLoading = historyGeneration != generationAtStart
+            synchronized(historyLock) {
+                val restoredFlat = HashMap<String, MutableMap<String, ConversationNotification>>()
+                val restoredRows = HashMap<String, List<NotificationHistoryLimits.Row>>()
+                restored.forEach { (pkg, list) ->
+                    val byId = list.filter { it.conversationId.isNotBlank() }
+                        .associateBy { it.conversationId }
+                        .toMutableMap()
+                    if (byId.isNotEmpty()) {
+                        restoredFlat[pkg] = byId
+                        restoredRows[pkg] = byId.values.map {
+                            NotificationHistoryLimits.Row(it.conversationId, it.timestamp)
+                        }
+                    }
+                }
+                if (changedWhileLoading || tombstones.isNotEmpty()) {
+                    val currentRows = conversationNotifications.mapValues { entry ->
+                        entry.value.values.map {
+                            NotificationHistoryLimits.Row(it.conversationId, it.timestamp)
+                        }
+                    }
+                    val mergedRows = NotificationHistoryLimits.mergePreferCurrent(
+                        currentRows, restoredRows, Int.MAX_VALUE, tombstones
+                    )
+                    val next = LinkedHashMap<String, MutableMap<String, ConversationNotification>>()
+                    mergedRows.forEach { (pkg, rows) ->
+                        val target = LinkedHashMap<String, ConversationNotification>()
+                        rows.forEach { row ->
+                            val value = conversationNotifications[pkg]?.get(row.id)
+                                ?: restoredFlat[pkg]?.get(row.id)
+                            if (value != null) target[row.id] = value
+                        }
+                        if (target.isNotEmpty()) next[pkg] = target
+                    }
+                    conversationNotifications.clear()
+                    conversationNotifications.putAll(next)
+                } else {
+                    conversationNotifications.clear()
+                    restored.forEach { (pkg, list) ->
+                        val valid = list.filter {
+                            it.conversationId.isNotBlank() &&
+                                !tombstones.contains("$pkg|${it.conversationId}")
+                        }
+                        if (valid.isNotEmpty()) {
+                            // 保留磁盘既有的全部历史：恢复阶段不裁剪
+                            conversationNotifications[pkg] =
+                                valid.associateBy { it.conversationId }.toMutableMap()
+                        }
+                    }
+                }
+            }
+            _conversationNotificationsState.value = getConversationNotifications()
+            } catch (e: Exception) {
+                Log.e(TAG, "Cannot merge restored notification history", e)
+            } finally {
+                val needSave = synchronized(restoreLock) {
+                    restoreInFlight = false
+                    restoreCompleted = true
+                    pendingSaveAfterRestore.also { pendingSaveAfterRestore = false }
+                }
+                synchronized(historyLock) { removedDuringRestore.clear() }
+                if (needSave) saveConversationNotifications()
+            }
+            }
+        }
+    }
+
     private fun extractNotificationContent(
         sbn: android.service.notification.StatusBarNotification,
         prefs: com.github.gezimos.inkos.data.Prefs
@@ -388,6 +531,7 @@ class NotificationManager private constructor(private val context: Context) {
      * Used when a notification is removed to check if there are other notifications to display.
      * Returns null if no active notifications exist, ensuring badges are properly cleared.
      */
+
     fun buildNotificationInfoForRemaining(
         packageName: String,
         prefs: com.github.gezimos.inkos.data.Prefs,

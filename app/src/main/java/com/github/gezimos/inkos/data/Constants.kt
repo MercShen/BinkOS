@@ -2,6 +2,7 @@ package com.github.gezimos.inkos.data
 
 import android.content.Context
 import android.graphics.Typeface
+import com.github.gezimos.inkos.helper.FontFileCache
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.res.ResourcesCompat
@@ -394,25 +395,16 @@ object Constants {
         Custom;
 
         fun getFont(context: Context, customPath: String? = null): Typeface? {
-            val prefs = Prefs(context)
             return when (this) {
                 System -> getTrueSystemFont()
                 Shortstack -> ResourcesCompat.getFont(context, R.font.shortstack)
                 PublicSans -> ResourcesCompat.getFont(context, R.font.publicsans)
                 Vollkorn -> ResourcesCompat.getFont(context, R.font.vollkorn)
                 Custom -> {
-                    val path = customPath ?: prefs.customFontPath
+                    // 有界缓存：同一 path+mtime+len 不再重复 createFromFile；缺省路径直接读 SharedPreferences，不构造 Prefs
+                    val path = customPath ?: FontFileCache.defaultCustomFontPath(context)
                     if (!path.isNullOrBlank()) {
-                        val file = java.io.File(path)
-                        if (file.exists()) {
-                            try {
-                                Typeface.createFromFile(path)
-                            } catch (_: Exception) {
-                                getTrueSystemFont()
-                            }
-                        } else {
-                            getTrueSystemFont()
-                        }
+                        FontFileCache.get(context, path) ?: getTrueSystemFont()
                     } else getTrueSystemFont()
                 }
 

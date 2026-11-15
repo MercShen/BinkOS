@@ -47,6 +47,10 @@ class NotificationService : NotificationListenerService() {
     }
 
     override fun onDestroy() {
+        try {
+            notificationManager.flushAsync()
+        } catch (_: Exception) {
+        }
         audioWidgetHelper.cleanup()
         instance = null
         super.onDestroy()

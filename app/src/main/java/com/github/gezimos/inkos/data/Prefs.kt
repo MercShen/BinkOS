@@ -10,10 +10,20 @@ import com.github.gezimos.inkos.helper.getUserHandleFromString
 import com.github.gezimos.inkos.helper.isSystemInDarkMode
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.launch
 
 private const val PREFS_FILENAME = "com.github.gezimos.inkos"
 
@@ -256,9 +266,55 @@ class Prefs(val context: Context) {
 
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_FILENAME, 0)
 
-    private val _preferenceChangeFlow = MutableSharedFlow<String>(extraBufferCapacity = 16)
-    val preferenceChangeFlow = _preferenceChangeFlow.asSharedFlow()
+    /** 手动触发的变更（例如 notifyPinnedShortcutsChanged），与系统监听合并成同一个 Flow。 */
+    private val _manualPreferenceChanges = MutableStateFlow(0L)
 
+    private val _allKeysRevision = MutableStateFlow(0L)
+    /** 每次溢出发出 ALL 时递增，供只想做全量回读的消费者观察。 */
+    val allKeysRevision: StateFlow<Long> = _allKeysRevision.asStateFlow()
+
+    /**
+     * 每个 collector 用 callbackFlow 注册自己的强引用 listener，collector 结束时注销；
+     * 事件缓冲满时改发 ALL_KEYS_CHANGED（CONFLATED 通道，不会被丢），消费者收到后全量回读。
+     * 不再依赖每个 Prefs 实例 init 的匿名长期 listener 转发 key（那个仍保留用于主题流/QuoteWidget）。
+     */
+    val preferenceChangeFlow: Flow<String> = merge(
+        _manualPreferenceChanges.drop(1).map { ALL_KEYS_CHANGED },
+        callbackFlow {
+            val queue = Channel<String>(capacity = 64)
+            val allKeys = Channel<String>(Channel.CONFLATED)
+            val keyPump = launch { for (key in queue) send(key) }
+            val allPump = launch { for (value in allKeys) send(value) }
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                if (key == null) {
+                    allKeys.trySend(ALL_KEYS_CHANGED)
+                    return@OnSharedPreferenceChangeListener
+                }
+                val result = queue.trySend(key)
+                if (result.isFailure) {
+                    _allKeysRevision.value = _allKeysRevision.value + 1
+                    allKeys.trySend(ALL_KEYS_CHANGED)
+                }
+            }
+            try {
+                prefs.registerOnSharedPreferenceChangeListener(listener)
+            } catch (e: Exception) {
+                Log.w("Prefs", "register collector listener failed", e)
+            }
+            awaitClose {
+                try {
+                    prefs.unregisterOnSharedPreferenceChangeListener(listener)
+                } catch (_: Exception) {
+                }
+                queue.close()
+                allKeys.close()
+                keyPump.cancel()
+                allPump.cancel()
+            }
+        }
+    )
+
+    /** 主题流/QuoteWidget 仍需一直生效，保留单个具名 listener（不再在这里转发 key）。 */
     private val sharedPrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         try {
             when (key) {
@@ -272,11 +328,8 @@ class Prefs(val context: Context) {
                     _textColorFlow.value = textColor
                 }
             }
-            if (key != null) {
-                try { _preferenceChangeFlow.tryEmit(key) } catch (e: Exception) { Log.w("Prefs", "preferenceChangeFlow emit failed for key=$key", e) }
-                if (com.github.gezimos.inkos.widget.QuoteWidget.isQuotePrefKey(key)) {
-                    com.github.gezimos.inkos.widget.QuoteWidget.requestUpdate(context)
-                }
+            if (key != null && com.github.gezimos.inkos.widget.QuoteWidget.isQuotePrefKey(key)) {
+                com.github.gezimos.inkos.widget.QuoteWidget.requestUpdate(context)
             }
         } catch (e: Exception) {
             Log.w("Prefs", "sharedPrefsListener failed", e)
@@ -770,6 +823,7 @@ class Prefs(val context: Context) {
     }
 
     fun loadFromString(json: String) {
+        validateBackupString(json)?.let { throw IllegalArgumentException(it) }
         // 兼容两种备份格式：
         //   v1+    {"type":"inkos_full","version":1,"prefs":{...}}
         //   legacy 直接就是设置键值 map
@@ -778,11 +832,14 @@ class Prefs(val context: Context) {
             if (root.has("prefs")) {
                 val version = root.optInt("version", 0)
                 if (version > BACKUP_FORMAT_VERSION) {
+                    // Newer backups are rejected consistently (validator does the same) instead of a
+                    // partial import that could write only some settings.
                     android.widget.Toast.makeText(
                         context,
-                        "This backup was created by a newer Bink OS (v" + version + "). Unsupported settings are ignored.",
+                        "This backup was created by a newer Bink OS (v" + version + "). Update Bink OS to restore it.",
                         android.widget.Toast.LENGTH_LONG
                     ).show()
+                    return
                 }
                 root.getJSONObject("prefs").toString()
             } else {
@@ -793,7 +850,8 @@ class Prefs(val context: Context) {
         }
         prefs.edit {
             val all: HashMap<String, Any?> =
-                Gson().fromJson(settingsJson, object : TypeToken<HashMap<String, Any?>>() {}.type)
+                com.google.gson.GsonBuilder().setObjectToNumberStrategy(com.google.gson.ToNumberPolicy.BIG_DECIMAL)
+                    .create().fromJson(settingsJson, object : TypeToken<HashMap<String, Any?>>() {}.type)
             val pm = context.packageManager
             for ((key, value) in all) {
                 if (key in deprecatedImportKeys) continue
@@ -847,11 +905,24 @@ class Prefs(val context: Context) {
                     putStringSet(key, set)
                     continue
                 }
+                val schemaType = com.github.gezimos.inkos.helper.BackupPreferenceSchema.typeFor(key)
+                if (schemaType == com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.SET) {
+                    putStringSet(key, when (value) {
+                        is Collection<*> -> value.filterIsInstance<String>().toSet()
+                        is String -> setOf(value)
+                        else -> emptySet()
+                    })
+                    continue
+                }
                 when (value) {
                     is String -> putString(key, value)
                     is Boolean -> putBoolean(key, value)
                     is Number -> {
-                        if (key in floatPrefKeys) {
+                        if (schemaType == com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.LONG) {
+                            putLong(key, value.toLong())
+                        } else if (schemaType == com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.INTEGER) {
+                            putInt(key, value.toInt())
+                        } else if (schemaType == com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.FLOAT || key in floatPrefKeys) {
                             putFloat(key, value.toFloat())
                         } else {
                             if (value.toDouble() == value.toInt().toDouble()) {
@@ -873,6 +944,38 @@ class Prefs(val context: Context) {
                 }
             }
         }
+    }
+
+    /**
+     * Validate a full-backup JSON without writing anything.
+     * Returns null when [json] is a supported backup, otherwise a user-facing reason.
+     * The rules live in the Android-free [com.github.gezimos.inkos.helper.BackupJsonValidator]
+     * so they are covered by JVM tests; restore engines re-check before touching user data.
+     */
+    fun validateBackupString(json: String): String? {
+        val expected = HashMap<String, com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType>()
+        for ((key, value) in prefs.all) {
+            // The static schema is authoritative for known keys (protects fresh installs too);
+            // actual values only add keys the schema does not know.
+            if (com.github.gezimos.inkos.helper.BackupPreferenceSchema.typeFor(key) != null) continue
+            val type = when (value) {
+                is Boolean -> com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.BOOLEAN
+                is Int -> com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.INTEGER
+                is Long -> com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.LONG
+                is Float -> com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.FLOAT
+                is Number -> com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.NUMBER
+                is String -> com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.STRING
+                is Set<*> -> com.github.gezimos.inkos.helper.BackupJsonValidator.ValueType.SET
+                else -> null
+            }
+            if (type != null) expected[key] = type
+        }
+        return com.github.gezimos.inkos.helper.BackupJsonValidator.validate(
+            json,
+            expected,
+            com.github.gezimos.inkos.helper.BackupPreferenceSchema,
+            BACKUP_FORMAT_VERSION
+        )
     }
 
     fun getAppAlias(key: String): String {
@@ -1476,7 +1579,7 @@ class Prefs(val context: Context) {
         get() = prefs.getStringSet(LOCKED_APPS, mutableSetOf()) as MutableSet<String>
         set(value) = prefs.edit { putStringSet(LOCKED_APPS, value) }
     fun notifyPinnedShortcutsChanged() {
-        try { _preferenceChangeFlow.tryEmit(PINNED_SHORTCUTS) } catch (e: Exception) { Log.w("Prefs", "notifyPinnedShortcutsChanged emit failed", e) }
+        _manualPreferenceChanges.value = _manualPreferenceChanges.value + 1
     }
 
     var newlyInstalledApps: MutableSet<String>
@@ -2091,6 +2194,9 @@ var pageIndicatorMargin: Int
     }
 
     companion object {
+
+        /** 偏好事件缓冲溢出时的全量回读信号（专用 CONFLATED 通道投递，保证不丢）。 */
+        const val ALL_KEYS_CHANGED = "__all_preferences_changed__"
 
         /** 备份文件格式版本；导入更高版本时提示，但继续尽量导入 */
         const val BACKUP_FORMAT_VERSION = 1

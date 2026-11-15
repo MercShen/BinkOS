@@ -213,7 +213,7 @@ BackupCompatTestActivity 用 DebugProbeContract 校验：一次只能选一个op
 | file + clear=true | 上述加--ez clear true | **confirm_write + confirm_clear**；清prefs和filesDir后导入，可能丢数据 |
 | ziprestore | --es ziprestore 设备内ZIP路径 | **confirm_write + confirm_clear**；恢复内部也会clear，不能省第二道确认 |
 
-`clear`参数仅支持file，ziprestore及其他op显式带clear(包括false)也拒绝。confirm只代表调用方声称获授权，不代替快照/回滚。备份恢复本身尚非事务，此轮保护只防误跑，不宣称导入可靠。
+`clear`参数仅支持file，ziprestore及其他op显式带clear(包括false)也拒绝。confirm只代表调用方声称获授权，不代替快照/回滚。备份恢复已增加校验、快照和普通异常回滚，但不保证进程强杀/断电时跨偏好与文件的原子提交；确认保护仍不能代替独立备份。
 
 安全读取例：
 
@@ -232,8 +232,9 @@ BackupCompatTestActivity 用 DebugProbeContract 校验：一次只能选一个op
 
 ## 10. 验收边界、已知问题
 
-- 全局字体/长文列表的向下滚动拦截、字体ⓘ许可页抢占、备份恢复非事务、组件缓存miss/主线程预览解码仍有历史风险，本轮并未全部修复；发现需记录，不能“按已知问题忽略验收”。
-- 本轮host只补待展示任务取消、生命周期清理抑制父页重开、root为空回滚和idle host不误清可见标志；**不承诺完整全站sheet状态机或任意show+show替换**。
+- 后续修复已恢复字体/长文双向滚动及ⓘ许可页；host采用最新请求代次，替换/HOME/STOP不触发旧父页回调。仍要回归认证、返回栈和生命周期，不能以Handler.post证明旧Dialog已销毁。
+- ZIP恢复先受限解压/类型校验，再快照prefs和files、提交；普通异常回滚，回滚失败的恢复点保留在noBackupFilesDir。旧JSON/主题是合并，不清files。**尚不保证进程强杀/断电跨prefs+files的原子性**，恢复测试仍须隔离。
+- 组件枚举是后台单飞快照，标题/搜索区实测后计算分页，预览图片后台加载；首次字体文件加载/文件元数据读取等仍需关注，未给出全机型性能保证。
 - WIDGET编辑面板里的Choose App/Choose Widget同sheet切状态，组件列表箭头回WIDGET；设置→Home/Widgets的Choose Widget箭头回应用列表。需按入口区分。
 - 想截图分页，不用主页横滑代替home_next/prev；通知区/卡片自身仍按其实现支持翻页。字节大小/哈希仅证明变化，不证明正确。
 - 功能依赖：通知访问权、POST_NOTIFICATIONS、系统相机/日历/蓝牙权限、已装组件、锁屏认证会改变结果。脚本不自动授予BinkOS权限或关闭设置锁。

@@ -1,8 +1,11 @@
 package com.github.gezimos.inkos
 
 import android.app.Application
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.LauncherApps
 import android.os.Process
 import android.os.UserHandle
@@ -278,6 +281,89 @@ data class AppsDrawerUiState(
 )
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
+    private var clockTickerJob: kotlinx.coroutines.Job? = null
+    private var timeChangeReceiver: BroadcastReceiver? = null
+
+    /** ALL_KEYS_CHANGED 时全量回读的 key 列表（由 updateStateFromPreference 的 when 生成，避免反射）。 */
+    private val snapshotPrefKeys: List<String> = listOf(
+        PrefKeys.ALL_CAPS_APPS,
+        PrefKeys.ANDROID_WIDGET_HEIGHT,
+        PrefKeys.ANDROID_WIDGET_ID,
+        PrefKeys.ANDROID_WIDGET_MARGIN_END,
+        PrefKeys.ANDROID_WIDGET_MARGIN_START,
+        PrefKeys.APP_DRAWER_ALIGNMENT,
+        PrefKeys.APP_DRAWER_AUTO_LAUNCH,
+        PrefKeys.APP_DRAWER_AUTO_SHOW_KEYBOARD,
+        PrefKeys.APP_DRAWER_AZ_FILTER,
+        PrefKeys.APP_DRAWER_GAP,
+        PrefKeys.APP_DRAWER_SEARCH_ENABLED,
+        PrefKeys.APP_DRAWER_SEARCH_HIDDEN_APPS,
+        PrefKeys.APP_DRAWER_SIZE,
+        PrefKeys.APP_SIZE_TEXT,
+        PrefKeys.APP_THEME,
+        PrefKeys.APPS_FONT,
+        PrefKeys.BACKGROUND_COLOR,
+        PrefKeys.BACKGROUND_OPACITY,
+        PrefKeys.BOTTOM_WIDGET_MARGIN,
+        PrefKeys.BOTTOM_WIDGET_TYPE,
+        PrefKeys.CLOCK_FONT,
+        PrefKeys.CLOCK_MODE,
+        PrefKeys.CLOCK_SIZE_TEXT,
+        PrefKeys.CLOCK_STYLE,
+        PrefKeys.DARK_BACKGROUND_COLOR,
+        PrefKeys.DARK_TEXT_COLOR,
+        PrefKeys.DATE_FONT,
+        PrefKeys.DATE_SIZE_TEXT,
+        PrefKeys.DRAWER_SHOW_ICONS,
+        PrefKeys.HAPTIC_FEEDBACK,
+        PrefKeys.HIDE_HOME_APPS,
+        PrefKeys.HOME_ALIGNMENT,
+        PrefKeys.HOME_APPS_INSET_BOTTOM,
+        PrefKeys.HOME_APPS_INSET_END,
+        PrefKeys.HOME_APPS_INSET_START,
+        PrefKeys.HOME_APPS_INSET_TOP,
+        PrefKeys.HOME_APPS_Y_OFFSET,
+        PrefKeys.HOME_CLOCK_ALIGNMENT,
+        PrefKeys.HOME_DATE_ALIGNMENT,
+        PrefKeys.HOME_PAGER,
+        PrefKeys.HOME_PAGER_ALIGN,
+        PrefKeys.HOME_QUOTE_ALIGNMENT,
+        PrefKeys.LETTERS_FONT,
+        PrefKeys.LETTERS_TITLE_FONT,
+        PrefKeys.LOCKED_APPS,
+        PrefKeys.NAVIGATION_BAR,
+        PrefKeys.NOTIFICATION_COUNT_SOURCE,
+        PrefKeys.NOTIFICATION_FONT,
+        PrefKeys.NOTIFICATION_INDICATOR_STYLE,
+        PrefKeys.NOTIFICATIONS_FONT,
+        PrefKeys.PAGE_INDICATOR_MARGIN,
+        PrefKeys.QUOTE_FONT,
+        PrefKeys.QUOTE_TEXT,
+        PrefKeys.QUOTE_TEXT_SIZE,
+        PrefKeys.SECOND_CLOCK_OFFSET_HOURS,
+        PrefKeys.SHOW_AM_PM,
+        PrefKeys.SHOW_ANDROID_WIDGET,
+        PrefKeys.SHOW_AUDIO_WIDGET,
+        PrefKeys.SHOW_CLOCK,
+        PrefKeys.SHOW_DATE,
+        PrefKeys.SHOW_DATE_BATTERY_COMBO,
+        PrefKeys.SHOW_ICONS,
+        PrefKeys.SHOW_NOTIFICATION_BADGE,
+        PrefKeys.SHOW_NOTIFICATION_COUNT,
+        PrefKeys.SHOW_QUOTE,
+        PrefKeys.SHOW_SECOND_CLOCK,
+        PrefKeys.SMALL_CAPS_APPS,
+        PrefKeys.STATUS_BAR,
+        PrefKeys.STATUS_FONT,
+        PrefKeys.TEXT_COLOR,
+        PrefKeys.TEXT_ISLANDS,
+        PrefKeys.TEXT_ISLANDS_INVERTED,
+        PrefKeys.TEXT_ISLANDS_SHAPE,
+        PrefKeys.TEXT_PADDING_SIZE,
+        PrefKeys.TEXT_SIZE_SETTINGS,
+        PrefKeys.TOP_WIDGET_MARGIN,
+        PrefKeys.VIBRATION_SCALE,
+    )
     private val appContext by lazy { application.applicationContext }
     private val prefs = Prefs(appContext)
     private val appsRepository = com.github.gezimos.inkos.data.repository.AppsRepository.getInstance(application)
@@ -972,6 +1058,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** system sentinel：缓冲区溢出后的一次性全量回读（由 Prefs.ALL_KEYS_CHANGED 触发）。 */
+    private fun refreshAllStateFromPrefs() {
+        snapshotPrefKeys.forEach { key ->
+            try {
+                updateStateFromPreference(key)
+            } catch (_: Exception) {
+            }
+        }
+        val appsPath = prefs.getCustomFontPathForContext("apps")
+        _appsDrawerUiState.value = _appsDrawerUiState.value.copy(customFontPath = appsPath)
+        _homeUiState.value = _homeUiState.value.copy(
+            clockCustomFontPath = prefs.getCustomFontPathForContext("clock"),
+            dateCustomFontPath = prefs.getCustomFontPathForContext("date"),
+            quoteCustomFontPath = prefs.getCustomFontPathForContext("quote"),
+            notificationCustomFontPath = prefs.getCustomFontPathForContext("notification")
+        )
+        updateClockState()
+        try { refreshHomeAppsUiState(appContext) } catch (_: Exception) {}
+    }
+
     private fun updateStateFromPreference(key: String) {
         val currentState = _homeUiState.value
         _homeUiState.value = when (key) {
@@ -1102,7 +1208,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             prefs.preferenceChangeFlow.collect { key ->
                 try {
-                    updateStateFromPreference(key)
+                    if (key == Prefs.ALL_KEYS_CHANGED) {
+                        refreshAllStateFromPrefs()
+                    } else {
+                        updateStateFromPreference(key)
+                    }
                 } catch (_: Exception) {
                     // ignore
                 }
@@ -1114,12 +1224,56 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // ================================================================================
 
     init {
-        viewModelScope.launch {
+        startClockTicker()
+        registerTimeChangeReceiver()
+    }
+
+    /** 对齐下一整分钟；refreshClock()/系统时间变化时取消并重启。 */
+    private fun startClockTicker() {
+        clockTickerJob?.cancel()
+        clockTickerJob = viewModelScope.launch {
             while (true) {
                 updateClockState()
-                kotlinx.coroutines.delay(60_000L)
+                kotlinx.coroutines.delay(
+                    com.github.gezimos.inkos.helper.ClockTickDelay.untilNextMinute(System.currentTimeMillis())
+                )
             }
         }
+    }
+
+    private fun registerTimeChangeReceiver() {
+        if (timeChangeReceiver != null) return
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                startClockTicker()
+            }
+        }
+        try {
+            androidx.core.content.ContextCompat.registerReceiver(
+                appContext,
+                receiver,
+                IntentFilter().apply {
+                    addAction(Intent.ACTION_TIME_CHANGED)
+                    addAction(Intent.ACTION_TIMEZONE_CHANGED)
+                },
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            timeChangeReceiver = receiver
+        } catch (_: Exception) {
+        }
+    }
+
+    override fun onCleared() {
+        clockTickerJob?.cancel()
+        clockTickerJob = null
+        timeChangeReceiver?.let {
+            try {
+                appContext.unregisterReceiver(it)
+            } catch (_: Exception) {
+            }
+        }
+        timeChangeReceiver = null
+        super.onCleared()
     }
 
     private fun updateClockState() {
@@ -1182,7 +1336,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun refreshClock() {
-        updateClockState()
+        startClockTicker()
     }
 
     // ================================================================================
@@ -2100,8 +2254,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setPageIndicatorMargin(margin: Int) {
-        prefs.pageIndicatorMargin = margin
-        _homeUiState.value = _homeUiState.value.copy(pageIndicatorMargin = margin.coerceIn(0, 32))
+        val bounded = margin.coerceIn(0, 12)
+        prefs.pageIndicatorMargin = bounded
+        _homeUiState.value = _homeUiState.value.copy(pageIndicatorMargin = bounded)
     }
 
     fun setPageIndicatorVisible(visible: Boolean) {

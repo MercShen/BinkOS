@@ -20,6 +20,10 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.navigation.NavController
 import androidx.navigation.findNavController
 import com.github.gezimos.common.CrashHandler
@@ -60,136 +64,106 @@ class MainActivity : AppCompatActivity() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
         }
 
+    private fun showBackupError(title: String, message: String) {
+        ComposeDialogManager(this, this).showErrorDialog(this, title, message)
+    }
+
     val backupWriteLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.also { uri ->
-                    try {
-                        // ZIP = prefs.json + files/（字体、壁纸等私有文件）
-                        val zip = com.github.gezimos.inkos.helper.BackupZipHelper.createBackupZip(
-                            applicationContext,
-                            Prefs(applicationContext)
-                        )
-                        zip.inputStream().use { input ->
-                            applicationContext.contentResolver.openOutputStream(uri)?.use { out ->
-                                input.copyTo(out)
-                            }
-                        }
-                        zip.delete()
-                    } catch (e: Exception) {
-                        Log.e("BackupExport", "Export failed", e)
-                    }
+            if (result.resultCode != RESULT_OK) return@registerForActivityResult
+            val uri = result.data?.data ?: return@registerForActivityResult
+            lifecycleScope.launch {
+                val outcome = withContext(Dispatchers.IO) {
+                    com.github.gezimos.inkos.helper.BackupZipHelper.backupToUri(
+                        applicationContext,
+                        Prefs(applicationContext),
+                        uri
+                    )
+                }
+                if (!outcome.ok) {
+                    Log.e("BackupExport", "Export failed: ${outcome.message}")
+                    showBackupError(
+                        getString(R.string.error_invalid_file_title),
+                        outcome.message ?: "Export failed"
+                    )
                 }
             }
         }
 
     val backupReadLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.also { uri ->
-                    val tmp = File(cacheDir, "inkos_import.tmp")
-                    try {
-                        applicationContext.contentResolver.openInputStream(uri)?.use { input ->
-                            tmp.outputStream().use { out -> input.copyTo(out) }
-                        }
-                    } catch (e: Exception) {
-                        ComposeDialogManager(this, this).showErrorDialog(
-                            this,
-                            getString(R.string.error_invalid_file_title),
-                            getString(R.string.error_invalid_file_message)
-                        )
-                        return@registerForActivityResult
-                    }
-
-                    val prefs = Prefs(applicationContext)
-
-                    // 新格式：ZIP（prefs.json + files/），能把字体和壁纸一起恢复
-                    if (com.github.gezimos.inkos.helper.BackupZipHelper.isZip(tmp)) {
-                        val restored = com.github.gezimos.inkos.helper.BackupZipHelper.restore(
-                            applicationContext,
-                            prefs,
-                            tmp
-                        )
-                        tmp.delete()
-                        if (!restored) {
-                            ComposeDialogManager(this, this).showErrorDialog(
-                                this,
-                                getString(R.string.error_invalid_file_title),
-                                getString(R.string.error_invalid_file_message)
-                            )
-                            return@registerForActivityResult
-                        }
-                        startActivity(Intent.makeRestartActivityTask(this.intent?.component))
-                        return@registerForActivityResult
-                    }
-
-                    // 旧格式：单个 JSON（全量设置 / 主题）
-                    val string = tmp.readText()
-                    tmp.delete()
-                    val jsonObj: org.json.JSONObject = try {
-                        org.json.JSONObject(string)
-                    } catch (_: Exception) {
-                        ComposeDialogManager(this, this).showErrorDialog(
-                            this,
-                            getString(R.string.error_invalid_file_title),
-                            getString(R.string.error_invalid_file_message)
-                        )
-                        return@registerForActivityResult
-                    }
-                    if (jsonObj.optString("type") == "inkos_theme") {
-                        try {
-                            prefs.loadThemeFromJson(string)
-                            android.widget.Toast.makeText(this, getString(R.string.theme_imported), android.widget.Toast.LENGTH_SHORT).show()
-                        } catch (e: Exception) {
-                            Log.e("ThemeImport", "Import failed", e)
-                            ComposeDialogManager(this, this).showErrorDialog(this, "Import failed", e.message ?: "Unknown error")
-                            return@registerForActivityResult
-                        }
-                    } else {
-                        prefs.clear()
-                        prefs.loadFromString(string)
-                    }
-                    startActivity(Intent.makeRestartActivityTask(this.intent?.component))
+            if (result.resultCode != RESULT_OK) return@registerForActivityResult
+            val uri = result.data?.data ?: return@registerForActivityResult
+            lifecycleScope.launch {
+                val prefs = Prefs(applicationContext)
+                // Reads the URI with a size cap, stages+validates, snapshots, applies with rollback.
+                val outcome = withContext(Dispatchers.IO) {
+                    com.github.gezimos.inkos.helper.BackupZipHelper.importFromUri(
+                        applicationContext,
+                        prefs,
+                        uri
+                    )
                 }
+                if (!outcome.ok) {
+                    showBackupError(
+                        getString(R.string.error_invalid_file_title),
+                        outcome.message ?: getString(R.string.error_invalid_file_message)
+                    )
+                    return@launch
+                }
+                startActivity(Intent.makeRestartActivityTask(this@MainActivity.intent?.component))
             }
         }
 
     val themeBackupWriteLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.also { uri ->
-                    try {
-                        val prefs = Prefs(applicationContext)
-                        val json = prefs.saveThemeToJson()
-                        applicationContext.contentResolver.openOutputStream(uri)?.use { out ->
-                            out.write(json.toByteArray(Charsets.UTF_8))
-                        }
-                        android.widget.Toast.makeText(this, getString(R.string.theme_exported), android.widget.Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Log.e("ThemeExport", "Export failed", e)
-                        ComposeDialogManager(this, this).showErrorDialog(this, "Export failed", e.message ?: "Unknown error")
-                    }
+            if (result.resultCode != RESULT_OK) return@registerForActivityResult
+            val uri = result.data?.data ?: return@registerForActivityResult
+            lifecycleScope.launch {
+                val outcome = withContext(Dispatchers.IO) {
+                    com.github.gezimos.inkos.helper.BackupZipHelper.exportThemeToUri(
+                        applicationContext,
+                        Prefs(applicationContext),
+                        uri
+                    )
                 }
+                if (!outcome.ok) {
+                    Log.e("ThemeExport", "Export failed: ${outcome.message}")
+                    showBackupError("Export failed", outcome.message ?: "Export failed")
+                    return@launch
+                }
+                android.widget.Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.theme_exported),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
             }
         }
 
     val themeBackupReadLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                result.data?.data?.also { uri ->
-                    try {
-                        val prefs = Prefs(applicationContext)
-                        val json = applicationContext.contentResolver.openInputStream(uri)?.use { input ->
-                            BufferedReader(InputStreamReader(input)).use { it.readText() }
-                        } ?: throw IllegalArgumentException("Cannot read file")
-                        prefs.loadThemeFromJson(json)
-                        android.widget.Toast.makeText(this, getString(R.string.theme_imported), android.widget.Toast.LENGTH_SHORT).show()
-                        startActivity(Intent.makeRestartActivityTask(this.intent?.component))
-                    } catch (e: Exception) {
-                        Log.e("ThemeImport", "Import failed", e)
-                        ComposeDialogManager(this, this).showErrorDialog(this, "Import failed", e.message ?: "Unknown error")
-                    }
+            if (result.resultCode != RESULT_OK) return@registerForActivityResult
+            val uri = result.data?.data ?: return@registerForActivityResult
+            lifecycleScope.launch {
+                val prefs = Prefs(applicationContext)
+                val outcome = withContext(Dispatchers.IO) {
+                    com.github.gezimos.inkos.helper.BackupZipHelper.importThemeFromUri(
+                        applicationContext,
+                        prefs,
+                        uri
+                    )
                 }
+                if (!outcome.ok) {
+                    Log.e("ThemeImport", "Import failed: ${outcome.message}")
+                    showBackupError("Import failed", outcome.message ?: "Import failed")
+                    return@launch
+                }
+                android.widget.Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.theme_imported),
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                startActivity(Intent.makeRestartActivityTask(this@MainActivity.intent?.component))
             }
         }
 
@@ -942,7 +916,7 @@ class MainActivity : AppCompatActivity() {
         super.onPause()
         try {
             wasInBackground = true
-                EditModeHelper.exitEditMode()
+            EditModeHelper.exitEditMode()
         } catch (_: Exception) {}
     }
 

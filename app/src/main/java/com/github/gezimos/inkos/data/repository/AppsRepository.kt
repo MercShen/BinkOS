@@ -20,11 +20,24 @@ import com.github.gezimos.inkos.helper.PinnedShortcutUtility
 import com.github.gezimos.inkos.helper.utils.ProfileManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicLong
 class AppsRepository(application: Application) {
     private val appContext: Context = application.applicationContext
     private val prefs = Prefs(appContext)
+
+    /** Prefs 事件缓冲溢出时由 Prefs 侧补发的 sentinel（root 负责发射，这里只处理一次）。 */
+    private val allPreferencesChangedSentinel = Prefs.ALL_KEYS_CHANGED
+
+    /** 全量刷新：只保留最新一次请求（含 includeHidden/flag），单 worker 串行执行，旧结果不覆盖新结果。 */
+    private val refreshQueue = LatestRefreshQueue()
+    private val refreshMutex = Mutex()
+    private val publishedVisibleGeneration = AtomicLong(0L)
+    private val publishedHiddenGeneration = AtomicLong(0L)
 
     /** Blacklisted package names loaded from res/xml/blacklist.xml. */
     private val blacklist: Set<String> by lazy {
@@ -188,6 +201,7 @@ class AppsRepository(application: Application) {
                 when {
                     key == "SELECTED_APP_SHORTCUTS" ||
                     key == "notifications_enabled" ||
+                    key == allPreferencesChangedSentinel ||
                     key == Constants.PrefKeys.APP_DRAWER_SEARCH_ENABLED ||
                     key == "HIDDEN_APPS" ||
                     key == Constants.PrefKeys.HIDE_HOME_APPS ||
@@ -294,8 +308,30 @@ class AppsRepository(application: Application) {
     // PUBLIC API - APP LIST MANAGEMENT
     // ================================================================================
     fun refreshAppList(includeHiddenApps: Boolean = false, flag: AppDrawerFlag? = null) {
-        coroutineScope.launch {
+        // 只登记最新请求；多个事件/包广播在 worker 里合并成一次全量枚举
+        refreshQueue.request(includeHiddenApps, flag?.name)
+        coroutineScope.launch(Dispatchers.Default) { drainRefreshRequests() }
+    }
+
+    private suspend fun drainRefreshRequests() {
+        refreshMutex.withLock {
+            while (true) {
+                val job = refreshQueue.take() ?: return
+                runRefresh(job)
+            }
+        }
+    }
+
+    private suspend fun runRefresh(job: LatestRefreshQueue.Job) {
+        val includeHiddenApps = job.includeHiddenApps
+        val flag = job.flag?.let { name ->
             try {
+                AppDrawerFlag.valueOf(name)
+            } catch (_: Exception) {
+                null
+            }
+        }
+        try {
                 // Get regular installed apps (including shortcuts)
                 val apps = getAppsList(
                     appContext,
@@ -391,6 +427,12 @@ class AppsRepository(application: Application) {
 
                 val azLetters = computeAzLetters(regularApps)
 
+                // 旧 generation 的结果不许覆盖已发布的新结果（visible/hidden 各自独立比较）
+                val publishedGeneration =
+                    if (includeHiddenApps) publishedHiddenGeneration.get() else publishedVisibleGeneration.get()
+                if (!LatestRefreshQueue.shouldPublish(job.generation, publishedGeneration)) {
+                    return
+                }
                 // Update State
                 if (!includeHiddenApps) {
                     val localized = localizeInternalShortcutLabels(regularApps)
@@ -400,9 +442,13 @@ class AppsRepository(application: Application) {
                 } else {
                     _allAppsList.value = localizeInternalShortcutLabels(filteredApps)
                 }
-            } catch (e: Exception) {
-                Log.e("AppsRepository", "Error refreshing app list", e)
-            }
+                if (includeHiddenApps) {
+                    publishedHiddenGeneration.set(job.generation)
+                } else {
+                    publishedVisibleGeneration.set(job.generation)
+                }
+        } catch (e: Exception) {
+            Log.e("AppsRepository", "Error refreshing app list", e)
         }
     }
     /** 内部快捷方式（设置/抽屉/通知/托盘/中枢/最近任务）名字跟随应用内语言，

@@ -201,11 +201,10 @@ object PinnedShortcutUtility {
             }
         }
         
-        // Clean up invalid shortcuts
+        // 只过滤展示，不改用户数据：检索为空/未授权/locked profile 都不等于“永久失效”，
+        // 无效条目保留在存储里，等用户显式 unpin 再删。
         if (invalidShortcuts.isNotEmpty()) {
-            val updatedShortcuts = pinnedShortcuts.toMutableSet()
-            updatedShortcuts.removeAll(invalidShortcuts.toSet())
-            savePinnedShortcuts(context, updatedShortcuts)
+            Log.d(TAG, "Filtered ${invalidShortcuts.size} unresolvable pinned shortcuts from UI (kept in storage)")
         }
         
         return validShortcuts
@@ -215,7 +214,32 @@ object PinnedShortcutUtility {
      * This is called when another app requests to pin a shortcut to this launcher.
      */
     fun acceptPinRequest(context: Context, request: LauncherApps.PinItemRequest): Boolean {
-        val shortcutInfo = request.shortcutInfo ?: return false
+        val shortcutInfo = request.shortcutInfo
+        val alreadyStored = if (shortcutInfo != null) {
+            isPinned(context, shortcutInfo.`package`, shortcutInfo.id, shortcutInfo.userHandle)
+        } else false
+        val decision = PinnedShortcutPolicy.acceptDecision(
+            isValid = request.isValid,
+            hasShortcutInfo = shortcutInfo != null,
+            alreadyStored = alreadyStored
+        )
+        if (decision == PinnedShortcutPolicy.AcceptDecision.REJECT) {
+            return false
+        }
+
+        // 先让系统 accept（且只 accept 一次）；失败则绝不落本地数据
+        val accepted = try {
+            request.accept()
+        } catch (e: Exception) {
+            Log.e(TAG, "Pin request accept failed", e)
+            false
+        }
+        if (!accepted) {
+            return false
+        }
+        if (decision == PinnedShortcutPolicy.AcceptDecision.ACCEPT_DUPLICATE || shortcutInfo == null) {
+            return true
+        }
 
         try {
             val launcherApps = context.getSystemService(Context.LAUNCHER_APPS_SERVICE) as? LauncherApps
@@ -232,15 +256,7 @@ object PinnedShortcutUtility {
             Log.w(TAG, "Could not pre-save shortcut icon for ${shortcutInfo.id}", e)
         }
 
-        // Add to our pinned shortcuts
-        val added = addPinnedShortcut(context, shortcutInfo)
-
-        if (added) {
-            // Accept the request
-            return request.accept()
-        }
-
-        return false
+        // 系统已 accept，才写入本地存储与选中集合
+        return addPinnedShortcut(context, shortcutInfo)
     }
-    
 }
