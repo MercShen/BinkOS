@@ -273,6 +273,12 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                                         // Draw behind system bars to prevent content jump
                                         dialogWindow.addFlags(android.view.WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
                                         androidx.core.view.WindowCompat.setDecorFitsSystemWindows(dialogWindow, false)
+                                        try {
+                                            dialogWindow.setLayout(
+                                                android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                                                android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                                            )
+                                        } catch (_: Exception) {}
                                         // Match bar appearance
                                         val controller = androidx.core.view.WindowCompat.getInsetsController(dialogWindow, dialogWindow.decorView)
                                         val activityController = androidx.core.view.WindowCompat.getInsetsController(activity.window, activity.window.decorView)
@@ -390,11 +396,10 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                                             )
                                         }
                                         .padding(horizontal = SettingsTheme.color.horizontalPadding)
-                                        .padding(top = 24.dp.scaled(screenScale), bottom = 24.dp.scaled(screenScale) + with(
-                                            LocalDensity.current) { navBarHeightPx.toDp() }),
+                                        .padding(top = 24.dp.scaled(screenScale)),
                                     verticalArrangement = Arrangement.spacedBy(0.dp)
                                 ) {
-                                    content()
+                                        Column(modifier = Modifier.padding(bottom = 24.dp.scaled(screenScale) + with(LocalDensity.current) { navBarHeightPx.toDp() })) { content() }
                                 }
                                 Box(
                                     modifier = Modifier
