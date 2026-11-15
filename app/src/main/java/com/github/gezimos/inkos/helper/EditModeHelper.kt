@@ -88,6 +88,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material.icons.rounded.Remove
+import androidx.compose.material.icons.filled.Add
 object EditModeHelper {
     
     private val _isEditModeActive = MutableStateFlow(false)
@@ -1231,14 +1234,17 @@ object EditModeHelper {
                                     )
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Text(
-                                            text = "−",
-                                            style = SettingsTheme.typography.title,
-                                            color = if (pagerMargin > 0) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                            stringResource(R.string.page_indicator_margin),
+                                            style = SettingsTheme.typography.item,
+                                            color = Theme.colors.text,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        Box(
                                             modifier = Modifier
+                                                .size(32.dp)
                                                 .clickable(enabled = pagerMargin > 0) {
                                                     pagerMargin -= 1
                                                     try {
@@ -1248,19 +1254,26 @@ object EditModeHelper {
                                                         prefs.pageIndicatorMargin = pagerMargin
                                                     }
                                                     onUpdate()
-                                                }
-                                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                                        )
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Rounded.Remove,
+                                                contentDescription = null,
+                                                tint = if (pagerMargin > 0) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                         Text(
-                                            stringResource(R.string.edit_menu_page_indicator_margin_fmt, pagerMargin),
+                                            text = pagerMargin.toString(),
                                             style = SettingsTheme.typography.item,
-                                            color = Theme.colors.text
+                                            color = Theme.colors.text,
+                                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                            modifier = Modifier.widthIn(min = 28.dp)
                                         )
-                                        Text(
-                                            text = "+",
-                                            style = SettingsTheme.typography.title,
-                                            color = if (pagerMargin < 12) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                        Box(
                                             modifier = Modifier
+                                                .size(32.dp)
                                                 .clickable(enabled = pagerMargin < 12) {
                                                     pagerMargin += 1
                                                     try {
@@ -1270,9 +1283,16 @@ object EditModeHelper {
                                                         prefs.pageIndicatorMargin = pagerMargin
                                                     }
                                                     onUpdate()
-                                                }
-                                                .padding(horizontal = 24.dp, vertical = 8.dp)
-                                        )
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = null,
+                                                tint = if (pagerMargin < 12) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
