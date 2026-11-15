@@ -294,8 +294,8 @@ fun showClockSettings(context: Context, fragment: Fragment, prefs: Prefs, initia
             val selectedTabIndex = remember { mutableStateOf(initialTab.coerceIn(0, 2)) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
-            val clockTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); 1 -> stringResource(R.string.tab_function); else -> stringResource(R.string.tab_gestures) }
-            SheetTitle(clockTitle)
+            val clockTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_style); 1 -> stringResource(R.string.edit_panel_desc_function); else -> stringResource(R.string.edit_panel_desc_gestures) }
+            SheetTitle(stringResource(R.string.edit_panel_clock))
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
@@ -307,6 +307,12 @@ fun showClockSettings(context: Context, fragment: Fragment, prefs: Prefs, initia
                     onTabSelected = { selectedTabIndex.value = it }
                 )
                 Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
+                Text(
+                    text = clockTabDesc,
+                    style = SettingsTheme.typography.item,
+                    color = Theme.colors.text.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(bottom = 8.dp.scaled(screenScale))
+                )
                 when (selectedTabIndex.value) {
                     0 -> {
                         // Style tab
@@ -465,8 +471,16 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
             val selectedTabIndex = remember { mutableStateOf(initialTab.coerceIn(0, 2)) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
-            val dateTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); 1 -> stringResource(R.string.tab_function); else -> stringResource(R.string.tab_gestures) }
-            SheetTitle(dateTitle)
+            val dateTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_style); 1 -> stringResource(R.string.edit_panel_desc_function); else -> stringResource(R.string.edit_panel_desc_gestures) }
+            SheetTitle(stringResource(R.string.edit_panel_date))
+            Text(
+                text = 
+dateTabDesc
+,
+                style = SettingsTheme.typography.item,
+                color = Theme.colors.text.copy(alpha = 0.6f),
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp.scaled(screenScale))
+            )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
@@ -1015,8 +1029,16 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
             val selectedTabIndex = remember { mutableStateOf(initialTab.coerceIn(0, 3)) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
-            val bgTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_theme); 1 -> stringResource(R.string.tab_alignment); 2 -> stringResource(R.string.tab_islands_corners); else -> stringResource(R.string.tab_gestures) }
-            SheetTitle(bgTitle)
+            val bgTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_theme); 1 -> stringResource(R.string.edit_panel_desc_alignment); 2 -> stringResource(R.string.edit_panel_desc_islands); else -> stringResource(R.string.edit_panel_desc_gestures) }
+            SheetTitle(stringResource(R.string.edit_panel_background))
+            Text(
+                text = 
+bgTabDesc
+,
+                style = SettingsTheme.typography.item,
+                color = Theme.colors.text.copy(alpha = 0.6f),
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp.scaled(screenScale))
+            )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
@@ -1447,8 +1469,16 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
         showDialog(context, prefs) {
         val selectedTabIndex = remember { mutableStateOf(initialTabIndex.coerceIn(0, 3)) }
         val uiState by vm.homeUiState.collectAsState()
-        val appTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); 1 -> stringResource(R.string.tab_icons); 2 -> stringResource(R.string.tab_function); else -> stringResource(R.string.tab_notifications) }
-        SheetTitle(appTitle)
+            val appTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_apps_font); 1 -> stringResource(R.string.edit_panel_desc_apps_size); 2 -> stringResource(R.string.edit_panel_desc_apps_name); else -> stringResource(R.string.edit_panel_desc_apps_type) }
+            SheetTitle(stringResource(R.string.edit_panel_apps))
+            Text(
+                text = 
+appTabDesc
+,
+                style = SettingsTheme.typography.item,
+                color = Theme.colors.text.copy(alpha = 0.6f),
+                modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+            )
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
