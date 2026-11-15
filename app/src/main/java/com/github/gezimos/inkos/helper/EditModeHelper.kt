@@ -684,8 +684,15 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
             val selectedTabIndex = remember { mutableStateOf(0) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
-            val widgetTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_function); 1 -> stringResource(R.string.tab_style); else -> stringResource(R.string.tab_gestures) }
-            SheetTitle(widgetTitle)
+            val widgetTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_widget_function); 1 -> stringResource(R.string.edit_panel_desc_widget_style); else -> stringResource(R.string.edit_panel_desc_widget_gestures) }
+            SheetTitle(stringResource(R.string.edit_panel_widget), fontScale = 1.35f)
+            Text(
+                text = widgetTabDesc,
+                style = SettingsTheme.typography.item,
+                fontSize = (SettingsTheme.typography.item.fontSize.value * 0.85f).sp,
+                color = Theme.colors.text,
+                modifier = Modifier.padding(bottom = 8.dp.scaled(screenScale))
+            )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 SheetTabRow(
                     selectedIndex = selectedTabIndex.value,
@@ -766,10 +773,20 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                                 }
                             }
                             Constants.BottomWidgetType.AndroidWidget.value -> {
+                                val currentProviderPkg = if (uiState.androidWidgetId != -1) {
+                                    appWidgetHelper.getWidgetInfo(uiState.androidWidgetId)?.provider?.packageName
+                                } else null
+                                val currentAppLabel = currentProviderPkg?.let { pkg ->
+                                    appWidgetHelper.getInstalledWidgetsByApp().firstOrNull { it.packageName == pkg }?.appLabel ?: pkg
+                                } ?: stringResource(R.string.option_none_widget)
                                 val currentLabel = appWidgetHelper.getCurrentWidgetLabel() ?: stringResource(R.string.option_none_widget)
-                                SettingRow(label = stringResource(R.string.choose_android_widget), value = currentLabel) {
+                                SettingRow(label = stringResource(R.string.choose_app_title), value = currentAppLabel) {
                                     currentSheet?.dismiss()
                                     showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate)
+                                }
+                                SettingRow(label = stringResource(R.string.choose_android_widget), value = currentLabel) {
+                                    currentSheet?.dismiss()
+                                    showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate, initialAppPackage = currentProviderPkg)
                                 }
                                 if (uiState.androidWidgetId != -1) {
                                     SettingRow(label = stringResource(R.string.remove_android_widget), value = "") {

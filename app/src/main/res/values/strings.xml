@@ -839,6 +839,11 @@
     <string name="edit_menu_value_set">Set</string>
     <string name="edit_menu_apps_alignment">Apps Alignment</string>
     <string name="edit_menu_page_indicator">Page Indicator</string>
+    <string name="edit_panel_widget">Widget</string>
+    <string name="edit_panel_desc_widget_function">Which widget is shown and where</string>
+    <string name="edit_panel_desc_widget_style">Text and appearance</string>
+    <string name="edit_panel_desc_widget_gestures">Tap and gesture actions</string>
+    <string name="choose_app_title">Choose App</string>
     <string name="edit_panel_clock">Clock</string>
     <string name="edit_panel_date">Date</string>
     <string name="edit_panel_apps">Apps</string>
