@@ -109,19 +109,26 @@ object SettingsComposable {
     ) {
         val tintColor = SettingsTheme.color.settings
         val screenScale = rememberScreenScale()
+        val islandsShape = LocalPrefs.current?.textIslandsShape ?: 0
+        val dotShape = if (islandsShape == 0) CircleShape
+            else ShapeHelper.getRoundedCornerShape(islandsShape, pillRadius = 50.dp, roundedRadius = 4.dp)
         Row(
             modifier = modifier,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End
         ) {
             for (i in 0 until pageCount) {
-                Image(
-                    painter = painterResource(id = if (i == currentPage) com.github.gezimos.inkos.R.drawable.ic_current_page else com.github.gezimos.inkos.R.drawable.ic_new_page),
-                    contentDescription = null,
-                    colorFilter = ColorFilter.tint(tintColor),
+                val selected = i == currentPage
+                val dotSize = if (selected) 12.dp.scaled(screenScale) else 10.dp.scaled(screenScale)
+                androidx.compose.foundation.layout.Box(
                     modifier = Modifier
                         .padding(horizontal = 2.dp.scaled(screenScale))
-                        .size(if (i == currentPage) 12.dp.scaled(screenScale) else 10.dp.scaled(screenScale))
+                        .size(dotSize)
+                        .background(if (selected) tintColor else Color.Transparent, dotShape)
+                        .then(
+                            if (selected) Modifier
+                            else Modifier.border(1.5.dp.scaled(screenScale), tintColor, dotShape)
+                        )
                 )
             }
         }
