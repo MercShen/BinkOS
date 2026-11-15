@@ -1633,7 +1633,7 @@ class Prefs(val context: Context) {
 /** 页码指示器与屏幕边缘的留白（dp）；0 = 自动（主页/Hub/托盘按显示区域取中点） */
 var pageIndicatorMargin: Int
     get() = prefs.getInt(PAGE_INDICATOR_MARGIN, 0)
-    set(value) = prefs.edit { putInt(PAGE_INDICATOR_MARGIN, value.coerceIn(0, 32)) }
+    set(value) = prefs.edit { putInt(PAGE_INDICATOR_MARGIN, value.coerceIn(0, 12)) }
     /** 打开/关闭界面时播放大我系统翻页动画 */
     var einkPageTurnAnimation: Boolean
         get() = prefs.getBoolean(EINK_PAGE_TURN_ANIMATION, false)

@@ -96,6 +96,27 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
         }
     }
 
+    fun showStepperDialog(
+        context: Context,
+        title: String,
+        minValue: Int,
+        maxValue: Int,
+        currentValue: Int,
+        valueFormatter: (Int) -> String = { it.toString() },
+        onValueChanged: (Int) -> Unit
+    ) {
+        sheetHost.show {
+            StepperSheet(
+                title = title,
+                minValue = minValue,
+                maxValue = maxValue,
+                currentValue = currentValue,
+                valueFormatter = valueFormatter,
+                onValueChanged = onValueChanged
+            )
+        }
+    }
+
     fun showSliderDialog(
         context: Context,
         title: String,

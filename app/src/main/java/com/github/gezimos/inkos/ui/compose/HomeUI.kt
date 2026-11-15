@@ -387,27 +387,10 @@ fun HomeUI(
         ) {
             val leftAlign = state.pageIndicatorAlignment == 0
             val dotSizePx = with(density) { (state.pageIndicatorDotSize.dp.scaled(screenScale) + 4.dp).toPx() }
-            val gapPx = with(density) { 4.dp.toPx() }
-            val area = homeAppsAreaBounds
             val screenW = homeRootSize.width.toFloat()
-            val marginDp = state.pageIndicatorMargin
-            val marginRawPx = with(density) { marginDp.dp.toPx() }
-            // 留白最多到 App 显示区域外侧，超出会被夹住，避免压到图标
-            val marginPx = if (area.width > 0f && screenW > 0f) {
-                val maxSafe = if (leftAlign) area.left - dotSizePx - gapPx else screenW - area.right - dotSizePx - gapPx
-                marginRawPx.coerceIn(gapPx, maxSafe.coerceAtLeast(gapPx))
-            } else marginRawPx
-            val dotLeftPx = when {
-                marginRawPx > 0f && leftAlign -> marginPx
-                marginRawPx > 0f -> screenW - marginPx - dotSizePx
-                area.width <= 0f || screenW <= 0f -> if (leftAlign) gapPx else screenW - dotSizePx - gapPx
-                leftAlign -> (((area.left - gapPx) / 2f) - dotSizePx / 2f)
-                    .coerceAtMost(area.left - gapPx - dotSizePx)
-                    .coerceAtLeast(gapPx)
-                else -> (((area.right + gapPx + screenW) / 2f) - dotSizePx / 2f)
-                    .coerceAtLeast(area.right + gapPx)
-                    .coerceAtMost(screenW - dotSizePx - gapPx)
-            }
+            // margin 0 = 贴在安全区虚线内侧（老版 12dp 基准），每加 1 让圆点再远离虚线 1dp
+            val edgeInsetPx = with(density) { (12 + state.pageIndicatorMargin).dp.toPx() }
+            val dotLeftPx = if (leftAlign) edgeInsetPx else screenW - edgeInsetPx - dotSizePx
             val dotLeftDp = with(density) { dotLeftPx.toDp() }
             PageIndicator(
                 currentPage = state.currentPage,

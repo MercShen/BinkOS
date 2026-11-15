@@ -615,6 +615,55 @@ fun StepperSlider(
 }
 
 @Composable
+fun StepperSheet(
+    title: String,
+    minValue: Int,
+    maxValue: Int,
+    currentValue: Int,
+    valueFormatter: (Int) -> String = { it.toString() },
+    onValueChanged: (Int) -> Unit
+) {
+    var stepValue by remember { mutableIntStateOf(currentValue) }
+
+    SheetTitle(title)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = "−",
+            style = SettingsTheme.typography.title,
+            color = if (stepValue > minValue) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+            modifier = Modifier
+                .clickable(enabled = stepValue > minValue) {
+                    stepValue = (stepValue - 1).coerceAtLeast(minValue)
+                    onValueChanged(stepValue)
+                }
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+        )
+        Text(
+            text = valueFormatter(stepValue),
+            style = SettingsTheme.typography.item,
+            color = Theme.colors.text
+        )
+        Text(
+            text = "+",
+            style = SettingsTheme.typography.title,
+            color = if (stepValue < maxValue) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+            modifier = Modifier
+                .clickable(enabled = stepValue < maxValue) {
+                    stepValue = (stepValue + 1).coerceAtMost(maxValue)
+                    onValueChanged(stepValue)
+                }
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
 fun SliderSheet(
     title: String,
     minValue: Int,

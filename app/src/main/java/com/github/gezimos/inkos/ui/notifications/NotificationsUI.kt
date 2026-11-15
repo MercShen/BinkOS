@@ -240,18 +240,9 @@ private fun BoxScope.NotificationPageIndicatorOverlay(
     val leftAlign = prefs.homePagerAlign == 0
     val dotWidthPx = with(LocalDensity.current) { 12.dp.toPx() }
     val marginDp = prefs.pageIndicatorMargin
-    val gapPx = with(LocalDensity.current) { 4.dp.toPx() }
-    val leftPx = if (marginDp > 0) {
-        val rawMargin = with(LocalDensity.current) { marginDp.dp.toPx() }
-        // 最多到消息框外侧，超出夹住，避免压到列表内容
-        val maxSafe = if (leftAlign) listBounds.left - dotWidthPx - gapPx
-                      else rootWidthPx - listBounds.right - dotWidthPx - gapPx
-        val marginPx = rawMargin.coerceIn(gapPx, maxSafe.coerceAtLeast(gapPx))
-        if (leftAlign) marginPx else rootWidthPx - marginPx - dotWidthPx
-    } else {
-        val centerX = if (leftAlign) listBounds.left / 2f else (listBounds.right + rootWidthPx) / 2f
-        centerX - dotWidthPx / 2f
-    }
+    // margin 0 = 贴在安全区虚线内侧（基准 12dp），每加 1 让圆点再远离 1dp
+    val edgeInsetPx = with(LocalDensity.current) { (12 + marginDp).dp.toPx() }
+    val leftPx = if (leftAlign) edgeInsetPx else rootWidthPx - edgeInsetPx - dotWidthPx
     Box(
         modifier = Modifier
             .align(Alignment.CenterStart)
@@ -768,6 +759,10 @@ fun HubScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .padding(
+                        start = if (prefs.homePagerAlign == 0) ((12 + prefs.pageIndicatorMargin + 16 - 24).coerceIn(0, 16)).dp.scaled(screenScale) else 0.dp,
+                        end = if (prefs.homePagerAlign == 0) 0.dp else ((12 + prefs.pageIndicatorMargin + 16 - 24).coerceIn(0, 16)).dp.scaled(screenScale)
+                    )
                     .onSizeChanged { containerSize = it }
                     .onGloballyPositioned { hubListBounds = it.boundsInRoot() }
             ) {
@@ -2288,6 +2283,10 @@ fun SimpleTrayScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
+                    .padding(
+                        start = if (prefs.homePagerAlign == 0) ((12 + prefs.pageIndicatorMargin + 16 - 24).coerceIn(0, 16)).dp.scaled(screenScale) else 0.dp,
+                        end = if (prefs.homePagerAlign == 0) 0.dp else ((12 + prefs.pageIndicatorMargin + 16 - 24).coerceIn(0, 16)).dp.scaled(screenScale)
+                    )
                     .onSizeChanged { trayContainerSize = it }
                     .onGloballyPositioned { trayListBounds = it.boundsInRoot() }
             ) {

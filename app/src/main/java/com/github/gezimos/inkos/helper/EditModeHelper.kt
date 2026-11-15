@@ -1229,27 +1229,51 @@ object EditModeHelper {
                                         minValue = -maxShiftY,
                                         maxValue = maxShiftY
                                     )
-
-                                    Text(
-                                        stringResource(R.string.edit_menu_page_indicator_margin_fmt, pagerMargin),
-                                        style = SettingsTheme.typography.item,
-                                        color = Theme.colors.text
-                                    )
-                                    com.github.gezimos.inkos.ui.dialogs.StepperSlider(
-                                        value = pagerMargin,
-                                        onValueChange = { value ->
-                                            pagerMargin = value
-                                            try {
-                                                val vmRef = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
-                                                vmRef.setPageIndicatorMargin(value)
-                                            } catch (_: Exception) {
-                                                prefs.pageIndicatorMargin = value
-                                            }
-                                            onUpdate()
-                                        },
-                                        minValue = 0,
-                                        maxValue = 32
-                                    )
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "−",
+                                            style = SettingsTheme.typography.title,
+                                            color = if (pagerMargin > 0) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                            modifier = Modifier
+                                                .clickable(enabled = pagerMargin > 0) {
+                                                    pagerMargin -= 1
+                                                    try {
+                                                        val vmRef = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
+                                                        vmRef.setPageIndicatorMargin(pagerMargin)
+                                                    } catch (_: Exception) {
+                                                        prefs.pageIndicatorMargin = pagerMargin
+                                                    }
+                                                    onUpdate()
+                                                }
+                                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                                        )
+                                        Text(
+                                            stringResource(R.string.edit_menu_page_indicator_margin_fmt, pagerMargin),
+                                            style = SettingsTheme.typography.item,
+                                            color = Theme.colors.text
+                                        )
+                                        Text(
+                                            text = "+",
+                                            style = SettingsTheme.typography.title,
+                                            color = if (pagerMargin < 12) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                            modifier = Modifier
+                                                .clickable(enabled = pagerMargin < 12) {
+                                                    pagerMargin += 1
+                                                    try {
+                                                        val vmRef = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
+                                                        vmRef.setPageIndicatorMargin(pagerMargin)
+                                                    } catch (_: Exception) {
+                                                        prefs.pageIndicatorMargin = pagerMargin
+                                                    }
+                                                    onUpdate()
+                                                }
+                                                .padding(horizontal = 24.dp, vertical = 8.dp)
+                                        )
+                                    }
                                 }
                             }
                         }

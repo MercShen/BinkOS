@@ -1058,16 +1058,21 @@ class SettingsFragment : Fragment() {
                 fontSize = titleFontSize,
                 description = stringResource(R.string.desc_page_indicator_margin),
                 onClick = {
-                    dialogBuilder.showSliderDialog(
-                        requireContext(),
-                        getString(R.string.page_indicator_margin),
-                        0, 32, pagerMargin
-                    ) { margin ->
-                        pagerMargin = margin
-                        viewModel.setPageIndicatorMargin(margin)
-                    }
+                    dialogBuilder.showStepperDialog(
+                        context = requireContext(),
+                        title = getString(R.string.page_indicator_margin),
+                        minValue = 0,
+                        maxValue = 12,
+                        currentValue = pagerMargin,
+                        valueFormatter = { if (it == 0) getString(R.string.option_auto) else it.toString() },
+                        onValueChanged = { margin ->
+                            pagerMargin = margin
+                            viewModel.setPageIndicatorMargin(margin)
+                        }
+                    )
                 }
             )
+
             SettingsSwitch(text = stringResource(R.string.home_page_reset), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_page_reset),
                 defaultState = homeUiState.homeReset, onCheckedChange = { viewModel.setHomeReset(it) })
