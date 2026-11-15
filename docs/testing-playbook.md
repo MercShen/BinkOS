@@ -149,3 +149,10 @@ $ADB shell am start -n $APP/$MAIN --es dest editmode_on
 | 时钟 | STYLE | 样式（Clock Size/Font/Style/Typography）/ 功能 / 手势 | `edit_clock --ei tab N` |
 | 日期 | STYLE | 样式（Date Size/Font/Typography）/ 功能 / 手势 | `edit_date --ei tab N` |
 | 主页应用列表 | STYLE | 字体 / 大小与间距 / 名称类型 / 排版 | `edit_apps --ei tab N` |
+### 底部小组件（编辑模式）
+
+| 操作 | 结果 |
+|---|---|
+| 点小组件**本体** | 打开小组件设置面板（FUNCTION / STYLE / GESTURES） |
+| 点**铅笔**图标 | 打开「CHOOSE APP → 该 App 的组件列表」选择器 |
+| 选择器里 App 列表顶部的 `← Back` | 回到小组件设置面板 |

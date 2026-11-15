@@ -3413,7 +3413,10 @@ private fun HomeAndroidWidget(
                                     // 编辑模式下在 ViewGroup 层拦截触摸：宿主的 onTouchListener 拦不住子 View，
                                     // 必须走 onInterceptTouchEvent，否则点一下就会触发 widget 自己的点击
                                     // （例如「继续阅读」直接跳进阅读器）。编辑模式下用户意图是拖动/调整。
-                                    (host as? BlockableFrameLayout)?.blockTouches = isEditMode
+                                    (host as? BlockableFrameLayout)?.apply {
+                                        blockTouches = isEditMode
+                                        onBlockedTap = { if (isEditMode) onClick() }
+                                    }
                                 }
                             )
                         }
@@ -4799,12 +4802,30 @@ fun QuickMenuSheet(
  */
 private class BlockableFrameLayout(context: android.content.Context) : android.widget.FrameLayout(context) {
     var blockTouches: Boolean = false
+    /** 编辑模式拦截触摸时，抬起且没拖动就当作点击（交给外层打开设置面板） */
+    var onBlockedTap: (() -> Unit)? = null
+    private var downX = 0f
+    private var downY = 0f
+    private var moved = false
 
     override fun onInterceptTouchEvent(ev: android.view.MotionEvent): Boolean {
         return blockTouches || super.onInterceptTouchEvent(ev)
     }
 
     override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
-        return blockTouches || super.onTouchEvent(event)
+        if (!blockTouches) return super.onTouchEvent(event)
+        when (event.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> {
+                downX = event.x; downY = event.y; moved = false
+            }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                if (kotlin.math.abs(event.x - downX) > 12f || kotlin.math.abs(event.y - downY) > 12f) moved = true
+            }
+            android.view.MotionEvent.ACTION_UP -> {
+                if (!moved) onBlockedTap?.invoke()
+            }
+        }
+        return true
     }
 }
+

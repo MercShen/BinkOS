@@ -1418,6 +1418,12 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
                         selectedApp.value = it
                     },
                     onClose = { currentSheet?.dismiss() },
+                    onBack = {
+                        currentSheet?.dismiss()
+                        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                            showBottomWidgetSettings(context, fragment, prefs, onUpdate)
+                        }, 350)
+                    },
                     textIslandsShape = prefs.textIslandsShape
                 )
             } else {
@@ -2807,7 +2813,8 @@ internal fun WidgetAppListContent(
     widgetApps: List<AppWidgetHelper.WidgetApp>,
     onAppSelected: (AppWidgetHelper.WidgetApp) -> Unit,
     onClose: () -> Unit,
-    textIslandsShape: Int = 0
+    textIslandsShape: Int = 0,
+    onBack: (() -> Unit)? = null,
 ) {
     val screenScale = rememberScreenScale()
     var query by remember { mutableStateOf("") }
@@ -2861,6 +2868,29 @@ internal fun WidgetAppListContent(
                     onClose()
                 }
             }
+            if (onBack != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onBack() }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronLeft,
+                        contentDescription = stringResource(R.string.btn_back),
+                        tint = Theme.colors.text,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.btn_back),
+                        style = SettingsTheme.typography.item,
+                        color = Theme.colors.text
+                    )
+                }
+            }
+
             Text(
                 text = stringResource(R.string.choose_app),
                 style = SettingsTheme.typography.header,
