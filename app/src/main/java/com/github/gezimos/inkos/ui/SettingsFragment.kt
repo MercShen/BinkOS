@@ -1339,11 +1339,11 @@ class SettingsFragment : Fragment() {
                         val ctx = requireContext()
                         val navController = findNavController()
                         dialogBuilder.showSheet {
-                            // 优先定位到“当前正在使用的组件所属 App”，否则用上次选过的 App；都没有才显示应用列表
+                            // 优先定位到“当前正在使用的组件所属 App”，否则直接显示应用列表
                             val currentProviderPkg = if (homeUiState.androidWidgetId != -1) {
                                 appWidgetHelper.getWidgetInfo(homeUiState.androidWidgetId)?.provider?.packageName
                             } else null
-                            val startPackage = currentProviderPkg ?: prefs.lastWidgetAppPackage
+                            val startPackage = currentProviderPkg
                             val initialApp = remember(widgetApps, startPackage) {
                                 widgetApps.firstOrNull { it.packageName == startPackage }
                             }
@@ -1353,7 +1353,7 @@ class SettingsFragment : Fragment() {
                                 com.github.gezimos.inkos.helper.WidgetAppListContent(
                                     context = ctx, widgetApps = widgetApps,
                                     onAppSelected = {
-                                        prefs.lastWidgetAppPackage = it.packageName
+                                        // 不再记忆上次选择的应用
                                         selectedApp.value = it
                                     },
                                     onClose = { dialogBuilder.dismissAll() },
