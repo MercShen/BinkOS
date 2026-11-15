@@ -110,6 +110,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
@@ -350,6 +351,13 @@ internal object HubLayoutCache {
     fun clear() { cachedItemsPerPage = null; cachedContainerHeight = 0 }
 }
 
+// 托盘容器尺寸缓存：避免首次组合时用占位值算出假页数（页码点会先闪一次 4 页）
+internal object TrayLayoutCache {
+    var cachedPageSize: Int? = null
+    var cachedContainerHeight: Int = 0
+    fun clear() { cachedPageSize = null; cachedContainerHeight = 0 }
+}
+
 internal fun convertSbnToHubConversationNotification(
     ctx: Context,
     prefsLocal: Prefs,
@@ -564,9 +572,16 @@ fun HubScreen(
     val itemHeightPx = remember(density) { with(density) { 96.dp.toPx() }.toInt() }
     val hubOverheadPx = remember(density) { with(density) { 8.dp.toPx() }.toInt() }
 
+    val hubScreenHeightDp = LocalConfiguration.current.screenHeightDp
+    val estimatedItemsPerPage = remember(hubScreenHeightDp) { HubLayoutCache.cachedItemsPerPage ?: ((hubScreenHeightDp - 200) / 96).coerceAtLeast(1) }
     val itemsPerPage = remember(containerSize.height, itemHeightPx) {
         val h = containerSize.height
-        if (h <= 0) 4 else ((h - hubOverheadPx) / itemHeightPx).coerceAtLeast(1)
+        val measured = if (h <= 0) estimatedItemsPerPage else ((h - hubOverheadPx) / itemHeightPx).coerceAtLeast(1)
+        if (h > 0) {
+            HubLayoutCache.cachedItemsPerPage = measured
+            HubLayoutCache.cachedContainerHeight = h
+        }
+        measured
     }
 
     val coroutineScope = rememberCoroutineScope()
@@ -1613,9 +1628,16 @@ fun SimpleTrayScreen(
     val trayDensity = LocalDensity.current
     val trayItemHeightPx = remember(trayDensity) { with(trayDensity) { 104.dp.toPx() }.toInt() }
     val trayOverheadPx = remember(trayDensity) { with(trayDensity) { 8.dp.toPx() }.toInt() }
+    val trayScreenHeightDp = LocalConfiguration.current.screenHeightDp
+    val estimatedTrayPageSize = remember(trayScreenHeightDp) { TrayLayoutCache.cachedPageSize ?: (((trayScreenHeightDp - 320) / 104).coerceAtLeast(1)) }
     val pageSize = remember(trayContainerSize.height, trayItemHeightPx) {
         val h = trayContainerSize.height
-        if (h <= 0) 3 else ((h - trayOverheadPx) / trayItemHeightPx).coerceAtLeast(1)
+        val measured = if (h <= 0) estimatedTrayPageSize else ((h - trayOverheadPx) / trayItemHeightPx).coerceAtLeast(1)
+        if (h > 0) {
+            TrayLayoutCache.cachedPageSize = measured
+            TrayLayoutCache.cachedContainerHeight = h
+        }
+        measured
     }
     val pages = ((validNotifications.size + pageSize - 1) / pageSize).coerceAtLeast(1)
     val pagerState = remember { SimplePagerState(0, pages) }
