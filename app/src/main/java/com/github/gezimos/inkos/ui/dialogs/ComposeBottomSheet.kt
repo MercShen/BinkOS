@@ -63,6 +63,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.filled.Delete
@@ -3054,55 +3057,129 @@ fun BadgeIndicatorPickerSheet(
     val spacing = 12.dp.scaled(screenScale)
     val minCardWidth = 70.dp.scaled(screenScale)
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val visibleCount = ((maxWidth + spacing) / (minCardWidth + spacing)).toInt().coerceIn(3, 6).coerceAtMost(indicators.size)
-        val totalSpacing = spacing * (visibleCount - 1)
-        val cardWidth = (maxWidth - totalSpacing) / visibleCount
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(spacing),
-            contentPadding = PaddingValues(vertical = 4.dp.scaled(screenScale))
-        ) {
-            itemsIndexed(indicators.toList()) { index, indicator ->
-                val isSelected = index == selectedIdx
-                val fg = if (isSelected) bgColor else textColor
-                val cardInteraction = remember { MutableInteractionSource() }
-                Column(
-                    modifier = Modifier
-                        .width(cardWidth)
-                        .focusHalo(cardInteraction, cardShape)
-                        .clip(cardShape)
-                        .border(1.5.dp.scaled(screenScale), textColor, cardShape)
-                        .background(if (isSelected) textColor else Color.Transparent)
-                        .clickable(
-                            interactionSource = cardInteraction,
-                            indication = null
-                        ) {
-                            selectedIdx = index
-                            onSelect(indicator)
-                        }
-                        .padding(12.dp.scaled(screenScale)),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier.height(28.dp.scaled(screenScale)),
-                        contentAlignment = Alignment.Center
+        val visibleCount = ((maxWidth + spacing) / (minCardWidth + spacing)).toInt().coerceIn(3, 6)
+        val perPage = visibleCount.coerceAtMost(indicators.size)
+        val pages = remember(indicators.size, perPage) { indicators.toList().chunked(perPage) }
+        val pageCount = pages.size
+        var pageIndex by remember { mutableIntStateOf((selectedIdx / perPage).coerceIn(0, (pageCount - 1).coerceAtLeast(0))) }
+        LaunchedEffect(perPage) {
+            pageIndex = pageIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+        }
+        var dragX by remember { mutableStateOf(0f) }
+        val totalSpacing = spacing * (perPage - 1)
+        val cardWidth = (maxWidth - totalSpacing) / perPage
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .pointerInput(pageCount) {
+                        detectHorizontalDragGestures(
+                            onHorizontalDrag = { _, dragAmount -> dragX += dragAmount },
+                            onDragEnd = {
+                                if (dragX > 48f && pageIndex > 0) pageIndex--
+                                else if (dragX < -48f && pageIndex < pageCount - 1) pageIndex++
+                                dragX = 0f
+                            },
+                            onDragCancel = { dragX = 0f }
+                        )
+                    },
+                horizontalArrangement = Arrangement.spacedBy(spacing)
+            ) {
+                val pageItems = pages.getOrNull(pageIndex).orEmpty()
+                pageItems.forEach { indicator ->
+                    val index = indicators.indexOf(indicator)
+                    val isSelected = index == selectedIdx
+                    val fg = if (isSelected) bgColor else textColor
+                    val cardInteraction = remember { MutableInteractionSource() }
+                    Column(
+                        modifier = Modifier
+                            .width(cardWidth)
+                            .focusHalo(cardInteraction, cardShape)
+                            .clip(cardShape)
+                            .border(1.5.dp.scaled(screenScale), textColor, cardShape)
+                            .background(if (isSelected) textColor else Color.Transparent)
+                            .clickable(
+                                interactionSource = cardInteraction,
+                                indication = null
+                            ) {
+                                selectedIdx = index
+                                onSelect(indicator)
+                            }
+                            .padding(12.dp.scaled(screenScale)),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Box(
+                            modifier = Modifier.height(28.dp.scaled(screenScale)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = indicator.symbol,
+                                color = fg,
+                                fontSize = (22 * screenScale).sp,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                        Spacer(Modifier.height(6.dp.scaled(screenScale)))
                         Text(
-                            text = indicator.symbol,
+                            text = indicator.label,
+                            style = SettingsTheme.typography.item,
                             color = fg,
-                            fontSize = (22 * screenScale).sp,
+                            fontSize = (11 * screenScale).sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    Spacer(Modifier.height(6.dp.scaled(screenScale)))
-                    Text(
-                        text = indicator.label,
-                        style = SettingsTheme.typography.item,
-                        color = fg,
-                        fontSize = (11 * screenScale).sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                }
+                repeat(perPage - pageItems.size) {
+                    Spacer(Modifier.width(cardWidth))
+                }
+            }
+            if (pageCount > 1) {
+                val dotSize = 12.dp.scaled(screenScale)
+                val dotSpacing = (12f * 0.8f).dp.scaled(screenScale)
+                val dotBorder = (12f / 6f).dp.scaled(screenScale)
+                val dotShape = if (islandsShape == 0) CircleShape
+                    else ShapeHelper.getRoundedCornerShape(islandsShape, roundedRadius = 4.dp.scaled(screenScale))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp.scaled(screenScale)),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronLeft,
+                        contentDescription = stringResource(R.string.btn_back),
+                        tint = if (pageIndex > 0) textColor else textColor.copy(alpha = 0.3f),
+                        modifier = Modifier
+                            .size(28.dp.scaled(screenScale))
+                            .clickable { if (pageIndex > 0) pageIndex-- }
+                    )
+                    Spacer(Modifier.width(12.dp.scaled(screenScale)))
+                    for (i in 0 until pageCount) {
+                        val selected = i == pageIndex
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = dotSpacing / 2)
+                                .size(dotSize)
+                                .background(if (selected) textColor else bgColor, dotShape)
+                                .then(
+                                    if (!selected) Modifier.border(dotBorder, textColor, dotShape)
+                                    else Modifier
+                                )
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp.scaled(screenScale)))
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = stringResource(R.string.home_tooltip_next),
+                        tint = if (pageIndex < pageCount - 1) textColor else textColor.copy(alpha = 0.3f),
+                        modifier = Modifier
+                            .size(28.dp.scaled(screenScale))
+                            .clickable { if (pageIndex < pageCount - 1) pageIndex++ }
                     )
                 }
             }
