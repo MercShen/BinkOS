@@ -1,5 +1,10 @@
 package com.github.gezimos.inkos.helper
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import android.content.Context
 import com.github.gezimos.common.showLongToast
 import androidx.compose.foundation.background
@@ -38,6 +43,7 @@ import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Stars
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -2727,6 +2733,18 @@ internal fun WidgetAppListContent(
                 )
         }
     }
+    // 分页而不是连续滚动：一页固定一批 App，滑动换页，避免墨水屏上半个行被截断
+    val rowsPerPage = 7
+    val rowHeight = 56.dp
+    var pageIndex by remember { mutableStateOf(0) }
+    val pages = remember(apps) { apps.chunked(rowsPerPage) }
+    val pageCount = pages.size.coerceAtLeast(1)
+    LaunchedEffect(query, apps.size) {
+        pageIndex = pageIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+        if (query.isNotEmpty()) pageIndex = 0
+    }
+    var pageDragX by remember { mutableStateOf(0f) }
+
     Text(
         text = stringResource(R.string.choose_app),
         style = SettingsTheme.typography.header,
@@ -2735,7 +2753,6 @@ internal fun WidgetAppListContent(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         textAlign = TextAlign.Start
     )
-    // 搜索框：墨水屏上直接输入比翻长列表快得多
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -2762,68 +2779,82 @@ internal fun WidgetAppListContent(
             modifier = Modifier.fillMaxWidth()
         )
     }
+
     if (apps.isEmpty()) {
+        Spacer(modifier = Modifier.height(rowHeight * rowsPerPage))
         Text(
             text = stringResource(R.string.widget_no_matching_app),
             style = SettingsTheme.typography.item,
             color = Theme.colors.text.copy(alpha = 0.5f),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
         )
     } else {
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(0.dp),
-            modifier = Modifier.heightIn(max = 520.dp)
-        ) {
-            items(apps) { app ->
-                val interactionSource = remember { MutableInteractionSource() }
-                val isFocused = interactionSource.collectIsFocusedAsState().value
-                val isHighlighted = isFocused
-                val prefTextColor = Theme.colors.text
-                val prefBackgroundColor = Theme.colors.background
-
-                val icon = remember(app.packageName) {
-                    try { pm.getApplicationIcon(app.packageName) } catch (_: Exception) { null }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .then(with(SettingsComposable) {
-                            Modifier.pillHighlight(isHighlighted, 6.dp, prefTextColor)
-                        })
-                        .clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            onClick = {
-                                try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
-                                onAppSelected(app)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .pointerInput(pageCount) {
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount -> pageDragX += dragAmount },
+                        onDragEnd = {
+                            val threshold = 48f
+                            if (pageDragX > threshold) {
+                                if (pageIndex > 0) pageIndex--
+                            } else if (pageDragX < -threshold) {
+                                if (pageIndex < pageCount - 1) pageIndex++
                             }
-                        ),
+                            pageDragX = 0f
+                        },
+                        onDragCancel = { pageDragX = 0f }
+                    )
+                }
+        ) {
+            val pageApps = pages.getOrNull(pageIndex).orEmpty()
+            pageApps.forEach { app ->
+                WidgetAppRow(
+                    context = context,
+                    app = app,
+                    rowHeight = rowHeight,
+                    onSelect = { onAppSelected(app) }
+                )
+            }
+            // 用等高占位填满整页，保证分页高度稳定、翻页不跳动
+            repeat(rowsPerPage - pageApps.size) {
+                Spacer(modifier = Modifier.height(rowHeight))
+            }
+            if (pageCount > 1) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (icon != null) {
-                        val bmp = remember(app.packageName) {
-                            drawableToBitmap(icon).asImageBitmap()
-                        }
-                        androidx.compose.foundation.Image(
-                            painter = androidx.compose.ui.graphics.painter.BitmapPainter(bmp),
-                            contentDescription = app.appLabel,
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronLeft,
+                        contentDescription = stringResource(R.string.btn_back),
+                        tint = if (pageIndex > 0) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clickable { if (pageIndex > 0) pageIndex-- }
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    for (i in 0 until pageCount) {
+                        Box(
                             modifier = Modifier
-                                .height(32.dp)
-                                .padding(end = 12.dp)
+                                .padding(horizontal = 4.dp)
+                                .size(8.dp)
+                                .then(
+                                    if (i == pageIndex) Modifier.background(Theme.colors.text)
+                                    else Modifier.border(1.dp, Theme.colors.text, androidx.compose.foundation.shape.CircleShape)
+                                )
                         )
                     }
-                    Text(
-                        text = app.appLabel,
-                        style = SettingsTheme.typography.item,
-                        color = if (isHighlighted) prefBackgroundColor else prefTextColor,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = "${app.widgets.size}",
-                        style = SettingsTheme.typography.item,
-                        color = if (isHighlighted) prefBackgroundColor.copy(alpha = 0.7f) else prefTextColor.copy(alpha = 0.5f)
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = stringResource(R.string.home_tooltip_next),
+                        tint = if (pageIndex < pageCount - 1) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clickable { if (pageIndex < pageCount - 1) pageIndex++ }
                     )
                 }
             }
@@ -2833,6 +2864,63 @@ internal fun WidgetAppListContent(
         androidx.compose.material3.TextButton(onClick = onClose) {
             Text(stringResource(R.string.close), color = Theme.colors.text)
         }
+    }
+}
+
+@Composable
+private fun WidgetAppRow(
+    context: Context,
+    app: AppWidgetHelper.WidgetApp,
+    rowHeight: androidx.compose.ui.unit.Dp,
+    onSelect: () -> Unit
+) {
+    val pm = context.packageManager
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused = interactionSource.collectIsFocusedAsState().value
+    val isHighlighted = isFocused
+    val prefTextColor = Theme.colors.text
+    val prefBackgroundColor = Theme.colors.background
+    val icon = remember(app.packageName) {
+        try { pm.getApplicationIcon(app.packageName) } catch (_: Exception) { null }
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(rowHeight)
+            .then(with(SettingsComposable) {
+                Modifier.pillHighlight(isHighlighted, 6.dp, prefTextColor)
+            })
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = {
+                    try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
+                    onSelect()
+                }
+            ),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (icon != null) {
+            val bmp = remember(app.packageName) { drawableToBitmap(icon).asImageBitmap() }
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.graphics.painter.BitmapPainter(bmp),
+                contentDescription = app.appLabel,
+                modifier = Modifier
+                    .height(32.dp)
+                    .padding(end = 12.dp)
+            )
+        }
+        Text(
+            text = app.appLabel,
+            style = SettingsTheme.typography.item,
+            color = if (isHighlighted) prefBackgroundColor else prefTextColor,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = "${app.widgets.size}",
+            style = SettingsTheme.typography.item,
+            color = if (isHighlighted) prefBackgroundColor.copy(alpha = 0.7f) else prefTextColor.copy(alpha = 0.5f)
+        )
     }
 }
 
