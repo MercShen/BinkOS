@@ -126,6 +126,7 @@ data class HomeUiState(
     val allowedBadgeNotificationApps: Set<String> = emptySet(),
     val allowedNotificationApps: Set<String> = emptySet(),
     val allowedSimpleTrayApps: Set<String> = emptySet(),
+    val allowedHubApps: Set<String> = emptySet(),
     // SimpleTray Settings
     val notificationsPerPage: Int = 3,
     val enableBottomNav: Boolean = true,
@@ -485,6 +486,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         allowedBadgeNotificationApps = prefs.allowedBadgeNotificationApps,
         allowedNotificationApps = prefs.allowedNotificationApps,
         allowedSimpleTrayApps = prefs.allowedSimpleTrayApps,
+            allowedHubApps = prefs.allowedHubApps,
         // SimpleTray Settings
         notificationsPerPage = prefs.notificationsPerPage,
         enableBottomNav = prefs.enableBottomNav,
@@ -2064,6 +2066,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.allowedNotificationApps = apps.toMutableSet()
         _homeUiState.value = _homeUiState.value.copy(allowedNotificationApps = apps)
         NotificationManager.getInstance(appContext).refreshConversationNotificationState()
+    }
+
+    fun setAllowedHubApps(apps: Set<String>) {
+        prefs.allowedHubApps = apps.toMutableSet()
+        _homeUiState.value = _homeUiState.value.copy(allowedHubApps = apps)
     }
 
     fun setAllowedSimpleTrayApps(apps: Set<String>) {

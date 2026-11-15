@@ -191,7 +191,7 @@ class HubFragment : Fragment() {
                                 context?.showShortToast(getString(R.string.toast_all_dismissed))
                                 return@setOnKeyListener true
                             } else {
-                                val notifIndex = pagerState.currentPage * 3
+                                val notifIndex = pagerState.currentPage * pagerState.pageSize
                                 val hn = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
                                 try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
                                 if (hn.notif.notificationKey != null) {
@@ -206,7 +206,7 @@ class HubFragment : Fragment() {
                     true
                 }
                 com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.Open -> {
-                    val notifIndex = pagerState.currentPage * 3
+                    val notifIndex = pagerState.currentPage * pagerState.pageSize
                     val hn = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
                     NotificationManager.getInstance(requireContext())
                         .openNotification(hn.packageName, hn.notif.notificationKey, hn.notif.conversationId, removeAfterOpen = true)

@@ -2616,8 +2616,6 @@ class SettingsFragment : Fragment() {
                 }
             }
             SettingsTitle(text = stringResource(R.string.simple_tray_title), fontSize = titleFontSize)
-            SettingsSelect(title = stringResource(R.string.notifications_per_page), option = uiState.notificationsPerPage.toString(),
-                fontSize = titleFontSize, description = stringResource(R.string.desc_noti_per_page), onClick = { viewModel.setNotificationsPerPage((uiState.notificationsPerPage % 5) + 1) }, enabled = pushNotificationsEnabled)
             SettingsSwitch(text = stringResource(R.string.enable_bottom_navigation), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_bottom_nav),
                 defaultState = uiState.enableBottomNav, onCheckedChange = { viewModel.setEnableBottomNav(it) }, enabled = pushNotificationsEnabled)
@@ -2631,6 +2629,16 @@ class SettingsFragment : Fragment() {
                 LaunchedEffect(Unit) {
                     showSimpleTrayAllowlistDialog = false
                     showAppAllowlistDialog(getString(R.string.simple_tray_apps), uiState.allowedSimpleTrayApps) { viewModel.setAllowedSimpleTrayApps(it) }
+                }
+            }
+            SettingsTitle(text = stringResource(R.string.option_hub), fontSize = titleFontSize)
+            var showHubAllowlistDialog by remember { mutableStateOf(false) }
+            SettingsSelect(title = stringResource(R.string.hub_allowlist), option = uiState.allowedHubApps.size.toString(),
+                fontSize = titleFontSize, description = stringResource(R.string.desc_hub_filter), onClick = { showHubAllowlistDialog = true }, enabled = pushNotificationsEnabled)
+            if (showHubAllowlistDialog) {
+                LaunchedEffect(Unit) {
+                    showHubAllowlistDialog = false
+                    showAppAllowlistDialog(getString(R.string.hub_apps), uiState.allowedHubApps) { viewModel.setAllowedHubApps(it) }
                 }
             }
         }

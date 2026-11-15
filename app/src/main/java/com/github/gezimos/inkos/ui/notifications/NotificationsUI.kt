@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -129,6 +130,7 @@ import com.github.gezimos.inkos.helper.utils.VibrationHelper
 import com.github.gezimos.inkos.services.NotificationManager
 import com.github.gezimos.inkos.services.NotificationService
 import com.github.gezimos.inkos.style.Theme
+import com.github.gezimos.inkos.helper.ShapeHelper
 import com.github.gezimos.inkos.style.rememberScreenScale
 import com.github.gezimos.inkos.style.scaled
 import com.github.gezimos.inkos.ui.compose.AppIconBox
@@ -168,11 +170,44 @@ internal class SimplePagerState(current: Int = 0, count: Int = 1) {
     var currentPage: Int
         get() = _current.intValue
         set(v) { _current.intValue = v }
+    var pageSize: Int = 1
     var pageCount: Int
         get() = _count.intValue
         set(v) { _count.intValue = v }
     fun scrollToPage(page: Int) {
         currentPage = page.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+    }
+}
+
+/** 通知列表侧边的纵向页码点：只有多页时显示，形状跟随文字岛，位置跟随主页指示器对齐。 */
+@Composable
+private fun NotificationPageIndicator(
+    prefs: Prefs,
+    currentPage: Int,
+    pageCount: Int,
+    modifier: Modifier = Modifier
+) {
+    if (pageCount <= 1) return
+    val screenScale = rememberScreenScale()
+    val islandsShape = prefs.textIslandsShape
+    val dotShape = if (islandsShape == 0) CircleShape
+        else ShapeHelper.getRoundedCornerShape(islandsShape, pillRadius = 50.dp, roundedRadius = 4.dp)
+    val color = Theme.colors.text
+    val bg = Theme.colors.background
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp.scaled(screenScale)),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        for (i in 0 until pageCount) {
+            val selected = i == currentPage
+            Box(
+                modifier = Modifier
+                    .size(if (selected) 12.dp.scaled(screenScale) else 10.dp.scaled(screenScale))
+                    .background(if (selected) color else bg, dotShape)
+                    .then(if (selected) Modifier else Modifier.border(1.5.dp.scaled(screenScale), color, dotShape))
+            )
+        }
     }
 }
 
@@ -436,7 +471,7 @@ fun HubScreen(
     val prefsLocal = Prefs(ctx)
     val notificationManager = NotificationManager.getInstance(ctx)
 
-    val allowed = prefsLocal.allowedSimpleTrayApps
+    val allowed = prefsLocal.allowedHubApps
     val validNotifications = rawNotifications
         .filter { sbn ->
             if (sbn.notification.category == Notification.CATEGORY_TRANSPORT) return@filter false
@@ -479,20 +514,12 @@ fun HubScreen(
     var containerSize by remember { mutableStateOf(
         if (HubLayoutCache.cachedContainerHeight > 0) IntSize(0, HubLayoutCache.cachedContainerHeight) else IntSize.Zero
     ) }
-    val itemHeightPx = remember(density) { with(density) { 68.dp.toPx() }.toInt() }
+    val itemHeightPx = remember(density) { with(density) { 96.dp.toPx() }.toInt() }
+    val hubOverheadPx = remember(density) { with(density) { 8.dp.toPx() }.toInt() }
 
     val itemsPerPage = remember(containerSize.height, itemHeightPx) {
         val h = containerSize.height
-        if (h > 0 && h == HubLayoutCache.cachedContainerHeight && HubLayoutCache.cachedItemsPerPage != null) {
-            HubLayoutCache.cachedItemsPerPage!!
-        } else {
-            val overhead = with(density) { 30.dp.toPx() }.toInt()
-            val usableH = (h - overhead).coerceAtLeast(0)
-            val result = if (usableH <= 0) 4
-            else (usableH / itemHeightPx).coerceAtLeast(1)
-            if (h > 0) { HubLayoutCache.cachedContainerHeight = h; HubLayoutCache.cachedItemsPerPage = result }
-            result
-        }
+        if (h <= 0) 4 else ((h - hubOverheadPx) / itemHeightPx).coerceAtLeast(1)
     }
 
     val coroutineScope = rememberCoroutineScope()
@@ -500,6 +527,7 @@ fun HubScreen(
     val pagerState = remember { SimplePagerState(0, pages) }
 
     LaunchedEffect(filteredNotifications.size, itemsPerPage) {
+        pagerState.pageSize = itemsPerPage
         val oldPages = pagerState.pageCount
         pagerState.pageCount = pages
         if (pages != oldPages) {
@@ -600,13 +628,6 @@ fun HubScreen(
                     bottomNavEnabled = false
                 )
             }
-            .closeOnReverseLongSwipe(
-                action = Constants.Action.OpenHub,
-                prefs = prefs
-            ) {
-                VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
-                onNavigateBack()
-            }
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
     ) {
@@ -636,22 +657,6 @@ fun HubScreen(
                                     pagerState.scrollToPage(pagerState.currentPage - 1)
                                     vibratePaging(ctx)
                                 }
-                            }
-                            dragSum = 0f
-                        }
-                    )
-                }
-                .pointerInput(categoryTabs.size, selectedCategoryIndex.intValue) {
-                    var dragSum = 0f
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { _, dragAmount -> dragSum += dragAmount },
-                        onDragEnd = {
-                            val threshold = with(density) { 48.dp.toPx() }
-                            val idx = selectedCategoryIndex.intValue
-                            if (dragSum < -threshold && idx < categoryTabs.size - 1) {
-                                selectedCategoryIndex.intValue = idx + 1
-                            } else if (dragSum > threshold && idx > 0) {
-                                selectedCategoryIndex.intValue = idx - 1
                             }
                             dragSum = 0f
                         }
@@ -692,7 +697,19 @@ fun HubScreen(
                 )
             }
 
-            Box(modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged { containerSize = it }) {
+            Row(
+                modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged { containerSize = it },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (pagerState.pageCount > 1 && prefs.homePagerAlign == 0) {
+                    NotificationPageIndicator(
+                        prefs = prefs,
+                        currentPage = pagerState.currentPage,
+                        pageCount = pagerState.pageCount,
+                        modifier = Modifier.padding(end = 6.dp.scaled(screenScale))
+                    )
+                }
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 if (filteredNotifications.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -749,6 +766,15 @@ fun HubScreen(
                             expandedNotificationKey = null
                         },
                         modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                }
+                if (pagerState.pageCount > 1 && prefs.homePagerAlign != 0) {
+                    NotificationPageIndicator(
+                        prefs = prefs,
+                        currentPage = pagerState.currentPage,
+                        pageCount = pagerState.pageCount,
+                        modifier = Modifier.padding(start = 6.dp.scaled(screenScale))
                     )
                 }
             }
@@ -1527,11 +1553,18 @@ fun SimpleTrayScreen(
     }
 
     val coroutineScope = rememberCoroutineScope()
-    val pageSize = prefsLocal.notificationsPerPage
+    var trayContainerSize by remember { mutableStateOf(IntSize.Zero) }
+    val trayDensity = LocalDensity.current
+    val trayItemHeightPx = remember(trayDensity) { with(trayDensity) { 104.dp.toPx() }.toInt() }
+    val trayOverheadPx = remember(trayDensity) { with(trayDensity) { 8.dp.toPx() }.toInt() }
+    val pageSize = remember(trayContainerSize.height, trayItemHeightPx) {
+        val h = trayContainerSize.height
+        if (h <= 0) 3 else ((h - trayOverheadPx) / trayItemHeightPx).coerceAtLeast(1)
+    }
     val pages = ((validNotifications.size + pageSize - 1) / pageSize).coerceAtLeast(1)
     val pagerState = remember { SimplePagerState(0, pages) }
-
-    LaunchedEffect(validNotifications.size) {
+    LaunchedEffect(validNotifications.size, pageSize) {
+        pagerState.pageSize = pageSize
         val oldPages = pagerState.pageCount
         pagerState.pageCount = pages
         if (pages != oldPages) {
@@ -2026,13 +2059,6 @@ fun SimpleTrayScreen(
                     bottomNavEnabled = prefsLocal.enableBottomNav
                 )
             }
-            .closeOnReverseLongSwipe(
-                action = Constants.Action.OpenSimpleTray,
-                prefs = prefs
-            ) {
-                VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
-                onNavigateBack()
-            }
             .then(
                 if (isEditMode) {
                     Modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
@@ -2047,7 +2073,6 @@ fun SimpleTrayScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
                 .padding(
                     start = 24.dp.scaled(screenScale),
                     end = 24.dp.scaled(screenScale),
@@ -2232,15 +2257,38 @@ fun SimpleTrayScreen(
                     }
                 }
             } else {
-                MergedNotificationCards(
-                    prefs = prefs,
-                    notifications = displayNotifications,
-                    isDpadMode = isDpadMode,
-                    focusZone = focusZone.value,
-                    selectedNotificationIndex = selectedNotificationIndex.intValue,
-                    isEditMode = isEditMode,
-                    onEditModeTap = onNotificationEditModeClick
-                )
+                Row(
+                    modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged { trayContainerSize = it },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (pagerState.pageCount > 1 && prefs.homePagerAlign == 0) {
+                        NotificationPageIndicator(
+                            prefs = prefs,
+                            currentPage = pagerState.currentPage,
+                            pageCount = pagerState.pageCount,
+                            modifier = Modifier.padding(end = 6.dp.scaled(screenScale))
+                        )
+                    }
+                    Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                        MergedNotificationCards(
+                            prefs = prefs,
+                            notifications = displayNotifications,
+                            isDpadMode = isDpadMode,
+                            focusZone = focusZone.value,
+                            selectedNotificationIndex = selectedNotificationIndex.intValue,
+                            isEditMode = isEditMode,
+                            onEditModeTap = onNotificationEditModeClick
+                        )
+                    }
+                    if (pagerState.pageCount > 1 && prefs.homePagerAlign != 0) {
+                        NotificationPageIndicator(
+                            prefs = prefs,
+                            currentPage = pagerState.currentPage,
+                            pageCount = pagerState.pageCount,
+                            modifier = Modifier.padding(start = 6.dp.scaled(screenScale))
+                        )
+                    }
+                }
             }
         }
 

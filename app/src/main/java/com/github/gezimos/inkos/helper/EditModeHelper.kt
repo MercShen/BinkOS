@@ -2213,14 +2213,6 @@ object EditModeHelper {
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
                 Title(text = stringResource(R.string.simple_tray_title))
                 SettingRow(
-                    label = context.getString(R.string.notifications_per_page),
-                    value = uiState.notificationsPerPage.toString(),
-                ) {
-                    val next = (uiState.notificationsPerPage % 5) + 1
-                    vm.setNotificationsPerPage(next)
-                    onUpdate()
-                }
-                SettingRow(
                     label = stringResource(R.string.simple_tray_allowlist),
                     value = if (uiState.allowedSimpleTrayApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.selected_count_fmt, uiState.allowedSimpleTrayApps.size),
                 ) {
@@ -2296,7 +2288,7 @@ object EditModeHelper {
                 Title(text = stringResource(R.string.option_hub))
                 SettingRow(
                     label = stringResource(R.string.hub_allowlist),
-                    value = if (uiState.allowedSimpleTrayApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.selected_count_fmt, uiState.allowedSimpleTrayApps.size),
+                    value = if (uiState.allowedHubApps.isEmpty()) stringResource(R.string.text_none) else stringResource(R.string.selected_count_fmt, uiState.allowedHubApps.size),
                 ) {
                     currentSheet?.dismiss()
                     fragment.viewLifecycleOwner.lifecycleScope.launch {
@@ -2316,7 +2308,7 @@ object EditModeHelper {
                                     user = it.user.toString()
                                 )
                             }
-                            val initialSelected = vm.homeUiState.value.allowedSimpleTrayApps
+                            val initialSelected = vm.homeUiState.value.allowedHubApps
                             val collator = java.text.Collator.getInstance().apply { strength = java.text.Collator.PRIMARY }
                             val sortedApps = allApps.sortedWith(
                                 compareByDescending<AppInfo> { initialSelected.contains(it.packageName) }
@@ -2343,7 +2335,7 @@ object EditModeHelper {
                                         val pkgWithUser = if (userStr.isNotBlank()) "$pkg|$userStr" else pkg
                                         if (initialSelected.contains(pkgWithUser)) pkgWithUser else pkg
                                     }.toSet()
-                                    vm.setAllowedSimpleTrayApps(selectedPkgs)
+                                    vm.setAllowedHubApps(selectedPkgs)
                                     onUpdate()
                                 }
                             )

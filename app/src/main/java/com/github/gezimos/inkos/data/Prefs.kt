@@ -1973,6 +1973,18 @@ class Prefs(val context: Context) {
         set(value) = prefs.edit { putStringSet("allowed_badge_notification_apps", value) }
 
     // Per-app allowlist for SimpleTray notifications
+    var allowedHubApps: MutableSet<String>
+        get() {
+            if (!prefs.contains("allowed_hub_apps")) {
+                val migrated = prefs.getStringSet("allowed_simple_tray_apps", mutableSetOf()) ?: mutableSetOf()
+                prefs.edit { putStringSet("allowed_hub_apps", migrated) }
+                return migrated.toMutableSet()
+            }
+            return prefs.getStringSet("allowed_hub_apps", mutableSetOf()) ?: mutableSetOf()
+        }
+        set(value) = prefs.edit { putStringSet("allowed_hub_apps", value) }
+
+
     var allowedSimpleTrayApps: MutableSet<String>
         get() = prefs.getStringSet("allowed_simple_tray_apps", mutableSetOf())
             ?: mutableSetOf()

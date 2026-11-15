@@ -562,7 +562,7 @@ class SimpleTrayFragment : Fragment() {
                                 context?.showShortToast(getString(R.string.toast_all_dismissed))
                                 return@setOnKeyListener true
                             } else {
-                                val notifIndex = pagerState.currentPage * prefs.notificationsPerPage
+                                val notifIndex = pagerState.currentPage * pagerState.pageSize
                                 val (pkg, notif) = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
                                 try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
 
@@ -592,7 +592,7 @@ class SimpleTrayFragment : Fragment() {
                     true
                 }
                 com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.Open -> {
-                    val notifIndex = pagerState.currentPage * prefs.notificationsPerPage
+                    val notifIndex = pagerState.currentPage * pagerState.pageSize
                     val (pkg, notif) = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
                     NotificationManager.getInstance(requireContext())
                         .openNotification(pkg, notif.notificationKey, notif.conversationId, removeAfterOpen = true)
