@@ -2876,11 +2876,10 @@ internal fun WidgetAppListContent(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronLeft,
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
                         contentDescription = stringResource(R.string.btn_back),
-                        tint = Theme.colors.text,
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
@@ -3087,8 +3086,16 @@ internal fun WidgetListContent(
     onWidgetPicked: (android.appwidget.AppWidgetProviderInfo) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        androidx.compose.material3.TextButton(onClick = onBack) {
-            Text(stringResource(R.string.choose_another_app), color = Theme.colors.text, fontSize = 14.sp)
+        androidx.compose.material3.TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.choose_another_app), color = Theme.colors.text, fontSize = 14.sp)
+            }
         }
         Text(
             text = app.appLabel.uppercase(),
