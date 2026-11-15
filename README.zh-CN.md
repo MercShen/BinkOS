@@ -85,7 +85,7 @@ Bink OS 保留了 inkOS 的文字优先首页，并重做了与墨水屏硬件�
 
 从 [Releases](https://github.com/MercShen/BinkOS/releases) 下载签名 APK，可直接覆盖旧版安装 —— 签名密钥固定，升级不丢数据。
 
-需要 Android 10+。在 Bigme HiBreak 上体验最好；其它墨水屏手机也能用，但大我专属开关只对 HiBreak 生效。
+需要 Android 8.0+（API 26）。在 Bigme HiBreak 上体验最好；其它墨水屏手机也能用，但大我专属开关只对 HiBreak 生效。
 
 ## 构建
 

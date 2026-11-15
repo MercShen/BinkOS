@@ -85,7 +85,7 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 
 Download the signed APK from [Releases](https://github.com/MercShen/BinkOS/releases) and install it over an existing Bink OS build — the signing key is stable, so upgrades keep your data.
 
-Requires Android 10+. Best on the Bigme HiBreak; other e-ink phones work but the vendor-specific switches are HiBreak-only.
+Requires Android 8.0+ (API 26). Best on the Bigme HiBreak; other e-ink phones work but the vendor-specific switches are HiBreak-only.
 
 ## Build
 
