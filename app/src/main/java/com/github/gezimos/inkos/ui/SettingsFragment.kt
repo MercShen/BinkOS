@@ -1197,14 +1197,15 @@ class SettingsFragment : Fragment() {
                         if (!contains(Action.OpenAppDrawer)) add(Action.OpenAppDrawer)
                     }
                 }
-                val iconLabels = Constants.ShortcutIcon.entries.map { it.name }
-                SettingsSelect(title = stringResource(R.string.shortcut_left_icon), option = prefs.shortcutLeftIcon.name, fontSize = titleFontSize, onClick = {
+                val icons = Constants.ShortcutIcon.entries
+                val iconLabels = icons.map { getString(com.github.gezimos.inkos.helper.shortcutIconLabelRes(it)) }
+                SettingsSelect(title = stringResource(R.string.shortcut_left_icon), option = getString(com.github.gezimos.inkos.helper.shortcutIconLabelRes(prefs.shortcutLeftIcon)), fontSize = titleFontSize, onClick = {
                     dialogBuilder.showSingleChoiceDialog(
                         context = requireContext(), options = iconLabels.toTypedArray(),
                         titleResId = R.string.bottom_widget,
                         selectedIndex = Constants.ShortcutIcon.entries.indexOf(prefs.shortcutLeftIcon),
                         onItemSelected = { selected ->
-                            viewModel.setShortcutLeftIcon(Constants.ShortcutIcon.valueOf(selected))
+                            viewModel.setShortcutLeftIcon(icons[iconLabels.indexOf(selected).coerceAtLeast(0)])
                         }
                     )
                 })
@@ -1222,13 +1223,13 @@ class SettingsFragment : Fragment() {
                         else viewModel.setShortcutLeftAction(action)
                     }
                 })
-                SettingsSelect(title = stringResource(R.string.shortcut_right_icon), option = prefs.shortcutRightIcon.name, fontSize = titleFontSize, onClick = {
+                SettingsSelect(title = stringResource(R.string.shortcut_right_icon), option = getString(com.github.gezimos.inkos.helper.shortcutIconLabelRes(prefs.shortcutRightIcon)), fontSize = titleFontSize, onClick = {
                     dialogBuilder.showSingleChoiceDialog(
                         context = requireContext(), options = iconLabels.toTypedArray(),
                         titleResId = R.string.bottom_widget,
                         selectedIndex = Constants.ShortcutIcon.entries.indexOf(prefs.shortcutRightIcon),
                         onItemSelected = { selected ->
-                            viewModel.setShortcutRightIcon(Constants.ShortcutIcon.valueOf(selected))
+                            viewModel.setShortcutRightIcon(icons[iconLabels.indexOf(selected).coerceAtLeast(0)])
                         }
                     )
                 })

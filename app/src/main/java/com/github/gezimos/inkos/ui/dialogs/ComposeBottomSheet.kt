@@ -2754,12 +2754,13 @@ fun ShortcutIconPickerSheet(
                     }
                     Spacer(Modifier.height(6.dp.scaled(screenScale)))
                     Text(
-                        text = icon.name,
+                        text = stringResource(com.github.gezimos.inkos.helper.shortcutIconLabelRes(icon)),
                         style = SettingsTheme.typography.item,
                         color = fg,
                         fontSize = (11 * screenScale).sp,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
+                        minLines = 2,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -3122,11 +3123,12 @@ fun BadgeIndicatorPickerSheet(
                         }
                         Spacer(Modifier.height(6.dp.scaled(screenScale)))
                         Text(
-                            text = indicator.label,
+                            text = stringResource(com.github.gezimos.inkos.helper.notificationIndicatorLabelRes(indicator)),
                             style = SettingsTheme.typography.item,
                             color = fg,
                             fontSize = (11 * screenScale).sp,
-                            maxLines = 1,
+                            maxLines = 2,
+                            minLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()

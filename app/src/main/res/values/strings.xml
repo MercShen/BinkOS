@@ -1004,4 +1004,20 @@
     <string name="icon_center_alignment_hint">App icons are unavailable while apps are center aligned.</string>
     <string name="search_apps_hint">Search apps</string>
     <string name="widget_no_matching_app">No matching apps</string>
+    <string name="shortcut_icon_bubble">Bubble</string>
+    <string name="shortcut_icon_phone">Phone</string>
+    <string name="shortcut_icon_clock">Clock</string>
+    <string name="shortcut_icon_disabled">Disabled</string>
+    <string name="shortcut_icon_star">Star</string>
+    <string name="shortcut_icon_light">Light</string>
+    <string name="shortcut_icon_messages">Messages</string>
+    <string name="badge_indicator_filled_square">Filled square</string>
+    <string name="shortcut_icon_notes">Notes</string>
+    <string name="badge_indicator_asterisk">Asterisk</string>
+    <string name="badge_indicator_outline_circle">Outline circle</string>
+    <string name="shortcut_icon_search">Search</string>
+    <string name="shortcut_icon_music">Music</string>
+    <string name="shortcut_icon_camera">Camera</string>
+    <string name="badge_indicator_filled_circle">Filled circle</string>
+    <string name="badge_indicator_filled_diamond">Filled diamond</string>
 </resources>
