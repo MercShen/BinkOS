@@ -488,7 +488,6 @@ class HomeFragmentCompose : Fragment() {
                                 onBatteryClick = { handleBatteryClick() },
                                 onNotificationCountClick = { handleNotificationCountClick() },
                                 onBottomWidgetClick = { handleBottomWidgetClick() },
-                                onAndroidWidgetEditClick = { handleAndroidWidgetEditClick() },
                                 onEventsGrantPermissionClick = { handleEventsGrantPermissionClick() },
                                 onEventsCalendarClick = { requireContext().launchCalendar() },
                                 onEventsEventClick = { event -> requireContext().launchCalendarEvent(event.eventId) },
@@ -809,28 +808,6 @@ class HomeFragmentCompose : Fragment() {
     }
 
     /** 编辑模式里点小组件右上角的笔：直接打开“当前 App 的组件列表”，换应用再返回上一级。 */
-    private fun handleAndroidWidgetEditClick() {
-        val widgetId = prefs.androidWidgetId
-        val providerPackage = if (widgetId != -1) {
-            appWidgetHelper.getWidgetInfo(widgetId)?.provider?.packageName
-        } else null
-        if (providerPackage == null) {
-            EditModeHelper.showBottomWidgetSettings(requireContext(), this, prefs) {
-                viewModel.refreshHomeAppsUiState(requireContext())
-            }
-            return
-        }
-        EditModeHelper.showWidgetPickerSheet(
-            context = requireContext(),
-            fragment = this,
-            prefs = prefs,
-            appWidgetHelper = appWidgetHelper,
-            vm = viewModel,
-            onUpdate = { viewModel.refreshHomeAppsUiState(requireContext()) },
-            initialAppPackage = providerPackage
-        )
-    }
-
     private fun handleBottomWidgetClick() {
         if (EditModeHelper.isEditMode()) {
             EditModeHelper.showBottomWidgetSettings(requireContext(), this, prefs) {

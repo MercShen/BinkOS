@@ -467,7 +467,6 @@ fun HomeUI(
                         hasWidget = state.androidWidgetId != -1,
                         isEditMode = showEditMode,
                         onClick = callbacks.onBottomWidgetClick,
-                    onEditClick = callbacks.onAndroidWidgetEditClick,
                         onHeightChange = callbacks.onAndroidWidgetHeightChange,
                         onMarginStartChange = callbacks.onAndroidWidgetMarginStartChange,
                         onMarginEndChange = callbacks.onAndroidWidgetMarginEndChange
@@ -3333,7 +3332,6 @@ private fun HomeAndroidWidget(
     hasWidget: Boolean,
     isEditMode: Boolean,
     onClick: () -> Unit,
-    onEditClick: () -> Unit = {},
     onHeightChange: (Int) -> Unit,
     onMarginStartChange: (Int) -> Unit,
     onMarginEndChange: (Int) -> Unit
@@ -3427,25 +3425,6 @@ private fun HomeAndroidWidget(
                     Text(stringResource(R.string.home_tap_to_choose_widget), color = Theme.colors.text.copy(alpha = 0.5f), fontSize = 14.sp)
                 }
 
-                if (isEditMode && !EditModeHelper.zoneEditorVisible.value) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .padding(6.dp)
-                            .border(2.dp, Theme.colors.text, widgetShape)
-                            .background(Theme.colors.background, widgetShape)
-                            .padding(6.dp)
-                            .clickable { onEditClick() },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Edit,
-                            contentDescription = stringResource(R.string.cd_edit_widget),
-                            tint = Theme.colors.text,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
             }
 
             if (isEditMode && !EditModeHelper.zoneEditorVisible.value) {
@@ -4494,7 +4473,6 @@ data class HomeUiCallbacks(
     val onPageDelta: (Int) -> Unit,
     val onRootLongPress: () -> Unit,
     val onBackgroundClick: () -> Unit = {},
-    val onAndroidWidgetEditClick: () -> Unit = {},
     val onAndroidWidgetHeightChange: (Int) -> Unit = {},
     val onAndroidWidgetMarginStartChange: (Int) -> Unit = {},
     val onAndroidWidgetMarginEndChange: (Int) -> Unit = {},
