@@ -1002,4 +1002,6 @@
     <string name="wallpaper_delete_message">This only removes the image from the Bink OS gallery. The original file stays on your device.</string>
     <string name="wallpaper_remove">Remove</string>
     <string name="icon_center_alignment_hint">App icons are unavailable while apps are center aligned.</string>
+    <string name="search_apps_hint">Search apps</string>
+    <string name="widget_no_matching_app">No matching apps</string>
 </resources>

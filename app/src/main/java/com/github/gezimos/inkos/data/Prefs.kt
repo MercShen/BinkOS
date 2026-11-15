@@ -1812,6 +1812,10 @@ class Prefs(val context: Context) {
         set(value) = prefs.edit { putBoolean(DRAWER_SHOW_ICONS, value) }
 
     /** Hub（中枢）里是否显示应用图标；默认关闭，保持文字优先 */
+    /** 上次在“选择组件”里选过的 App，下次打开直接定位到它的组件列表。 */
+    var lastWidgetAppPackage: String
+        get() = prefs.getString("LAST_WIDGET_APP_PACKAGE", "") ?: ""
+        set(value) = prefs.edit { putString("LAST_WIDGET_APP_PACKAGE", value) }
     var hubShowIcons: Boolean
         get() = prefs.getBoolean(HUB_SHOW_ICONS, false)
         set(value) = prefs.edit { putBoolean(HUB_SHOW_ICONS, value) }

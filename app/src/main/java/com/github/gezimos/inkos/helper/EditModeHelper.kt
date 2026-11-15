@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.CircleShape
@@ -1294,7 +1295,8 @@ object EditModeHelper {
         prefs: Prefs,
         appWidgetHelper: AppWidgetHelper,
         vm: com.github.gezimos.inkos.MainViewModel,
-        onUpdate: () -> Unit
+        onUpdate: () -> Unit,
+        initialAppPackage: String? = null
     ) {
         val widgetApps = appWidgetHelper.getInstalledWidgetsByApp()
         if (widgetApps.isEmpty()) {
@@ -1303,14 +1305,21 @@ object EditModeHelper {
         }
 
         showDialog(context, prefs) {
-            val selectedApp = remember { mutableStateOf<AppWidgetHelper.WidgetApp?>(null) }
+            val startPackage = initialAppPackage ?: prefs.lastWidgetAppPackage
+            val initialApp = remember(widgetApps, startPackage) {
+                widgetApps.firstOrNull { it.packageName == startPackage }
+            }
+            val selectedApp = remember { mutableStateOf(initialApp) }
             val app = selectedApp.value
 
             if (app == null) {
                 WidgetAppListContent(
                     context = context,
                     widgetApps = widgetApps,
-                    onAppSelected = { selectedApp.value = it },
+                    onAppSelected = { 
+                        prefs.lastWidgetAppPackage = it.packageName
+                        selectedApp.value = it
+                    },
                     onClose = { currentSheet?.dismiss() }
                 )
             } else {
@@ -2705,6 +2714,19 @@ internal fun WidgetAppListContent(
     onClose: () -> Unit
 ) {
     val pm = context.packageManager
+    val screenScale = rememberScreenScale()
+    var query by remember { mutableStateOf("") }
+    val apps = remember(widgetApps, query) {
+        val q = query.trim()
+        widgetApps.filter { app ->
+            app.widgets.isNotEmpty() && (
+                q.isEmpty() ||
+                    app.appLabel.contains(q, ignoreCase = true) ||
+                    app.packageName.contains(q, ignoreCase = true) ||
+                    app.widgets.any { it.first.contains(q, ignoreCase = true) }
+                )
+        }
+    }
     Text(
         text = stringResource(R.string.choose_app),
         style = SettingsTheme.typography.header,
@@ -2713,61 +2735,97 @@ internal fun WidgetAppListContent(
         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
         textAlign = TextAlign.Start
     )
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(0.dp),
-        modifier = Modifier.height(400.dp)
+    // 搜索框：墨水屏上直接输入比翻长列表快得多
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .border(1.5.dp, Theme.colors.text, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
-        items(widgetApps) { app ->
-            val interactionSource = remember { MutableInteractionSource() }
-            val isFocused = interactionSource.collectIsFocusedAsState().value
-            val isHighlighted = isFocused
-            val prefTextColor = Theme.colors.text
-            val prefBackgroundColor = Theme.colors.background
+        if (query.isEmpty()) {
+            Text(
+                text = stringResource(R.string.search_apps_hint),
+                style = SettingsTheme.typography.item,
+                color = Theme.colors.text.copy(alpha = 0.5f)
+            )
+        }
+        androidx.compose.foundation.text.BasicTextField(
+            value = query,
+            onValueChange = { query = it },
+            singleLine = true,
+            textStyle = androidx.compose.ui.text.TextStyle(
+                color = Theme.colors.text,
+                fontSize = 16.sp.scaled(screenScale)
+            ),
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(Theme.colors.text),
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    if (apps.isEmpty()) {
+        Text(
+            text = stringResource(R.string.widget_no_matching_app),
+            style = SettingsTheme.typography.item,
+            color = Theme.colors.text.copy(alpha = 0.5f),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp)
+        )
+    } else {
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(0.dp),
+            modifier = Modifier.heightIn(max = 520.dp)
+        ) {
+            items(apps) { app ->
+                val interactionSource = remember { MutableInteractionSource() }
+                val isFocused = interactionSource.collectIsFocusedAsState().value
+                val isHighlighted = isFocused
+                val prefTextColor = Theme.colors.text
+                val prefBackgroundColor = Theme.colors.background
 
-            val icon = remember(app.packageName) {
-                try { pm.getApplicationIcon(app.packageName) } catch (_: Exception) { null }
-            }
+                val icon = remember(app.packageName) {
+                    try { pm.getApplicationIcon(app.packageName) } catch (_: Exception) { null }
+                }
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 6.dp)
-                    .then(with(SettingsComposable) {
-                        Modifier.pillHighlight(isHighlighted, 6.dp, prefTextColor)
-                    })
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = {
-                            try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
-                            onAppSelected(app)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .then(with(SettingsComposable) {
+                            Modifier.pillHighlight(isHighlighted, 6.dp, prefTextColor)
+                        })
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            onClick = {
+                                try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
+                                onAppSelected(app)
+                            }
+                        ),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (icon != null) {
+                        val bmp = remember(app.packageName) {
+                            drawableToBitmap(icon).asImageBitmap()
                         }
-                    ),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (icon != null) {
-                    val bmp = remember(app.packageName) {
-                        drawableToBitmap(icon).asImageBitmap()
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.graphics.painter.BitmapPainter(bmp),
+                            contentDescription = app.appLabel,
+                            modifier = Modifier
+                                .height(32.dp)
+                                .padding(end = 12.dp)
+                        )
                     }
-                    androidx.compose.foundation.Image(
-                        painter = androidx.compose.ui.graphics.painter.BitmapPainter(bmp),
-                        contentDescription = app.appLabel,
-                        modifier = Modifier
-                            .height(32.dp)
-                            .padding(end = 12.dp)
+                    Text(
+                        text = app.appLabel,
+                        style = SettingsTheme.typography.item,
+                        color = if (isHighlighted) prefBackgroundColor else prefTextColor,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "${app.widgets.size}",
+                        style = SettingsTheme.typography.item,
+                        color = if (isHighlighted) prefBackgroundColor.copy(alpha = 0.7f) else prefTextColor.copy(alpha = 0.5f)
                     )
                 }
-                Text(
-                    text = app.appLabel,
-                    style = SettingsTheme.typography.item,
-                    color = if (isHighlighted) prefBackgroundColor else prefTextColor,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "${app.widgets.size}",
-                    style = SettingsTheme.typography.item,
-                    color = if (isHighlighted) prefBackgroundColor.copy(alpha = 0.7f) else prefTextColor.copy(alpha = 0.5f)
-                )
             }
         }
     }

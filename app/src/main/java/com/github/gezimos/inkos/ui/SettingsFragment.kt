@@ -1323,12 +1323,23 @@ class SettingsFragment : Fragment() {
                         val ctx = requireContext()
                         val navController = findNavController()
                         dialogBuilder.showSheet {
-                            val selectedApp = remember { mutableStateOf<com.github.gezimos.inkos.helper.AppWidgetHelper.WidgetApp?>(null) }
+                            // 优先定位到“当前正在使用的组件所属 App”，否则用上次选过的 App；都没有才显示应用列表
+                            val currentProviderPkg = if (homeUiState.androidWidgetId != -1) {
+                                appWidgetHelper.getWidgetInfo(homeUiState.androidWidgetId)?.provider?.packageName
+                            } else null
+                            val startPackage = currentProviderPkg ?: prefs.lastWidgetAppPackage
+                            val initialApp = remember(widgetApps, startPackage) {
+                                widgetApps.firstOrNull { it.packageName == startPackage }
+                            }
+                            val selectedApp = remember { mutableStateOf(initialApp) }
                             val app = selectedApp.value
                             if (app == null) {
                                 com.github.gezimos.inkos.helper.WidgetAppListContent(
                                     context = ctx, widgetApps = widgetApps,
-                                    onAppSelected = { selectedApp.value = it },
+                                    onAppSelected = {
+                                        prefs.lastWidgetAppPackage = it.packageName
+                                        selectedApp.value = it
+                                    },
                                     onClose = { dialogBuilder.dismissAll() }
                                 )
                             } else {

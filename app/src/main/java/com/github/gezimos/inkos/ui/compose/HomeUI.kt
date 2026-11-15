@@ -454,6 +454,7 @@ fun HomeUI(
                         hasWidget = state.androidWidgetId != -1,
                         isEditMode = showEditMode,
                         onClick = callbacks.onBottomWidgetClick,
+                    onEditClick = callbacks.onAndroidWidgetEditClick,
                         onHeightChange = callbacks.onAndroidWidgetHeightChange,
                         onMarginStartChange = callbacks.onAndroidWidgetMarginStartChange,
                         onMarginEndChange = callbacks.onAndroidWidgetMarginEndChange
@@ -3310,6 +3311,7 @@ private fun HomeAndroidWidget(
     hasWidget: Boolean,
     isEditMode: Boolean,
     onClick: () -> Unit,
+    onEditClick: () -> Unit = {},
     onHeightChange: (Int) -> Unit,
     onMarginStartChange: (Int) -> Unit,
     onMarginEndChange: (Int) -> Unit
@@ -3408,7 +3410,7 @@ private fun HomeAndroidWidget(
                             .border(2.dp, Theme.colors.text, widgetShape)
                             .background(Theme.colors.background, widgetShape)
                             .padding(6.dp)
-                            .clickable { onClick() },
+                            .clickable { onEditClick() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -4466,6 +4468,7 @@ data class HomeUiCallbacks(
     val onPageDelta: (Int) -> Unit,
     val onRootLongPress: () -> Unit,
     val onBackgroundClick: () -> Unit = {},
+    val onAndroidWidgetEditClick: () -> Unit = {},
     val onAndroidWidgetHeightChange: (Int) -> Unit = {},
     val onAndroidWidgetMarginStartChange: (Int) -> Unit = {},
     val onAndroidWidgetMarginEndChange: (Int) -> Unit = {},
