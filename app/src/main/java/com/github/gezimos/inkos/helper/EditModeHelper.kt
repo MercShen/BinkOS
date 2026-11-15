@@ -3145,13 +3145,13 @@ internal fun WidgetListContent(
     onWidgetPicked: (android.appwidget.AppWidgetProviderInfo) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
-        androidx.compose.material3.TextButton(onClick = onBack, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
-            androidx.compose.foundation.Image(
-                painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
-                contentDescription = stringResource(R.string.btn_back),
-                modifier = Modifier.size(24.dp)
-            )
-        }
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
+            contentDescription = stringResource(R.string.btn_back),
+            modifier = Modifier
+                .size(24.dp)
+                .clickable { onBack() }
+        )
         Text(
             text = app.appLabel.uppercase(),
             fontSize = SettingsTheme.typography.item.fontSize,
