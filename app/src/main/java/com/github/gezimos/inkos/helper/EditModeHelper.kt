@@ -1,5 +1,6 @@
 package com.github.gezimos.inkos.helper
 
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.ChevronLeft
@@ -3149,6 +3150,7 @@ internal fun WidgetListContent(
             painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
             contentDescription = stringResource(R.string.btn_back),
             modifier = Modifier
+                .offset(x = (-3).dp)
                 .size(24.dp)
                 .clickable { onBack() }
         )
