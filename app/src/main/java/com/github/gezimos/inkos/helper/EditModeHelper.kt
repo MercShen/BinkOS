@@ -2966,10 +2966,7 @@ internal fun WidgetListContent(
     onBack: () -> Unit,
     onWidgetPicked: (android.appwidget.AppWidgetProviderInfo) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         androidx.compose.material3.TextButton(onClick = onBack) {
             Text(stringResource(R.string.btn_back_arrow), color = Theme.colors.text)
         }
@@ -2978,8 +2975,10 @@ internal fun WidgetListContent(
             style = SettingsTheme.typography.header,
             fontWeight = FontWeight.Bold,
             color = Theme.colors.text,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.Start
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 72.dp),
+            textAlign = TextAlign.Center
         )
     }
     LazyColumn(
@@ -3047,11 +3046,6 @@ internal fun WidgetListContent(
                     )
                 }
             }
-        }
-    }
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.End) {
-        androidx.compose.material3.TextButton(onClick = onBack) {
-            Text(stringResource(R.string.btn_back), color = Theme.colors.text)
         }
     }
 }
