@@ -982,18 +982,28 @@ fun PageIndicator(
 
             repeat(totalPages) { index ->
                 val selected = index == currentPage
-                if (selected) {
+                val thisSize = if (selected) dotSize else dotSize * (10f / 12f)
+                val thisShape = ShapeHelper.getPageDotShape(textIslandsShape, thisSize)
+                // 固定槽宽 = 最大点尺寸，保证大小不同也共用同一个圆心
+                Box(
+                    modifier = Modifier.size(dotSize),
+                    contentAlignment = Alignment.Center
+                ) {
                     Box(
                         modifier = Modifier
-                            .size(dotSize)
-                            .background(color = dotColor, shape = dotShape)
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .size(dotSize * (10f / 12f))
-                            .background(color = inactiveBackgroundColor, shape = dotShape)
-                            .border(width = borderWidth, color = borderColor, shape = dotShape)
+                            .size(thisSize)
+                            .background(
+                                color = if (selected) dotColor else inactiveBackgroundColor,
+                                shape = thisShape
+                            )
+                            .then(
+                                if (selected) Modifier
+                                else Modifier.border(
+                                    width = thisSize * (1f / 6f),
+                                    color = borderColor,
+                                    shape = thisShape
+                                )
+                            )
                     )
                 }
             }

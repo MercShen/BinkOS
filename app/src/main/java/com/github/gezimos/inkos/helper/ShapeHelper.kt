@@ -6,6 +6,15 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 object ShapeHelper {
+/** 页码点形状：胶囊=圆；圆角=半径随点尺寸按比例（约 1/3）缩放，方形=直角。 */
+fun getPageDotShape(textIslandsShape: Int, size: androidx.compose.ui.unit.Dp): androidx.compose.ui.graphics.Shape {
+    return if (textIslandsShape == 0) {
+        androidx.compose.foundation.shape.CircleShape
+    } else {
+        getRoundedCornerShape(textIslandsShape, roundedRadius = size / 3)
+    }
+}
+
     fun getRoundedCornerShape(
         textIslandsShape: Int,
         pillRadius: Dp = 50.dp,
