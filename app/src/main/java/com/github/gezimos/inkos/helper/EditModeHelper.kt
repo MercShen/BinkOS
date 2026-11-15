@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
@@ -2719,7 +2720,6 @@ internal fun WidgetAppListContent(
     onAppSelected: (AppWidgetHelper.WidgetApp) -> Unit,
     onClose: () -> Unit
 ) {
-    val pm = context.packageManager
     val screenScale = rememberScreenScale()
     var query by remember { mutableStateOf("") }
     val apps = remember(widgetApps, query) {
@@ -2733,136 +2733,144 @@ internal fun WidgetAppListContent(
                 )
         }
     }
-    // 分页而不是连续滚动：一页固定一批 App，滑动换页，避免墨水屏上半个行被截断
-    val rowsPerPage = 7
     val rowHeight = 56.dp
-    var pageIndex by remember { mutableStateOf(0) }
-    val pages = remember(apps) { apps.chunked(rowsPerPage) }
-    val pageCount = pages.size.coerceAtLeast(1)
-    LaunchedEffect(query, apps.size) {
-        pageIndex = pageIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
-        if (query.isNotEmpty()) pageIndex = 0
-    }
-    var pageDragX by remember { mutableStateOf(0f) }
 
-    Text(
-        text = stringResource(R.string.choose_app),
-        style = SettingsTheme.typography.header,
-        fontWeight = FontWeight.Bold,
-        color = Theme.colors.text,
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        textAlign = TextAlign.Start
-    )
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp)
-            .border(1.5.dp, Theme.colors.text, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        if (query.isEmpty()) {
-            Text(
-                text = stringResource(R.string.search_apps_hint),
-                style = SettingsTheme.typography.item,
-                color = Theme.colors.text.copy(alpha = 0.5f)
-            )
+    // 按弹窗可用高度算每页行数：不同屏幕尺寸/UI 缩放都能装满一页且不留半行
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+        val reservedForChrome = 190.dp // 标题 + 搜索框 + 页码条 + 关闭 + 间距
+        val usable = (maxHeight - reservedForChrome).coerceAtLeast(rowHeight * 3)
+        val rowsPerPage = (usable / rowHeight).toInt().coerceIn(3, 14)
+
+        var pageIndex by remember { mutableStateOf(0) }
+        val pages = remember(apps, rowsPerPage) { apps.chunked(rowsPerPage) }
+        val pageCount = pages.size.coerceAtLeast(1)
+        LaunchedEffect(query, apps.size, rowsPerPage) {
+            pageIndex = pageIndex.coerceIn(0, (pageCount - 1).coerceAtLeast(0))
+            if (query.isNotEmpty()) pageIndex = 0
         }
-        androidx.compose.foundation.text.BasicTextField(
-            value = query,
-            onValueChange = { query = it },
-            singleLine = true,
-            textStyle = androidx.compose.ui.text.TextStyle(
-                color = Theme.colors.text,
-                fontSize = 16.sp.scaled(screenScale)
-            ),
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(Theme.colors.text),
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
+        var pageDragX by remember { mutableStateOf(0f) }
 
-    if (apps.isEmpty()) {
-        Spacer(modifier = Modifier.height(rowHeight * rowsPerPage))
-        Text(
-            text = stringResource(R.string.widget_no_matching_app),
-            style = SettingsTheme.typography.item,
-            color = Theme.colors.text.copy(alpha = 0.5f),
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
-        )
-    } else {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .pointerInput(pageCount) {
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { _, dragAmount -> pageDragX += dragAmount },
-                        onDragEnd = {
-                            val threshold = 48f
-                            if (pageDragX > threshold) {
-                                if (pageIndex > 0) pageIndex--
-                            } else if (pageDragX < -threshold) {
-                                if (pageIndex < pageCount - 1) pageIndex++
-                            }
-                            pageDragX = 0f
-                        },
-                        onDragCancel = { pageDragX = 0f }
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = stringResource(R.string.choose_app),
+                style = SettingsTheme.typography.header,
+                fontWeight = FontWeight.Bold,
+                color = Theme.colors.text,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                textAlign = TextAlign.Start
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .border(1.5.dp, Theme.colors.text, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                    .padding(horizontal = 12.dp, vertical = 10.dp)
+            ) {
+                if (query.isEmpty()) {
+                    Text(
+                        text = stringResource(R.string.search_apps_hint),
+                        style = SettingsTheme.typography.item,
+                        color = Theme.colors.text.copy(alpha = 0.5f)
                     )
                 }
-        ) {
-            val pageApps = pages.getOrNull(pageIndex).orEmpty()
-            pageApps.forEach { app ->
-                WidgetAppRow(
-                    context = context,
-                    app = app,
-                    rowHeight = rowHeight,
-                    onSelect = { onAppSelected(app) }
+                androidx.compose.foundation.text.BasicTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        color = Theme.colors.text,
+                        fontSize = 16.sp.scaled(screenScale)
+                    ),
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(Theme.colors.text),
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
-            // 用等高占位填满整页，保证分页高度稳定、翻页不跳动
-            repeat(rowsPerPage - pageApps.size) {
-                Spacer(modifier = Modifier.height(rowHeight))
-            }
-            if (pageCount > 1) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+
+            if (apps.isEmpty()) {
+                Spacer(modifier = Modifier.height(rowHeight * rowsPerPage))
+                Text(
+                    text = stringResource(R.string.widget_no_matching_app),
+                    style = SettingsTheme.typography.item,
+                    color = Theme.colors.text.copy(alpha = 0.5f),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                )
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .pointerInput(pageCount) {
+                            detectHorizontalDragGestures(
+                                onHorizontalDrag = { _, dragAmount -> pageDragX += dragAmount },
+                                onDragEnd = {
+                                    val threshold = 48f
+                                    if (pageDragX > threshold) {
+                                        if (pageIndex > 0) pageIndex--
+                                    } else if (pageDragX < -threshold) {
+                                        if (pageIndex < pageCount - 1) pageIndex++
+                                    }
+                                    pageDragX = 0f
+                                },
+                                onDragCancel = { pageDragX = 0f }
+                            )
+                        }
                 ) {
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronLeft,
-                        contentDescription = stringResource(R.string.btn_back),
-                        tint = if (pageIndex > 0) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clickable { if (pageIndex > 0) pageIndex-- }
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    for (i in 0 until pageCount) {
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 4.dp)
-                                .size(8.dp)
-                                .then(
-                                    if (i == pageIndex) Modifier.background(Theme.colors.text)
-                                    else Modifier.border(1.dp, Theme.colors.text, androidx.compose.foundation.shape.CircleShape)
-                                )
+                    val pageApps = pages.getOrNull(pageIndex).orEmpty()
+                    pageApps.forEach { app ->
+                        WidgetAppRow(
+                            context = context,
+                            app = app,
+                            rowHeight = rowHeight,
+                            onSelect = { onAppSelected(app) }
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Icon(
-                        imageVector = Icons.Rounded.ChevronRight,
-                        contentDescription = stringResource(R.string.home_tooltip_next),
-                        tint = if (pageIndex < pageCount - 1) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clickable { if (pageIndex < pageCount - 1) pageIndex++ }
-                    )
+                    // 用等高占位填满整页，保证分页高度稳定、翻页不跳动
+                    repeat(rowsPerPage - pageApps.size) {
+                        Spacer(modifier = Modifier.height(rowHeight))
+                    }
+                    if (pageCount > 1) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronLeft,
+                                contentDescription = stringResource(R.string.btn_back),
+                                tint = if (pageIndex > 0) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clickable { if (pageIndex > 0) pageIndex-- }
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            for (i in 0 until pageCount) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 4.dp)
+                                        .size(8.dp)
+                                        .then(
+                                            if (i == pageIndex) Modifier.background(Theme.colors.text)
+                                            else Modifier.border(1.dp, Theme.colors.text, androidx.compose.foundation.shape.CircleShape)
+                                        )
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Icon(
+                                imageVector = Icons.Rounded.ChevronRight,
+                                contentDescription = stringResource(R.string.home_tooltip_next),
+                                tint = if (pageIndex < pageCount - 1) Theme.colors.text else Theme.colors.text.copy(alpha = 0.3f),
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clickable { if (pageIndex < pageCount - 1) pageIndex++ }
+                            )
+                        }
+                    }
                 }
             }
-        }
-    }
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.End) {
-        androidx.compose.material3.TextButton(onClick = onClose) {
-            Text(stringResource(R.string.close), color = Theme.colors.text)
+            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.End) {
+                androidx.compose.material3.TextButton(onClick = onClose) {
+                    Text(stringResource(R.string.close), color = Theme.colors.text)
+                }
+            }
         }
     }
 }
