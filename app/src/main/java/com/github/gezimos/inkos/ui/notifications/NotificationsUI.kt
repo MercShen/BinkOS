@@ -668,7 +668,7 @@ fun HubScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = (categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All").uppercase(),
+                    text = "${(categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All").uppercase()} (${filteredNotifications.size})",
                     color = Theme.colors.text,
                     fontSize = (prefs.notificationsTextSize + 2).sp.scaled(screenScale),
                     fontWeight = FontWeight.Bold,
@@ -699,7 +699,7 @@ fun HubScreen(
                 HubClearAllRow(
                     prefs = prefs,
                     isFocused = isDpadMode && focusZone.value == HubFocusZone.CLEAR_ALL,
-                    total = filteredNotifications.size,
+                    total = null,
                     isAllTab = selectedCategoryIndex.intValue == 0,
                     categoryLabel = categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All",
                     onClearAll = {
@@ -1287,7 +1287,7 @@ private fun HubClearAllRow(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = if (total == null) Arrangement.End else Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (total != null) {
