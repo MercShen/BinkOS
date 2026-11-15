@@ -194,10 +194,10 @@ private fun NotificationPageIndicator(
         else ShapeHelper.getRoundedCornerShape(islandsShape, pillRadius = 50.dp, roundedRadius = 4.dp)
     val color = Theme.colors.text
     val bg = Theme.colors.background
-    Row(
+    Column(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp.scaled(screenScale)),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(8.dp.scaled(screenScale)),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         for (i in 0 until pageCount) {
             val selected = i == currentPage
@@ -663,24 +663,14 @@ fun HubScreen(
                     )
                 }
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "${(categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All").uppercase()} (${filteredNotifications.size})",
-                    color = Theme.colors.text,
-                    fontSize = (prefs.notificationsTextSize + 2).sp.scaled(screenScale),
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = notifFontFamilyGlobal,
-                    modifier = Modifier.weight(1f)
-                )
-                NotificationPageIndicator(
-                    prefs = prefs,
-                    currentPage = pagerState.currentPage,
-                    pageCount = pagerState.pageCount
-                )
-            }
+            Text(
+                text = "${(categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All").uppercase()} (${filteredNotifications.size})",
+                color = Theme.colors.text,
+                fontSize = (prefs.notificationsTextSize + 2).sp.scaled(screenScale),
+                fontWeight = FontWeight.Bold,
+                fontFamily = notifFontFamilyGlobal,
+                modifier = Modifier.fillMaxWidth()
+            )
             Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
 
             HubCategoryTabsRow(
@@ -779,6 +769,19 @@ fun HubScreen(
             }
         }
 
+        if (pagerState.pageCount > 1) {
+            Box(
+                modifier = Modifier
+                    .align(if (prefs.homePagerAlign == 0) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(horizontal = 4.dp.scaled(screenScale))
+            ) {
+                NotificationPageIndicator(
+                    prefs = prefs,
+                    currentPage = pagerState.currentPage,
+                    pageCount = pagerState.pageCount
+                )
+            }
+        }
         if (isEditMode) {
             Box(
                 modifier = Modifier
@@ -2102,18 +2105,6 @@ fun SimpleTrayScreen(
                     )
                 }
         ) {
-            if (pagerState.pageCount > 1) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    NotificationPageIndicator(
-                        prefs = prefs,
-                        currentPage = pagerState.currentPage,
-                        pageCount = pagerState.pageCount
-                    )
-                }
-            }
 
             QuickSettingsRow(
                 prefs = prefs,
@@ -2285,6 +2276,19 @@ fun SimpleTrayScreen(
             }
         }
 
+        if (pagerState.pageCount > 1) {
+            Box(
+                modifier = Modifier
+                    .align(if (prefs.homePagerAlign == 0) Alignment.CenterStart else Alignment.CenterEnd)
+                    .padding(horizontal = 4.dp.scaled(screenScale))
+            ) {
+                NotificationPageIndicator(
+                    prefs = prefs,
+                    currentPage = pagerState.currentPage,
+                    pageCount = pagerState.pageCount
+                )
+            }
+        }
         if (isEditMode) {
             EditModeOverlay()
         }
