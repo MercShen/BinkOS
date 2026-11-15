@@ -1,5 +1,16 @@
 package com.github.gezimos.inkos.style
 
+import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+
+import androidx.compose.material3.LocalRippleConfiguration
+
+import androidx.compose.material3.ExperimentalMaterial3Api
+
+import androidx.compose.foundation.interaction.InteractionSource
+
+import androidx.compose.foundation.LocalIndication
+
+
 import android.content.Context
 import com.github.gezimos.inkos.data.Constants
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -112,6 +123,7 @@ private fun createLightColorScheme(textColor: Color, backgroundColor: Color): Co
 }
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun InkOSTheme(content: @Composable () -> Unit) {
     val context = LocalContext.current
     val prefs = LocalPrefs.current ?: Prefs(context)
@@ -139,7 +151,12 @@ fun InkOSTheme(content: @Composable () -> Unit) {
         createLightColorScheme(text, background)
     }
     
-    CompositionLocalProvider(LocalAppColors provides AppColors(text = text, background = background)) {
+    CompositionLocalProvider(
+        LocalAppColors provides AppColors(text = text, background = background),
+        // 墨水屏：全局关闭点击波纹与鼠标悬浮状态层
+        LocalIndication provides NoIndication,
+        LocalRippleConfiguration provides null
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             content = content
@@ -168,4 +185,19 @@ object Theme {
 fun resolveThemeColors(context: Context): Pair<Int, Int> {
     val prefs = Prefs(context)
     return Pair(prefs.textColor, prefs.backgroundColor)
+}
+/** 墨水屏不需要点击/悬浮阴影：全局关掉 ripple 与状态层。 */
+private object NoIndication : androidx.compose.foundation.IndicationNodeFactory {
+    private class NoOpNode : androidx.compose.ui.Modifier.Node(), androidx.compose.ui.node.DrawModifierNode {
+        override fun androidx.compose.ui.graphics.drawscope.ContentDrawScope.draw() {
+            drawContent()
+        }
+    }
+
+
+    override fun hashCode(): Int = System.identityHashCode(this)
+
+    override fun equals(other: Any?): Boolean = this === other
+    override fun create(interactionSource: InteractionSource): androidx.compose.ui.node.DelegatableNode =
+        NoOpNode()
 }
