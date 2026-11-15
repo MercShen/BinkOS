@@ -662,6 +662,15 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
         dialogManager.onAfterDismiss = { showBottomWidgetSettings(context, fragment, prefs, onUpdate) }
         val vm = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
         val appWidgetHelper = AppWidgetHelper.getInstance(context)
+
+        // 预热组件列表：进入面板时后台枚举一次，Choose App 打开即可直接显示
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            try {
+                Thread {
+                    try { appWidgetHelper.getInstalledWidgetsByApp() } catch (_: Exception) {}
+                }.start()
+            } catch (_: Exception) {}
+        }
         val bottomWidgetLabels = listOf(
             context.getString(R.string.bottom_widget_disabled),
             context.getString(R.string.bottom_widget_quote),
@@ -782,11 +791,15 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                                 val currentLabel = appWidgetHelper.getCurrentWidgetLabel() ?: stringResource(R.string.option_none_widget)
                                 SettingRow(label = stringResource(R.string.choose_app_title), value = currentAppLabel) {
                                     currentSheet?.dismiss()
-                                    showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate)
+                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                        showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate)
+                                    }, 280)
                                 }
                                 SettingRow(label = stringResource(R.string.choose_android_widget), value = currentLabel) {
                                     currentSheet?.dismiss()
-                                    showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate, initialAppPackage = currentProviderPkg)
+                                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                                        showWidgetPickerSheet(context, fragment, prefs, appWidgetHelper, vm, onUpdate, initialAppPackage = currentProviderPkg)
+                                    }, 280)
                                 }
                                 if (uiState.androidWidgetId != -1) {
                                     SettingRow(label = stringResource(R.string.remove_android_widget), value = "") {
@@ -1428,13 +1441,24 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
             }
             val widgetApps = loadedApps
             if (widgetApps == null) {
-                SheetTitle(stringResource(R.string.choose_app))
                 Text(
-                    text = stringResource(R.string.loading_generic),
-                    style = SettingsTheme.typography.item,
-                    color = Theme.colors.text.copy(alpha = 0.6f),
-                    modifier = Modifier.padding(vertical = 24.dp)
+                    text = stringResource(R.string.choose_app),
+                    style = SettingsTheme.typography.header,
+                    fontWeight = FontWeight.Bold,
+                    color = Theme.colors.text,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                 )
+                // 固定高度占位：避免加载完成时内容突然变高，sheet 停在半开状态
+                Box(
+                    modifier = Modifier.fillMaxWidth().height(440.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.loading_generic),
+                        style = SettingsTheme.typography.item,
+                        color = Theme.colors.text.copy(alpha = 0.6f)
+                    )
+                }
                 return@showDialog
             }
             val startPackage = initialAppPackage
