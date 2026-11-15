@@ -1514,22 +1514,14 @@ private fun MultiChoiceRow(
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(20.dp)
-                .border(1.5.dp, rowTextColor, checkShape)
-                .then(if (checked) Modifier.background(rowTextColor, checkShape) else Modifier),
-            contentAlignment = Alignment.Center
-        ) {
-            if (checked) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = rowBgColor,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
+        RadioButton(
+            selected = checked,
+            onClick = null,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = rowTextColor,
+                unselectedColor = rowTextColor
+            )
+        )
         Spacer(Modifier.width(12.dp))
         if (appIcon != null) {
             val bmp = remember(appIcon) {
@@ -1682,22 +1674,14 @@ private fun GroupHeader(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(20.dp)
-                .border(1.5.dp, rowTextColor, checkShape)
-                .then(if (isFullySelected) Modifier.background(rowTextColor, checkShape) else Modifier),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isFullySelected) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = rowBgColor,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
+        RadioButton(
+            selected = isFullySelected,
+            onClick = null,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = rowTextColor,
+                unselectedColor = rowTextColor
+            )
+        )
         Spacer(Modifier.width(12.dp))
         Text(
             groupName,
@@ -1736,22 +1720,14 @@ private fun ShortcutItemRow(
             ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(20.dp)
-                .border(1.5.dp, rowTextColor, checkShape)
-                .then(if (isSelected) Modifier.background(rowTextColor, checkShape) else Modifier),
-            contentAlignment = Alignment.Center
-        ) {
-            if (isSelected) {
-                Icon(
-                    imageVector = Icons.Rounded.Check,
-                    contentDescription = null,
-                    tint = rowBgColor,
-                    modifier = Modifier.size(14.dp)
-                )
-            }
-        }
+        RadioButton(
+            selected = isSelected,
+            onClick = null,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = rowTextColor,
+                unselectedColor = rowTextColor
+            )
+        )
         Spacer(Modifier.width(12.dp))
         Text(
             "• ${item.label}",
