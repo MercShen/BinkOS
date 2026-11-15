@@ -155,4 +155,4 @@ $ADB shell am start -n $APP/$MAIN --es dest editmode_on
 |---|---|
 | 点小组件**本体** | 打开小组件设置面板（FUNCTION / STYLE / GESTURES） |
 | 点**铅笔**图标 | 打开「CHOOSE APP → 该 App 的组件列表」选择器 |
-| 选择器里 App 列表顶部的 `← Back` | 回到小组件设置面板 |
+| 选择器里 `CHOOSE APP` 左侧的返回箭头 | 回到小组件设置面板 |

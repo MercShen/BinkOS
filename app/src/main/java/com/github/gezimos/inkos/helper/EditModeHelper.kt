@@ -2868,36 +2868,30 @@ internal fun WidgetAppListContent(
                     onClose()
                 }
             }
-            if (onBack != null) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onBack() }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (onBack != null) {
                     androidx.compose.foundation.Image(
                         painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_back),
                         contentDescription = stringResource(R.string.btn_back),
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable { onBack() }
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = stringResource(R.string.btn_back),
-                        style = SettingsTheme.typography.item,
-                        color = Theme.colors.text
-                    )
+                    Spacer(modifier = Modifier.width(10.dp))
                 }
+                Text(
+                    text = stringResource(R.string.choose_app),
+                    style = SettingsTheme.typography.header,
+                    fontWeight = FontWeight.Bold,
+                    color = Theme.colors.text,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Start
+                )
             }
-
-            Text(
-                text = stringResource(R.string.choose_app),
-                style = SettingsTheme.typography.header,
-                fontWeight = FontWeight.Bold,
-                color = Theme.colors.text,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                textAlign = TextAlign.Start
-            )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
