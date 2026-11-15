@@ -13,7 +13,7 @@
 | 快捷方式图标选择 | `LazyRow` 横向滚动，`ComposeBottomSheet.kt` `ShortcutIconPickerSheet` | [shortcut-icon-picker.png](images/scroll-audit/shortcut-icon-picker.png) | 原仅编辑模式可达，已加 `dest shortcuticon` |
 | 角标样式选择 | `LazyRow` 横向滚动，`ComposeBottomSheet.kt` `BadgeIndicatorPickerSheet` | [badge-indicator-picker.png](images/scroll-audit/badge-indicator-picker.png) | 同上，已加 `dest badgeindicator` |
 | 单选列表（语言等） | `LazyColumn`，`SingleChoiceSheet` | [single-choice-language.png](images/scroll-audit/single-choice-language.png) | 项数少，滚动压力低 |
-| 多选列表（标注通知应用等） | `LazyColumn`，`MultiChoiceSheet` | [multi-choice.png](images/scroll-audit/multi-choice.png) | 应用数多，滚动最长 |
+| ~~多选列表（标注通知应用等）~~ | 已改为按可用高度分页 + 搜索（`MultiChoiceSheet`，v0.2.6） | [multi-choice.png](images/scroll-audit/multi-choice.png) | 见下方「已翻页」 |
 | 分组多选 / 分组快捷方式 | `LazyColumn`，`GroupedMultiChoiceSheet` / `TabbedShortcutsSheet` | — | 分组头 + 子项，暂未单独截图 |
 | 字体选择（分 Tab） | `LazyColumn`，`TabbedFontPickerSheet` | [font-picker.png](images/scroll-audit/font-picker.png) | 字体预览行较高，滚动观感尚可 |
 | 手势动作选择 | 3 段 `LazyColumn`，`GestureActionPickerSheet` | [gesture-action-picker.png](images/scroll-audit/gesture-action-picker.png) | 分区列表，项目多 |
@@ -34,6 +34,8 @@
 | Onboarding | 分页 |
 | 小组件选择·应用列表（第一级） | 按可用高度分页（`chunked(rowsPerPage)` + 左右滑） | [paged-app-list.png](images/scroll-audit/paged-app-list.png) |
 | 图标样式选择 sheet | `BoxWithConstraints` 计算每页卡片数 |
+| 多选列表（标注通知应用） | 按可用高度分页 + 搜索框（`MultiChoiceSheet`） |
+| 角标样式选择 | 按宽度分页 + 页码圆点（`BadgeIndicatorPickerSheet`） |
 
 ## 三、建议顺序
 
