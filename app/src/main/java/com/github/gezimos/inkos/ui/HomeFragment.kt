@@ -1040,6 +1040,27 @@ class HomeFragmentCompose : Fragment() {
         }
     }
 
+    fun automationShowClockSettings(tab: Int) {
+        if (!isAdded) return
+        EditModeHelper.showClockSettings(requireContext(), this, prefs, initialTab = tab) {
+            viewModel.refreshHomeAppsUiState(requireContext())
+        }
+    }
+
+    fun automationShowDateSettings(tab: Int) {
+        if (!isAdded) return
+        EditModeHelper.showDateSettings(requireContext(), this, prefs, initialTab = tab) {
+            viewModel.refreshHomeAppsUiState(requireContext())
+        }
+    }
+
+    fun automationShowAppSettings(tab: Int) {
+        if (!isAdded) return
+        EditModeHelper.showAppSettings(requireContext(), this, prefs, initialTabIndex = tab) {
+            viewModel.refreshHomeAppsUiState(requireContext())
+        }
+    }
+
 
     private fun showQuickMenuWithAuth() {
         if (prefs.settingsLocked) {

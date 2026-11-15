@@ -283,15 +283,15 @@ object EditModeHelper {
             }
         )
     }
-    fun showClockSettings(context: Context, fragment: Fragment, prefs: Prefs, onUpdate: () -> Unit) {
+fun showClockSettings(context: Context, fragment: Fragment, prefs: Prefs, initialTab: Int = 0, onUpdate: () -> Unit) {
         currentSheet?.dismiss()
 
         val dialogManager = ComposeDialogManager(context, fragment.requireActivity())
-        dialogManager.onAfterDismiss = { showClockSettings(context, fragment, prefs, onUpdate) }
+        dialogManager.onAfterDismiss = { showClockSettings(context, fragment, prefs, initialTab = initialTab, onUpdate = onUpdate) }
         val vm = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
 
         showDialog(context, prefs) {
-            val selectedTabIndex = remember { mutableStateOf(0) }
+            val selectedTabIndex = remember { mutableStateOf(initialTab.coerceIn(0, 2)) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
             val clockTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); 1 -> stringResource(R.string.tab_function); else -> stringResource(R.string.tab_gestures) }
@@ -454,15 +454,15 @@ object EditModeHelper {
             }
         }
     }
-    fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, onUpdate: () -> Unit) {
+fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initialTab: Int = 0, onUpdate: () -> Unit) {
         currentSheet?.dismiss()
 
         val dialogManager = ComposeDialogManager(context, fragment.requireActivity())
-        dialogManager.onAfterDismiss = { showDateSettings(context, fragment, prefs, onUpdate) }
+        dialogManager.onAfterDismiss = { showDateSettings(context, fragment, prefs, initialTab = initialTab, onUpdate = onUpdate) }
         val vm = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
 
         showDialog(context, prefs) {
-            val selectedTabIndex = remember { mutableStateOf(0) }
+            val selectedTabIndex = remember { mutableStateOf(initialTab.coerceIn(0, 2)) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
             val dateTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_style); 1 -> stringResource(R.string.tab_function); else -> stringResource(R.string.tab_gestures) }

@@ -315,6 +315,9 @@ class MainActivity : AppCompatActivity() {
                     "edit_bg_gestures" -> {
                         findHomeFragment()?.automationShowBackgroundSettings(3)
                     }
+                    "edit_clock" -> findHomeFragment()?.automationShowClockSettings(intent.getIntExtra("tab", 0))
+                    "edit_date" -> findHomeFragment()?.automationShowDateSettings(intent.getIntExtra("tab", 0))
+                    "edit_apps" -> findHomeFragment()?.automationShowAppSettings(intent.getIntExtra("tab", 0))
                     "editmode_on", "edit_on" -> window.decorView.postDelayed({
                         com.github.gezimos.inkos.helper.EditModeHelper.setEditMode(true)
                     }, 600)

@@ -141,3 +141,11 @@ $ADB shell am start -n $APP/$MAIN --es dest editmode_on
 ```
 
 面板里 `Margin/Offset` 的滑块面板仍需点那一行打开（没有单独 dest）。
+### 编辑模式下各区域打开的面板
+
+| 点哪里 | 面板 | 标签页 | dest |
+|---|---|---|---|
+| 空白处 | 背景/主题设置 | 主题 / 对齐 / 岛屿与圆角 / 手势 | `edit_bg --ei tab N`（或 `edit_bg_theme` 等） |
+| 时钟 | STYLE | 样式（Clock Size/Font/Style/Typography）/ 功能 / 手势 | `edit_clock --ei tab N` |
+| 日期 | STYLE | 样式（Date Size/Font/Typography）/ 功能 / 手势 | `edit_date --ei tab N` |
+| 主页应用列表 | STYLE | 字体 / 大小与间距 / 名称类型 / 排版 | `edit_apps --ei tab N` |

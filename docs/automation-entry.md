@@ -52,6 +52,9 @@ adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity \
 | `quick_menu` | 打开编辑模式快捷菜单（= 捏合手势弹出的 QUICK MENU） |
 | `edit_bg` | 直接打开背景设置面板，`--ei tab 0..3`（0 主题 / 1 对齐 / 2 岛屿与圆角 / 3 手势） |
 | `edit_bg_theme` `edit_bg_align` `edit_bg_islands` `edit_bg_gestures` | 同上，分别直达四个标签页 |
+| `edit_clock` | 时钟面板，`--ei tab 0..2`（样式 / 功能 / 手势） |
+| `edit_date` | 日期面板，`--ei tab 0..2` |
+| `edit_apps` | 应用列表面板，`--ei tab 0..3`（字体 / 大小与间距 / 名称类型 / 排版） |
 | `home_next` / `home_prev` | 主页翻到下一页 / 上一页（横滑会触发长滑快捷方式，截图验证页码用这个） |
 | `bottomwidget` | 底部小部件类型，需 `--es type android|shortcuts|quote|events|usage|pagedots|off` |
 | `bottom_android` `bottom_shortcuts` `bottom_quote` `bottom_events` `bottom_usage` `bottom_pagedots` `bottom_off` | 直接切到对应底部小部件 |
