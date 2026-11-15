@@ -17,6 +17,8 @@
 | 设置项没有自动化入口时 | 先用本文的 state dest 设置；确实没有再加 dest，不要写死坐标 |
 | 截图验证 | `adb exec-out screencap -p > x.png`，配合字节大小/哈希对比判断是否有变化 |
 | 默认桌面 | `tools/home.ps1 debug`，测试完保持最近测试的包 |
+| 主页翻页截图 | 用 `dest home_next` / `dest home_prev`；横滑会触发**长滑快捷方式**，不要用滑 |
+| 主页页码看起来没变 | 先看 logcat 里 `home_next before/after` 的页码；主屏「Home Page Reset」开启时，每次回到主屏都会回第 1 页 |
 
 ---
 
