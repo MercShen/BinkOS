@@ -223,9 +223,9 @@
     <string name="enable_bottom_navigation">Enable Bottom Navigation</string>
     <string name="no_notifications">No notifications</string>
     <string name="letters_screen_title">Letters</string>
-    <string name="simple_tray_title">Simple Tray</string>
-    <string name="simple_tray_allowlist">Simple Tray Allowlist</string>
-    <string name="simple_tray_apps">Simple Tray Apps</string>
+    <string name="simple_tray_title">Simple Tray &amp; Hub</string>
+    <string name="simple_tray_allowlist">Simple Tray &amp; Hub Allowlist</string>
+    <string name="simple_tray_apps">Simple Tray &amp; Hub Apps</string>
     <string name="hub_allowlist">Hub Allowlist</string>
     <string name="hub_apps">Hub Apps</string>
 

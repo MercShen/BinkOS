@@ -223,9 +223,9 @@
     <string name="enable_bottom_navigation">启用底部导航</string>
     <string name="no_notifications">无通知</string>
     <string name="letters_screen_title">信笺</string>
-    <string name="simple_tray_title">简易托盘</string>
-    <string name="simple_tray_allowlist">简易托盘白名单</string>
-    <string name="simple_tray_apps">简易托盘应用</string>
+    <string name="simple_tray_title">简易托盘与中枢</string>
+    <string name="simple_tray_allowlist">简易托盘与中枢白名单</string>
+    <string name="simple_tray_apps">简易托盘与中枢应用</string>
     <string name="hub_allowlist">中枢白名单</string>
     <string name="hub_apps">中枢应用</string>
 
