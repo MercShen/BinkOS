@@ -168,9 +168,9 @@ class ComposeBottomSheetHost(private val activity: Activity) {
     init {
         activeHosts.add(java.lang.ref.WeakReference(this))
         (activity as? LifecycleOwner)?.lifecycle?.addObserver(LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_DESTROY) {
+            if (event == Lifecycle.Event.ON_STOP || event == Lifecycle.Event.ON_DESTROY) {
                 isAnySheetShowing = false
-                composeView = null
+                try { dismiss() } catch (_: Exception) { composeView = null }
             }
         })
     }

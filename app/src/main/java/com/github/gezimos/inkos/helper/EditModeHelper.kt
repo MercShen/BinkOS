@@ -27,6 +27,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import com.github.gezimos.inkos.ui.dialogs.IconStylePickerSheet
 import com.github.gezimos.inkos.ui.dialogs.SheetTabRow
 import androidx.compose.material3.Text
@@ -1327,7 +1330,8 @@ object EditModeHelper {
                         prefs.lastWidgetAppPackage = it.packageName
                         selectedApp.value = it
                     },
-                    onClose = { currentSheet?.dismiss() }
+                    onClose = { currentSheet?.dismiss() },
+                    textIslandsShape = prefs.textIslandsShape
                 )
             } else {
                 WidgetListContent(
@@ -2718,7 +2722,8 @@ internal fun WidgetAppListContent(
     context: Context,
     widgetApps: List<AppWidgetHelper.WidgetApp>,
     onAppSelected: (AppWidgetHelper.WidgetApp) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    textIslandsShape: Int = 0
 ) {
     val screenScale = rememberScreenScale()
     var query by remember { mutableStateOf("") }
@@ -2737,7 +2742,7 @@ internal fun WidgetAppListContent(
 
     // 按弹窗可用高度算每页行数：不同屏幕尺寸/UI 缩放都能装满一页且不留半行
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val reservedForChrome = 190.dp // 标题 + 搜索框 + 页码条 + 关闭 + 间距
+        val reservedForChrome = 172.dp // 标题 + 搜索框 + 页码条 + 间距（关闭按钮已移除）
         val usable = (maxHeight - reservedForChrome).coerceAtLeast(rowHeight * 3)
         val rowsPerPage = (usable / rowHeight).toInt().coerceIn(3, 14)
 
@@ -2750,7 +2755,28 @@ internal fun WidgetAppListContent(
         }
         var pageDragX by remember { mutableStateOf(0f) }
 
+        var verticalPull by remember { mutableStateOf(0f) }
         Column(modifier = Modifier.fillMaxWidth()) {
+            // 顶部空白 + 下拉/点击关闭（替代原来的“关闭”按钮）
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(16.dp)
+                    .pointerInput(Unit) {
+                        detectVerticalDragGestures(onVerticalDrag = { _, dragAmount ->
+                            if (dragAmount > 0f) verticalPull += dragAmount
+                        })
+                    }
+                    .pointerInput(Unit) {
+                        detectTapGestures(onTap = { onClose() })
+                    }
+            )
+            androidx.compose.runtime.LaunchedEffect(verticalPull) {
+                if (verticalPull > 40f) {
+                    verticalPull = 0f
+                    onClose()
+                }
+            }
             Text(
                 text = stringResource(R.string.choose_app),
                 style = SettingsTheme.typography.header,
@@ -2842,14 +2868,20 @@ internal fun WidgetAppListContent(
                                     .clickable { if (pageIndex > 0) pageIndex-- }
                             )
                             Spacer(modifier = Modifier.width(12.dp))
+                            val dotSize = 12.dp.scaled(screenScale)
+                            val dotSpacing = (12f * 0.8f).dp.scaled(screenScale)
+                            val dotBorder = (12f / 6f).dp.scaled(screenScale)
+                            val dotShape = if (textIslandsShape == 0) CircleShape else androidx.compose.foundation.shape.RoundedCornerShape(4.dp.scaled(screenScale))
                             for (i in 0 until pageCount) {
+                                val selected = i == pageIndex
                                 Box(
                                     modifier = Modifier
-                                        .padding(horizontal = 4.dp)
-                                        .size(8.dp)
+                                        .padding(horizontal = dotSpacing / 2)
+                                        .size(dotSize)
+                                        .background(if (selected) Theme.colors.text else Theme.colors.background, dotShape)
                                         .then(
-                                            if (i == pageIndex) Modifier.background(Theme.colors.text)
-                                            else Modifier.border(1.dp, Theme.colors.text, androidx.compose.foundation.shape.CircleShape)
+                                            if (!selected) Modifier.border(dotBorder, Theme.colors.text, dotShape)
+                                            else Modifier
                                         )
                                 )
                             }
@@ -2864,11 +2896,6 @@ internal fun WidgetAppListContent(
                             )
                         }
                     }
-                }
-            }
-            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.End) {
-                androidx.compose.material3.TextButton(onClick = onClose) {
-                    Text(stringResource(R.string.close), color = Theme.colors.text)
                 }
             }
         }

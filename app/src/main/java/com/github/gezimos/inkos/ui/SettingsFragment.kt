@@ -1340,7 +1340,8 @@ class SettingsFragment : Fragment() {
                                         prefs.lastWidgetAppPackage = it.packageName
                                         selectedApp.value = it
                                     },
-                                    onClose = { dialogBuilder.dismissAll() }
+                                    onClose = { dialogBuilder.dismissAll() },
+                                    textIslandsShape = prefs.textIslandsShape
                                 )
                             } else {
                                 com.github.gezimos.inkos.helper.WidgetListContent(
