@@ -303,6 +303,14 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                             val screenScale = rememberScreenScale()
                             val swallowDragConnection = remember {
                                 object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+                                    override fun onPreScroll(
+                                        available: Offset,
+                                        source: androidx.compose.ui.input.nestedscroll.NestedScrollSource
+                                    ): Offset {
+                                        // 内容区向下拖时先吃掉手势，避免整个面板被拖走关闭
+                                        return if (available.y > 0) available else Offset.Zero
+                                    }
+
                                     override fun onPostScroll(
                                         consumed: Offset,
                                         available: Offset,
@@ -316,6 +324,7 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .nestedScroll(swallowDragConnection)
+                                    .heightIn(max = (androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp - 24).dp)
 .padding(start = 24.dp.scaled(screenScale), end = 24.dp.scaled(screenScale), top = 6.dp.scaled(screenScale))
                             ) {
                                 val sheetOpenTime = remember { System.currentTimeMillis() }

@@ -1451,7 +1451,12 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
                 )
                 // 固定高度占位：避免加载完成时内容突然变高，sheet 停在半开状态
                 Box(
-                    modifier = Modifier.fillMaxWidth().height(440.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            (((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp - 200) / 56)
+                                .coerceIn(3, 11) * 56 + 172).dp
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
@@ -2901,7 +2906,9 @@ internal fun WidgetAppListContent(
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
         val reservedForChrome = 172.dp // 标题 + 搜索框 + 页码条 + 间距（关闭按钮已移除）
         val usable = (maxHeight - reservedForChrome).coerceAtLeast(rowHeight * 3)
-        val rowsPerPage = (usable / rowHeight).toInt().coerceIn(3, 14)
+        // 再按整屏高度兜底，避免内容高过屏幕导致底部被裁掉（翻页条看不见）
+        val screenMaxRows = ((androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp - 200) / rowHeight.value).toInt().coerceAtLeast(3)
+        val rowsPerPage = (usable / rowHeight).toInt().coerceIn(3, 14).coerceAtMost(screenMaxRows)
 
         var pageIndex by remember { mutableStateOf(0) }
         val pages = remember(apps, rowsPerPage) { apps.chunked(rowsPerPage) }
@@ -2913,7 +2920,14 @@ internal fun WidgetAppListContent(
         var pageDragX by remember { mutableStateOf(0f) }
 
         var verticalPull by remember { mutableStateOf(0f) }
-        Column(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                // 吞掉纵向拖动：列表内下滑不应把整个面板拖走关闭
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures { change, _ -> change.consume() }
+                }
+        ) {
             // 顶部空白 + 下拉/点击关闭（替代原来的“关闭”按钮）
             Box(
                 modifier = Modifier
