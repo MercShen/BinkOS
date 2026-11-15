@@ -3088,7 +3088,7 @@ internal fun WidgetListContent(
 ) {
     Box(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         androidx.compose.material3.TextButton(onClick = onBack) {
-            Text(stringResource(R.string.btn_back_arrow), color = Theme.colors.text)
+            Text(stringResource(R.string.choose_another_app), color = Theme.colors.text, fontSize = 14.sp)
         }
         Text(
             text = app.appLabel.uppercase(),
@@ -3096,8 +3096,8 @@ internal fun WidgetListContent(
             fontWeight = FontWeight.Bold,
             color = Theme.colors.text,
             modifier = Modifier
-                .align(Alignment.Center)
-                .padding(horizontal = 72.dp),
+                .align(Alignment.CenterEnd)
+                .padding(end = 12.dp),
             textAlign = TextAlign.Center
         )
     }
