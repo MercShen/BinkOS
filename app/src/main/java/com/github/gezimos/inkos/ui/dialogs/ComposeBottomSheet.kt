@@ -200,13 +200,27 @@ class ComposeBottomSheetHost(private val activity: Activity) {
         }
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    /**
+     * 排到下一帧再真正弹出：先 dismiss 旧面板，给旧 dialog 窗口一帧时间销毁，
+     * 避免两个 sheet 窗口同帧并存（表现为旧面板残影/底部断痕）。
+     */
     fun show(
         skipPartiallyExpanded: Boolean = true,
         content: @Composable () -> Unit
     ) {
         if (isAnySheetShowing) return
         dismiss()
+        android.os.Handler(android.os.Looper.getMainLooper()).post {
+            present(skipPartiallyExpanded, content)
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    private fun present(
+        skipPartiallyExpanded: Boolean = true,
+        content: @Composable () -> Unit
+    ) {
+        if (isAnySheetShowing) return
         activeHosts.removeAll { it.get() == null || it.get() === this }
         activeHosts.add(java.lang.ref.WeakReference(this))
         isAnySheetShowing = true
