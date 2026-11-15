@@ -239,7 +239,8 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
         initialChecked: BooleanArray,
         onConfirm: (selectedIndices: List<Int>) -> Unit,
         maxHeightRatio: Float = 0.60f,
-        showSelectAll: Boolean = false
+        showSelectAll: Boolean = false,
+        iconPackages: Array<out String?>? = null
     ) {
         sheetHost.show {
             MultiChoiceSheet(
@@ -248,7 +249,8 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 initialChecked = initialChecked,
                 onConfirm = onConfirm,
                 onDismiss = sheetHost::dismiss,
-                showSelectAll = showSelectAll
+                showSelectAll = showSelectAll,
+                iconPackages = iconPackages
             )
         }
     }

@@ -2668,6 +2668,7 @@ class SettingsFragment : Fragment() {
                 dialogBuilder.showMultiChoiceDialog(
                     context = requireContext(), title = title,
                     items = appLabels.toTypedArray(), initialChecked = checkedItems, maxHeightRatio = 0.60f,
+                    iconPackages = appPackages.toTypedArray(),
                     showSelectAll = true,
                     onConfirm = { selectedIndices ->
                         val selectedPkgs = selectedIndices.map { idx ->

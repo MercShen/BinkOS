@@ -1264,7 +1264,8 @@ fun MultiChoiceSheet(
     initialChecked: BooleanArray,
     onConfirm: (List<Int>) -> Unit,
     onDismiss: () -> Unit,
-    showSelectAll: Boolean = false
+    showSelectAll: Boolean = false,
+    iconPackages: Array<out String?>? = null
 ) {
     val checkedList = remember {
         mutableStateListOf<Boolean>().apply { addAll(initialChecked.toList()) }
@@ -1392,6 +1393,7 @@ fun MultiChoiceSheet(
                             bgColor = bgColor,
                             checkShape = checkShape,
                             minHeight = rowHeight,
+                            iconPackage = iconPackages?.getOrNull(index),
                             onToggle = { checkedList[index] = it }
                         )
                     }
@@ -1485,8 +1487,15 @@ private fun MultiChoiceRow(
     bgColor: Color,
     checkShape: androidx.compose.ui.graphics.Shape = RoundedCornerShape(4.dp),
     minHeight: androidx.compose.ui.unit.Dp = 0.dp,
+    iconPackage: String? = null,
     onToggle: (Boolean) -> Unit
 ) {
+    val context = LocalContext.current
+    val appIcon = remember(iconPackage) {
+        iconPackage?.let { pkg ->
+            try { context.packageManager.getApplicationIcon(pkg) } catch (_: Exception) { null }
+        }
+    }
     val interactionSource = remember { MutableInteractionSource() }
     val isFocused = interactionSource.collectIsFocusedAsState().value
     val rowTextColor = if (isFocused) bgColor else textColor
@@ -1522,6 +1531,16 @@ private fun MultiChoiceRow(
             }
         }
         Spacer(Modifier.width(12.dp))
+        if (appIcon != null) {
+            val bmp = remember(appIcon) {
+                com.github.gezimos.inkos.helper.IconUtility.drawableToBitmap(appIcon, 96).asImageBitmap()
+            }
+            androidx.compose.foundation.Image(
+                painter = androidx.compose.ui.graphics.painter.BitmapPainter(bmp),
+                contentDescription = null,
+                modifier = Modifier.height(28.dp).padding(end = 10.dp)
+            )
+        }
         Text(label, style = SettingsTheme.typography.item, color = rowTextColor)
     }
 }

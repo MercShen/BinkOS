@@ -2183,6 +2183,7 @@ object EditModeHelper {
                                         items = appLabels.toTypedArray(),
                                         initialChecked = checkedItems,
                                         maxHeightRatio = 0.60f,
+                                        iconPackages = appPackages.toTypedArray(),
                                         onConfirm = { selectedIndices ->
                                             val selectedPkgs = selectedIndices.map { idx ->
                                                 val pkg = appPackages[idx]
@@ -2260,6 +2261,7 @@ object EditModeHelper {
                                 items = appLabels.toTypedArray(),
                                 initialChecked = checkedItems,
                                 maxHeightRatio = 0.60f,
+                                iconPackages = appPackages.toTypedArray(),
                                 onConfirm = { selectedIndices ->
                                     val selectedPkgs = selectedIndices.map { idx ->
                                         val pkg = appPackages[idx]
@@ -2333,6 +2335,7 @@ object EditModeHelper {
                                 items = appLabels.toTypedArray(),
                                 initialChecked = checkedItems,
                                 maxHeightRatio = 0.60f,
+                                iconPackages = appPackages.toTypedArray(),
                                 onConfirm = { selectedIndices ->
                                     val selectedPkgs = selectedIndices.map { idx ->
                                         val pkg = appPackages[idx]
