@@ -29,7 +29,8 @@
 |---|---|
 | 主屏应用、App 抽屉、最近任务 | 分页状态 + 滑动切页（`userScrollEnabled = false` 的 `LazyColumn` 只负责每页布局） |
 | 来信 `LettersFragment` | `VerticalPager`，一屏一条 |
-| 通知中心 Hub / 简易托盘 | `SimplePagerState` 分页 |
+| 简易托盘 | `SimplePagerState` 分页（每页 = Notifications Per Page） |
+| 通知中心 Hub | 分类 Tab + 单页滚动列表（**不是分页**；`*3` 只用于键盘/索引换算） |
 | 壁纸画廊 | 按页切换 |
 | Onboarding | 分页 |
 | 小组件选择·应用列表（第一级） | 按可用高度分页（`chunked(rowsPerPage)` + 左右滑） | [paged-app-list.png](images/scroll-audit/paged-app-list.png) |
