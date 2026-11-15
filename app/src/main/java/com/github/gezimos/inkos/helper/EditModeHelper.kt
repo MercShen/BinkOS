@@ -1402,7 +1402,7 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
         }
 
         showDialog(context, prefs) {
-            val startPackage = initialAppPackage ?: prefs.lastWidgetAppPackage
+            val startPackage = initialAppPackage
             val initialApp = remember(widgetApps, startPackage) {
                 widgetApps.firstOrNull { it.packageName == startPackage }
             }
@@ -1414,7 +1414,7 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
                     context = context,
                     widgetApps = widgetApps,
                     onAppSelected = { 
-                        prefs.lastWidgetAppPackage = it.packageName
+                        // 不记忆上次选择的应用，由调用方（笔图标）决定初始列表
                         selectedApp.value = it
                     },
                     onClose = { currentSheet?.dismiss() },
