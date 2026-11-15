@@ -49,6 +49,9 @@ adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity \
 | `pager_on` / `pager_off` | 主页页码指示器开关 |
 | `pager_margin` | 页码指示器留白(0..12)，`--ei value N`；0 = 贴安全区虚线 |
 | `home_reset_off` / `home_reset_on` | 主屏「Home Page Reset」开关（新装默认关） |
+| `quick_menu` | 打开编辑模式快捷菜单（= 捏合手势弹出的 QUICK MENU） |
+| `edit_bg` | 直接打开背景设置面板，`--ei tab 0..3`（0 主题 / 1 对齐 / 2 岛屿与圆角 / 3 手势） |
+| `edit_bg_theme` `edit_bg_align` `edit_bg_islands` `edit_bg_gestures` | 同上，分别直达四个标签页 |
 | `home_next` / `home_prev` | 主页翻到下一页 / 上一页（横滑会触发长滑快捷方式，截图验证页码用这个） |
 | `bottomwidget` | 底部小部件类型，需 `--es type android|shortcuts|quote|events|usage|pagedots|off` |
 | `bottom_android` `bottom_shortcuts` `bottom_quote` `bottom_events` `bottom_usage` `bottom_pagedots` `bottom_off` | 直接切到对应底部小部件 |

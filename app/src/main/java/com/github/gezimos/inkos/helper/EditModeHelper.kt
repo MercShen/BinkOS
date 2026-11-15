@@ -1004,15 +1004,15 @@ object EditModeHelper {
             }
         }
     }
-    fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, onUpdate: () -> Unit) {
+fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, initialTab: Int = 0, onUpdate: () -> Unit) {
         currentSheet?.dismiss()
 
         val dialogManager = ComposeDialogManager(context, fragment.requireActivity())
-        dialogManager.onAfterDismiss = { showBackgroundSettings(context, fragment, prefs, onUpdate) }
+        dialogManager.onAfterDismiss = { showBackgroundSettings(context, fragment, prefs, onUpdate = onUpdate) }
         val vm = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
         
         showDialog(context, prefs) {
-            val selectedTabIndex = remember { mutableStateOf(0) }
+            val selectedTabIndex = remember { mutableStateOf(initialTab.coerceIn(0, 3)) }
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
             val bgTitle = when (selectedTabIndex.value) { 0 -> stringResource(R.string.tab_theme); 1 -> stringResource(R.string.tab_alignment); 2 -> stringResource(R.string.tab_islands_corners); else -> stringResource(R.string.tab_gestures) }

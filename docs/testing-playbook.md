@@ -117,3 +117,27 @@ $ADB shell am start -n $APP/$MAIN --es dest settings        # 进入设置根（
 tools/home.ps1 debug      # 确认默认桌面仍是刚测的包
 git status                # 确认没有遗漏改动
 ```
+## 6. 编辑模式（人机交互 + 自动化入口）
+
+人类路径：
+
+1. **捏合**主屏 → 弹出 `QUICK MENU`（Bink OS Settings / Edit Mode / Edit Favorites / Look & Feel / About）
+2. 点 `Edit Mode` → 进入编辑模式（虚线安全框 + 拖拽手柄）
+3. 编辑模式下**长按空白处** → 打开背景设置面板（顶部四个图标标签：主题 / 对齐 / 岛屿与圆角 / 手势）
+4. `对齐` 标签里的 `Margin/Offset` 行 → 打开滑块面板（Top/Bottom widget offset、Home apps X/Y、Page Indicators Margin）
+
+自动化对应：
+
+```bash
+# 快捷菜单（等价捏合）
+$ADB shell am start -n $APP/$MAIN --es dest quick_menu
+# 背景设置面板，直达标签
+$ADB shell am start -n $APP/$MAIN --es dest edit_bg_align      # 对齐
+$ADB shell am start -n $APP/$MAIN --es dest edit_bg_theme
+$ADB shell am start -n $APP/$MAIN --es dest edit_bg_islands
+$ADB shell am start -n $APP/$MAIN --es dest edit_bg_gestures
+# 旧的通用入口
+$ADB shell am start -n $APP/$MAIN --es dest editmode_on
+```
+
+面板里 `Margin/Offset` 的滑块面板仍需点那一行打开（没有单独 dest）。

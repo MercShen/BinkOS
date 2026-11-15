@@ -1027,6 +1027,20 @@ class HomeFragmentCompose : Fragment() {
         )
     }
 
+    // --- 自动化入口（adb --es dest ... 调用） ---
+    fun automationShowQuickMenu() {
+        if (!isAdded) return
+        showQuickMenuWithAuth()
+    }
+
+    fun automationShowBackgroundSettings(tab: Int) {
+        if (!isAdded) return
+        EditModeHelper.showBackgroundSettings(requireContext(), this, prefs, initialTab = tab) {
+            viewModel.refreshHomeAppsUiState(requireContext())
+        }
+    }
+
+
     private fun showQuickMenuWithAuth() {
         if (prefs.settingsLocked) {
             biometricHelper.startBiometricSettingsAuth(object : BiometricHelper.CallbackSettings {

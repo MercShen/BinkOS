@@ -228,6 +228,18 @@ class MainActivity : AppCompatActivity() {
      *
      * @return true 表示这条 intent 已被自动化入口处理，调用方不必再走普通分支。
      */
+    private fun findHomeFragment(): com.github.gezimos.inkos.ui.HomeFragmentCompose? {
+        fun walk(f: androidx.fragment.app.Fragment?): com.github.gezimos.inkos.ui.HomeFragmentCompose? {
+            if (f == null) return null
+            if (f is com.github.gezimos.inkos.ui.HomeFragmentCompose) return f
+            for (child in f.childFragmentManager.fragments) {
+                walk(child)?.let { return it }
+            }
+            return null
+        }
+        return walk(supportFragmentManager.findFragmentById(R.id.nav_host_fragment))
+    }
+
     private fun handleAutomationIntent(intent: Intent?): Boolean {
         intent ?: return false
         if (!::navController.isInitialized) return false
@@ -282,6 +294,27 @@ class MainActivity : AppCompatActivity() {
                     "guide" -> navController.navigate(R.id.guideFragment)
                     "onboarding" -> navController.navigate(R.id.onboardingFragment)
                     "editmode", "edit_mode" -> com.github.gezimos.inkos.helper.EditModeHelper.toggleEditMode()
+                    "quick_menu" -> {
+                        val home = findHomeFragment()
+                        home?.automationShowQuickMenu()
+                    }
+                    "edit_bg", "edit_background" -> {
+                        val tab = intent.getIntExtra("tab", 0)
+                        val home = findHomeFragment()
+                        home?.automationShowBackgroundSettings(tab)
+                    }
+                    "edit_bg_theme" -> {
+                        findHomeFragment()?.automationShowBackgroundSettings(0)
+                    }
+                    "edit_bg_align" -> {
+                        findHomeFragment()?.automationShowBackgroundSettings(1)
+                    }
+                    "edit_bg_islands" -> {
+                        findHomeFragment()?.automationShowBackgroundSettings(2)
+                    }
+                    "edit_bg_gestures" -> {
+                        findHomeFragment()?.automationShowBackgroundSettings(3)
+                    }
                     "editmode_on", "edit_on" -> window.decorView.postDelayed({
                         com.github.gezimos.inkos.helper.EditModeHelper.setEditMode(true)
                     }, 600)
