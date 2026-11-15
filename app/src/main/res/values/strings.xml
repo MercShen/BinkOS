@@ -320,7 +320,7 @@
     <string name="date_click_app">Click on Date</string>
     <string name="quote_click_app">Click on Quote</string>
     <string name="edit_gestures_settings_toast">Edit actions &amp; Gestures in Settings/Gestures</string>
-    <string name="swipe_movement">Swipe Movement</string>
+    <string name="swipe_movement">Long Swipe Shortcuts</string>
     <string name="swipe_left_app">Swipe left</string>
     <string name="swipe_right_app">Swipe right</string>
     <string name="swipe_up_app">Swipe up</string>

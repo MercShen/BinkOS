@@ -2869,16 +2869,22 @@ internal fun WidgetAppListContent(
                             val dotShape = if (textIslandsShape == 0) CircleShape else ShapeHelper.getRoundedCornerShape(textIslandsShape, roundedRadius = 4.dp.scaled(screenScale))
                             for (i in 0 until pageCount) {
                                 val selected = i == pageIndex
+                                val thisSize = if (selected) dotSize else dotSize * (10f / 12f)
+                                val thisShape = ShapeHelper.getPageDotShape(textIslandsShape, thisSize)
                                 Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = dotSpacing / 2)
-                                        .size(if (selected) dotSize else dotSize * (10f / 12f))
-                                        .background(if (selected) Theme.colors.text else Theme.colors.background, dotShape)
-                                        .then(
-                                            if (!selected) Modifier.border(dotBorder, Theme.colors.text, dotShape)
-                                            else Modifier
-                                        )
-                                )
+                                    modifier = Modifier.padding(horizontal = dotSpacing / 2).size(dotSize),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(thisSize)
+                                            .background(if (selected) Theme.colors.text else Theme.colors.background, thisShape)
+                                            .then(
+                                                if (!selected) Modifier.border(thisSize * (1f / 6f), Theme.colors.text, thisShape)
+                                                else Modifier
+                                            )
+                                    )
+                                }
                             }
                             Spacer(modifier = Modifier.width(12.dp))
                             Icon(

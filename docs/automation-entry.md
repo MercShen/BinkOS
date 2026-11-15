@@ -47,6 +47,7 @@ adb shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity \
 | `privacy` / `privacypolicy` | 隐私政策弹窗 |
 | `fontlicense` / `font_license` | 开放字体许可弹窗 |
 | `pager_on` / `pager_off` | 主页页码指示器开关 |
+| `home_next` / `home_prev` | 主页翻到下一页 / 上一页（横滑会触发长滑快捷方式，验证页码用这个） |
 | `bottomwidget` | 底部小部件类型，需 `--es type android|shortcuts|quote|events|usage|pagedots|off` |
 | `bottom_android` `bottom_shortcuts` `bottom_quote` `bottom_events` `bottom_usage` `bottom_pagedots` `bottom_off` | 直接切到对应底部小部件 |
 | `allowlist_clear` | 清空托盘与 Hub 白名单（测试通知过滤前用） |

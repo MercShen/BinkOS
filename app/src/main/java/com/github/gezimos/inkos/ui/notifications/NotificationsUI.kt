@@ -197,8 +197,6 @@ private fun NotificationPageIndicator(
     if (pageCount <= 1) return
     val screenScale = rememberScreenScale()
     val islandsShape = prefs.textIslandsShape
-    val dotShape = if (islandsShape == 0) CircleShape
-        else ShapeHelper.getRoundedCornerShape(islandsShape, pillRadius = 50.dp, roundedRadius = 4.dp)
     val color = Theme.colors.text
     val bg = Theme.colors.background
     Column(
@@ -208,12 +206,23 @@ private fun NotificationPageIndicator(
     ) {
         for (i in 0 until pageCount) {
             val selected = i == currentPage
+            val slotSize = 12.dp.scaled(screenScale)
+            val dotSize = if (selected) slotSize else slotSize * (10f / 12f)
+            val dotShape = ShapeHelper.getPageDotShape(islandsShape, dotSize)
             Box(
-                modifier = Modifier
-                    .size(if (selected) 12.dp.scaled(screenScale) else 10.dp.scaled(screenScale))
-                    .background(if (selected) color else bg, dotShape)
-                    .then(if (selected) Modifier else Modifier.border(1.5.dp.scaled(screenScale), color, dotShape))
-            )
+                modifier = Modifier.size(slotSize),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(dotSize)
+                        .background(if (selected) color else bg, dotShape)
+                        .then(
+                            if (selected) Modifier
+                            else Modifier.border(dotSize * (1f / 6f), color, dotShape)
+                        )
+                )
+            }
         }
     }
 }

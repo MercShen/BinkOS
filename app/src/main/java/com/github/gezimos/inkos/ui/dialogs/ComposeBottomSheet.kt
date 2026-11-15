@@ -1422,13 +1422,21 @@ fun MultiChoiceSheet(
                             Spacer(Modifier.width(12.dp.scaled(screenScale)))
                             for (i in 0 until pageCount) {
                                 val selected = i == pageIndex
+                                val thisSize = if (selected) dotSize else dotSize * (10f / 12f)
+                                val thisShape = ShapeHelper.getPageDotShape(Prefs(context).textIslandsShape, thisSize)
                                 Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = dotSpacing / 2)
-                                        .size(if (selected) dotSize else dotSize * (10f / 12f))
-                                        .background(if (selected) textColor else bgColor, dotShape)
-                                        .then(if (!selected) Modifier.border(dotBorder, textColor, dotShape) else Modifier)
-                                )
+                                    modifier = Modifier.padding(horizontal = dotSpacing / 2).size(dotSize),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(thisSize)
+                                            .background(if (selected) textColor else bgColor, thisShape)
+                                            .then(
+                                                if (!selected) Modifier.border(thisSize * (1f / 6f), textColor, thisShape) else Modifier
+                                            )
+                                    )
+                                }
                             }
                             Spacer(Modifier.width(12.dp.scaled(screenScale)))
                             Icon(
@@ -3279,16 +3287,21 @@ fun BadgeIndicatorPickerSheet(
                     Spacer(Modifier.width(12.dp.scaled(screenScale)))
                     for (i in 0 until pageCount) {
                         val selected = i == pageIndex
+                        val thisSize = if (selected) dotSize else dotSize * (10f / 12f)
+                        val thisShape = ShapeHelper.getPageDotShape(islandsShape, thisSize)
                         Box(
-                            modifier = Modifier
-                                .padding(horizontal = dotSpacing / 2)
-                                .size(if (selected) dotSize else dotSize * (10f / 12f))
-                                .background(if (selected) textColor else bgColor, dotShape)
-                                .then(
-                                    if (!selected) Modifier.border(dotBorder, textColor, dotShape)
-                                    else Modifier
-                                )
-                        )
+                            modifier = Modifier.padding(horizontal = dotSpacing / 2).size(dotSize),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(thisSize)
+                                    .background(if (selected) textColor else bgColor, thisShape)
+                                    .then(
+                                        if (!selected) Modifier.border(thisSize * (1f / 6f), textColor, thisShape) else Modifier
+                                    )
+                            )
+                        }
                     }
                     Spacer(Modifier.width(12.dp.scaled(screenScale)))
                     Icon(

@@ -110,8 +110,7 @@ object SettingsComposable {
         val tintColor = SettingsTheme.color.settings
         val screenScale = rememberScreenScale()
         val islandsShape = LocalPrefs.current?.textIslandsShape ?: 0
-        val dotShape = if (islandsShape == 0) CircleShape
-            else ShapeHelper.getRoundedCornerShape(islandsShape, pillRadius = 50.dp, roundedRadius = 4.dp)
+
         Row(
             modifier = modifier,
             verticalAlignment = Alignment.CenterVertically,
@@ -119,17 +118,25 @@ object SettingsComposable {
         ) {
             for (i in 0 until pageCount) {
                 val selected = i == currentPage
-                val dotSize = if (selected) 12.dp.scaled(screenScale) else 10.dp.scaled(screenScale)
+                val slotSize = 12.dp.scaled(screenScale)
+                val dotSize = if (selected) slotSize else slotSize * (10f / 12f)
+                val dotShape = ShapeHelper.getPageDotShape(islandsShape, dotSize)
                 androidx.compose.foundation.layout.Box(
                     modifier = Modifier
                         .padding(horizontal = 2.dp.scaled(screenScale))
-                        .size(dotSize)
-                        .background(if (selected) tintColor else Color.Transparent, dotShape)
-                        .then(
-                            if (selected) Modifier
-                            else Modifier.border(1.5.dp.scaled(screenScale), tintColor, dotShape)
-                        )
-                )
+                        .size(slotSize),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .size(dotSize)
+                            .background(if (selected) tintColor else Color.Transparent, dotShape)
+                            .then(
+                                if (selected) Modifier
+                                else Modifier.border(dotSize * (1f / 6f), tintColor, dotShape)
+                            )
+                    )
+                }
             }
         }
     }
