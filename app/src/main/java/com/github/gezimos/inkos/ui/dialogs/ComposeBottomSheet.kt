@@ -38,6 +38,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
@@ -315,7 +316,7 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .nestedScroll(swallowDragConnection)
-                                    .padding(horizontal = 24.dp.scaled(screenScale))
+.padding(start = 24.dp.scaled(screenScale), end = 24.dp.scaled(screenScale), top = 6.dp.scaled(screenScale))
                             ) {
                                 val sheetOpenTime = remember { System.currentTimeMillis() }
 
@@ -389,17 +390,13 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.TopCenter)
-                                        .size(width = 40.dp, height = 8.dp)
+.offset(y = 3.dp.scaled(screenScale))
+                                        .size(width = 40.dp.scaled(screenScale), height = 6.dp.scaled(screenScale))
                                         .background(
                                             Theme.colors.text,
-                                            RoundedCornerShape(
-                                                topStart = 0.dp,
-                                                topEnd = 0.dp,
-                                                bottomStart = 2.dp,
-                                                bottomEnd = 2.dp
-                                            )
+                                            RoundedCornerShape(3.dp.scaled(screenScale))
                                         )
-                                )
+                                        )
                             }
                         }
                     }
