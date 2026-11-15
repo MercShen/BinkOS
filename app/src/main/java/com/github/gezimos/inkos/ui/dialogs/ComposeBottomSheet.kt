@@ -2795,9 +2795,9 @@ fun IconStylePickerSheet(
                 Text(
                     text = option.label,
                     style = SettingsTheme.typography.item,
-                    fontSize = (15 * screenScale).sp,
+                    fontSize = (13.5f * screenScale).sp,
                     color = itemFg,
-                    maxLines = 1,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 2.dp)
