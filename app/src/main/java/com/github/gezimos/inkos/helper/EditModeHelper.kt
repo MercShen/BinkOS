@@ -3154,12 +3154,13 @@ internal fun WidgetListContent(
         }
         Text(
             text = app.appLabel.uppercase(),
+            fontSize = SettingsTheme.typography.item.fontSize,
             style = SettingsTheme.typography.header,
             fontWeight = FontWeight.Bold,
             color = Theme.colors.text,
             modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 12.dp),
+                .align(Alignment.Center)
+                .padding(horizontal = 56.dp),
             textAlign = TextAlign.Center
         )
     }
@@ -3199,6 +3200,7 @@ internal fun WidgetListContent(
                 Text(
                     text = label,
                     style = SettingsTheme.typography.item,
+                    fontSize = SettingsTheme.typography.header.fontSize,
                     fontWeight = FontWeight.Medium,
                     color = if (isHighlighted) prefBackgroundColor else prefTextColor
                 )
