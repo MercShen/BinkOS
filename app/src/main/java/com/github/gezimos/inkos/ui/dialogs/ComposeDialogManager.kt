@@ -54,7 +54,8 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
         showIcons: Boolean = true,
         currentIconShape: Int = 0,
         onSelect: (mode: Int, packPackage: String?) -> Unit,
-        onShapeSelect: ((Int) -> Unit)? = null
+        onShapeSelect: ((Int) -> Unit)? = null,
+        unavailableHint: String? = null
     ) {
         sheetHost.show {
             IconStylePickerSheet(
@@ -65,6 +66,7 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
                 currentIconShape = currentIconShape,
                 onSelect = onSelect,
                 onShapeSelect = onShapeSelect,
+                unavailableHint = unavailableHint,
                 onDismiss = sheetHost::dismiss
             )
         }

@@ -1817,6 +1817,7 @@ class SettingsFragment : Fragment() {
                         iconPacks = iconStylePacks,
                         showIcons = currentEnabled,
                         currentIconShape = currentShape,
+                        unavailableHint = if (surface == 0 && uiState.homeAlignment == 1) getString(R.string.icon_center_alignment_hint) else null,
                         onSelect = { newMode, newPack ->
                             when (surface) {
                                 0 -> if (newMode == -1) viewModel.setShowIcons(false) else {

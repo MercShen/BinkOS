@@ -2286,6 +2286,7 @@ fun IconStylePickerSheet(
     currentIconShape: Int = 0,
     onSelect: (mode: Int, packPackage: String?) -> Unit,
     onShapeSelect: ((Int) -> Unit)? = null,
+    unavailableHint: String? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -2309,8 +2310,10 @@ fun IconStylePickerSheet(
     }
 
     data class IconOption(val label: String, val mode: Int, val packPkg: String? = null)
-    val options = remember(iconPacks) {
-        buildList {
+    val options = remember(iconPacks, unavailableHint) {
+        if (!unavailableHint.isNullOrBlank()) {
+            listOf(IconOption(context.getString(R.string.icon_none), -1))
+        } else buildList {
             add(IconOption(context.getString(R.string.icon_none), -1))
             add(IconOption(context.getString(R.string.icon_letters), 0))
             add(IconOption(context.getString(R.string.icon_inkos), 4))
@@ -2320,8 +2323,8 @@ fun IconStylePickerSheet(
             iconPacks.forEach { (pkg, name) -> add(IconOption(name, 3, pkg)) }
         }
     }
-    var selectedIdx by remember(currentMode, currentIconPack, showIcons) {
-        mutableIntStateOf(if (!showIcons) 0 else when (currentMode) {
+    var selectedIdx by remember(currentMode, currentIconPack, showIcons, unavailableHint) {
+        mutableIntStateOf(if (!showIcons || !unavailableHint.isNullOrBlank()) 0 else when (currentMode) {
             0 -> 1
             4 -> 2
             5 -> 3
@@ -2420,7 +2423,26 @@ fun IconStylePickerSheet(
                     fontWeight = FontWeight.Bold,
                     maxLines = 1
                 )
+                if (!unavailableHint.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.width(8.dp.scaled(screenScale)))
+                    Text(
+                        text = unavailableHint,
+                        color = textColor.copy(alpha = 0.7f),
+                        style = SettingsTheme.typography.body,
+                        fontSize = 12.sp.scaled(screenScale),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
+        }
+        if (!unavailableHint.isNullOrBlank() && sampleFavorite == null) {
+            Text(
+                text = unavailableHint,
+                color = textColor.copy(alpha = 0.7f),
+                style = SettingsTheme.typography.body,
+                fontSize = 12.sp.scaled(screenScale),
+                modifier = Modifier.padding(bottom = 12.dp.scaled(screenScale))
+            )
         }
         Row(
             modifier = Modifier

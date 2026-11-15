@@ -3751,7 +3751,7 @@ private fun HomeAppButton(
     }
     val context = LocalContext.current
     val isSep = Constants.isSeparator(app.activityPackage)
-    val hasIcon = !isSep && state.showIcons &&
+    val hasIcon = !isSep && state.showIcons && state.homeAlignment != 1 &&
         (state.iconSourceMode != 0 || (iconCodes[app.label]?.isNotEmpty() == true))
     val resolvedIconShape = remember(state.iconShape) {
         IconShape.fromPreference(state.iconShape)

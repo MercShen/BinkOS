@@ -1476,6 +1476,7 @@ object EditModeHelper {
                         iconPacks = packs,
                         showIcons = uiState.showIcons,
                         currentIconShape = uiState.iconShape,
+                        unavailableHint = if (uiState.homeAlignment == 1) context.getString(R.string.icon_center_alignment_hint) else null,
                         onSelect = { mode, packPkg ->
                             if (mode == -1) {
                                 vm.setShowIcons(false)

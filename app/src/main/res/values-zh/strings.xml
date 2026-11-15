@@ -1001,4 +1001,5 @@
     <string name="wallpaper_delete_title">从画廊中移除？</string>
     <string name="wallpaper_delete_message">只会从 Bink OS 壁纸画廊中移除，设备上的原图不会被删除。</string>
     <string name="wallpaper_remove">移除</string>
+    <string name="icon_center_alignment_hint">应用居中对齐时无法启用图标。</string>
 </resources>
