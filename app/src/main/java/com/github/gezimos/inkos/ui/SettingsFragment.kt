@@ -120,13 +120,14 @@ import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.rememberScreenScale
 import com.github.gezimos.inkos.style.scaled
 import com.github.gezimos.inkos.ui.compose.SettingsComposable
-import com.github.gezimos.inkos.ui.compose.SettingsComposable.PageHeader
-import com.github.gezimos.inkos.ui.compose.SettingsComposable.PageIndicator
 import com.github.gezimos.inkos.ui.compose.SettingsComposable.SettingsHomeItem
 import com.github.gezimos.inkos.ui.compose.SettingsComposable.SettingsSelect
 import com.github.gezimos.inkos.ui.compose.SettingsComposable.SettingsSelectWithDualColorPreview
+import com.github.gezimos.inkos.ui.compose.SettingsComposable.SettingsStepper
 import com.github.gezimos.inkos.ui.compose.SettingsComposable.SettingsSwitch
 import com.github.gezimos.inkos.ui.compose.SettingsComposable.SettingsTitle
+import com.github.gezimos.inkos.ui.compose.SettingsComposable.PageIndicator
+import com.github.gezimos.inkos.ui.compose.SettingsComposable.PageHeader
 import com.github.gezimos.inkos.style.Theme
 import com.github.gezimos.inkos.ui.dialogs.SheetTitle
 import com.github.gezimos.inkos.ui.compose.getChosenThemeDisplayName
@@ -1052,24 +1053,16 @@ class SettingsFragment : Fragment() {
                 description = stringResource(R.string.desc_page_indicator),
                 defaultState = homeUiState.pageIndicatorVisible, onCheckedChange = { viewModel.setPageIndicatorVisible(it) })
             var pagerMargin by remember { mutableIntStateOf(Prefs(requireContext()).pageIndicatorMargin) }
-            SettingsSelect(
+            SettingsStepper(
                 title = stringResource(R.string.page_indicator_margin),
-                option = if (pagerMargin == 0) stringResource(R.string.option_auto) else "$pagerMargin",
+                value = pagerMargin,
+                minValue = 0,
+                maxValue = 12,
                 fontSize = titleFontSize,
                 description = stringResource(R.string.desc_page_indicator_margin),
-                onClick = {
-                    dialogBuilder.showStepperDialog(
-                        context = requireContext(),
-                        title = getString(R.string.page_indicator_margin),
-                        minValue = 0,
-                        maxValue = 12,
-                        currentValue = pagerMargin,
-                        valueFormatter = { if (it == 0) getString(R.string.option_auto) else it.toString() },
-                        onValueChanged = { margin ->
-                            pagerMargin = margin
-                            viewModel.setPageIndicatorMargin(margin)
-                        }
-                    )
+                onValueChange = { margin ->
+                    pagerMargin = margin
+                    viewModel.setPageIndicatorMargin(margin)
                 }
             )
 

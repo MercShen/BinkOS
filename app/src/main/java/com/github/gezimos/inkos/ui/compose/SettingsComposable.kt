@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +42,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -572,6 +574,95 @@ object SettingsComposable {
                         style = SettingsTheme.typography.item,
                         fontSize = if (optionFontSize.isSpecified) optionFontSize else fontSize,
                         color = if (!enabled) prefTextColor.copy(alpha = 0.4f) else if (isHighlighted) prefBackgroundColor else fontColor
+                    )
+                }
+            }
+        }
+    }
+
+    @Composable
+    fun SettingsStepper(
+        title: String,
+        value: Int,
+        minValue: Int,
+        maxValue: Int,
+        fontSize: TextUnit = TextUnit.Unspecified,
+        description: String? = null,
+        horizontalPadding: Dp = SettingsTheme.color.horizontalPadding,
+        verticalPadding: Dp = 10.dp.scaled(rememberScreenScale()),
+        onValueChange: (Int) -> Unit
+    ) {
+        val interactionSource = remember { MutableInteractionSource() }
+        val isFocused = interactionSource.collectIsFocusedAsState().value
+        val isHighlighted = isFocused
+        val prefTextColor = Theme.colors.text
+        val prefBackgroundColor = Theme.colors.background
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalPadding)
+                .padding(vertical = verticalPadding)
+                .pillHighlight(isHighlighted, 6.dp, prefTextColor)
+                .clickable(
+                    onClick = {},
+                    interactionSource = interactionSource,
+                    indication = null
+                )
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val textColor = if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.title.color
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = SettingsTheme.typography.title,
+                        fontSize = fontSize,
+                        color = textColor
+                    )
+                    if (description != null) {
+                        val descFontSize = if (fontSize.isSpecified) (fontSize.value * 0.65f).sp else (SettingsTheme.typography.title.fontSize.value * 0.65f).sp
+                        Text(
+                            text = description,
+                            style = SettingsTheme.typography.title,
+                            fontSize = descFontSize,
+                            color = textColor
+                        )
+                    }
+                }
+                // 右侧 − 数值 +：+ 与其它设置项的右侧控件右对齐
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.widthIn(min = 108.dp)
+                ) {
+                    val activeColor = if (isHighlighted) prefBackgroundColor else prefTextColor
+                    Text(
+                        text = "−",
+                        style = SettingsTheme.typography.item,
+                        fontSize = fontSize,
+                        color = if (value > minValue) activeColor else activeColor.copy(alpha = 0.3f),
+                        modifier = Modifier
+                            .clickable(enabled = value > minValue) { onValueChange(value - 1) }
+                            .padding(start = 10.dp, end = 6.dp, top = 4.dp, bottom = 4.dp)
+                    )
+                    Text(
+                        text = value.toString(),
+                        style = SettingsTheme.typography.item,
+                        fontSize = fontSize,
+                        color = activeColor,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(min = 28.dp)
+                    )
+                    Text(
+                        text = "+",
+                        style = SettingsTheme.typography.item,
+                        fontSize = fontSize,
+                        color = if (value < maxValue) activeColor else activeColor.copy(alpha = 0.3f),
+                        modifier = Modifier
+                            .clickable(enabled = value < maxValue) { onValueChange(value + 1) }
+                            .padding(start = 8.dp, top = 4.dp, bottom = 4.dp)
                     )
                 }
             }
