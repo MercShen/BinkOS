@@ -247,11 +247,7 @@ class ComposeBottomSheetHost(private val activity: Activity) {
 
                     LaunchedEffect(Unit) { sheetState.show() }
 
-                    val sheetCornerRadius = when (prefs.textIslandsShape) {
-                        0 -> 24.dp  // Pill
-                        1 -> 12.dp  // Rounded
-                        else -> 0.dp // Square
-                    }
+                    val sheetCornerRadius = 12.dp // 带拖拽条的弹窗统一圆角，不跟随文字岛形状
 
                     if (open) {
                         ModalBottomSheet(

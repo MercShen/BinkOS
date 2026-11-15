@@ -2871,7 +2871,7 @@ internal fun WidgetAppListContent(
                             val dotSize = 12.dp.scaled(screenScale)
                             val dotSpacing = (12f * 0.8f).dp.scaled(screenScale)
                             val dotBorder = (12f / 6f).dp.scaled(screenScale)
-                            val dotShape = if (textIslandsShape == 0) CircleShape else androidx.compose.foundation.shape.RoundedCornerShape(4.dp.scaled(screenScale))
+                            val dotShape = if (textIslandsShape == 0) CircleShape else ShapeHelper.getRoundedCornerShape(textIslandsShape, roundedRadius = 4.dp.scaled(screenScale))
                             for (i in 0 until pageCount) {
                                 val selected = i == pageIndex
                                 Box(
