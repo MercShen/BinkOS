@@ -29,6 +29,7 @@ import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -92,6 +93,10 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -112,6 +117,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -146,6 +152,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
 
 // ================================================================================
 // SHARED DATA TYPES
@@ -208,6 +215,32 @@ private fun NotificationPageIndicator(
                     .then(if (selected) Modifier else Modifier.border(1.5.dp.scaled(screenScale), color, dotShape))
             )
         }
+    }
+}
+
+/** 把页码点放在消息框边框与屏幕边缘的中点（垂直居中），不依赖具体机型的边距数值。 */
+@Composable
+private fun BoxScope.NotificationPageIndicatorOverlay(
+    prefs: Prefs,
+    listBounds: Rect,
+    rootWidthPx: Int,
+    currentPage: Int,
+    pageCount: Int
+) {
+    if (pageCount <= 1 || rootWidthPx <= 0 || listBounds.width <= 0f) return
+    val leftAlign = prefs.homePagerAlign == 0
+    val dotWidthPx = with(LocalDensity.current) { 12.dp.toPx() }
+    val centerX = if (leftAlign) listBounds.left / 2f else (listBounds.right + rootWidthPx) / 2f
+    Box(
+        modifier = Modifier
+            .align(Alignment.CenterStart)
+            .offset { IntOffset((centerX - dotWidthPx / 2f).roundToInt(), 0) }
+    ) {
+        NotificationPageIndicator(
+            prefs = prefs,
+            currentPage = currentPage,
+            pageCount = pageCount
+        )
     }
 }
 
@@ -514,6 +547,8 @@ fun HubScreen(
     var containerSize by remember { mutableStateOf(
         if (HubLayoutCache.cachedContainerHeight > 0) IntSize(0, HubLayoutCache.cachedContainerHeight) else IntSize.Zero
     ) }
+    var hubListBounds by remember { mutableStateOf(Rect.Zero) }
+    var hubRootSize by remember { mutableStateOf(IntSize.Zero) }
     val itemHeightPx = remember(density) { with(density) { 96.dp.toPx() }.toInt() }
     val hubOverheadPx = remember(density) { with(density) { 8.dp.toPx() }.toInt() }
 
@@ -628,6 +663,7 @@ fun HubScreen(
                     bottomNavEnabled = false
                 )
             }
+                .onSizeChanged { hubRootSize = it }
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
     ) {
@@ -707,12 +743,13 @@ fun HubScreen(
                 )
             }
 
-            Row(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .onSizeChanged { containerSize = it }
+                    .onGloballyPositioned { hubListBounds = it.boundsInRoot() }
             ) {
-                Spacer(modifier = Modifier.width(20.dp))
-                Box(modifier = Modifier.weight(1f).fillMaxHeight().onSizeChanged { containerSize = it }) {
                 if (filteredNotifications.isEmpty()) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
@@ -772,26 +809,15 @@ fun HubScreen(
                     )
                 }
             }
-                Spacer(modifier = Modifier.width(20.dp))
-            }
         }
 
-        if (pagerState.pageCount > 1) {
-            Box(
-                modifier = Modifier
-                    .align(if (prefs.homePagerAlign == 0) Alignment.CenterStart else Alignment.CenterEnd)
-                    .padding(
-                        start = if (prefs.homePagerAlign == 0) 12.dp.scaled(screenScale) else 0.dp,
-                        end = if (prefs.homePagerAlign == 0) 0.dp else 12.dp.scaled(screenScale)
-                    )
-            ) {
-                NotificationPageIndicator(
-                    prefs = prefs,
-                    currentPage = pagerState.currentPage,
-                    pageCount = pagerState.pageCount
-                )
-            }
-        }
+        NotificationPageIndicatorOverlay(
+            prefs = prefs,
+            listBounds = hubListBounds,
+            rootWidthPx = hubRootSize.width,
+            currentPage = pagerState.currentPage,
+            pageCount = pagerState.pageCount
+        )
         if (isEditMode) {
             Box(
                 modifier = Modifier
@@ -1566,6 +1592,8 @@ fun SimpleTrayScreen(
 
     val coroutineScope = rememberCoroutineScope()
     var trayContainerSize by remember { mutableStateOf(IntSize.Zero) }
+    var trayListBounds by remember { mutableStateOf(Rect.Zero) }
+    var trayRootSize by remember { mutableStateOf(IntSize.Zero) }
     val trayDensity = LocalDensity.current
     val trayItemHeightPx = remember(trayDensity) { with(trayDensity) { 104.dp.toPx() }.toInt() }
     val trayOverheadPx = remember(trayDensity) { with(trayDensity) { 8.dp.toPx() }.toInt() }
@@ -2079,6 +2107,7 @@ fun SimpleTrayScreen(
                     }
                 } else Modifier
             )
+                .onSizeChanged { trayRootSize = it }
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
     ) {
@@ -2234,80 +2263,68 @@ fun SimpleTrayScreen(
                 )
             }
 
-            Row(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .onSizeChanged { trayContainerSize = it }
+                    .onGloballyPositioned { trayListBounds = it.boundsInRoot() }
             ) {
-                Spacer(modifier = Modifier.width(20.dp))
-                Box(
-                    modifier = Modifier.weight(1f).fillMaxHeight().onSizeChanged { trayContainerSize = it }
-                ) {
-                    if (validNotifications.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .then(
-                                    if (isEditMode) {
-                                        Modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
-                                            try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
-                                            onBackgroundEditModeClick()
-                                        }
-                                    } else Modifier
-                                ),
-                            contentAlignment = Alignment.Center
+                if (validNotifications.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (isEditMode) {
+                                    Modifier.clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
+                                        try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
+                                        onBackgroundEditModeClick()
+                                    }
+                                } else Modifier
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.ic_foreground),
-                                    contentDescription = null,
-                                    colorFilter = ColorFilter.tint(Theme.colors.text),
-                                    modifier = Modifier.size(36.dp.scaled(screenScale))
-                                )
-                                Spacer(modifier = Modifier.height(12.dp.scaled(screenScale)))
-                                Text(
-                                    text = stringResource(id = R.string.no_notifications),
-                                    color = Theme.colors.text,
-                                    fontSize = baseFontSize.sp,
-                                    fontFamily = notifFontFamilyGlobal,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_foreground),
+                                contentDescription = null,
+                                colorFilter = ColorFilter.tint(Theme.colors.text),
+                                modifier = Modifier.size(36.dp.scaled(screenScale))
+                            )
+                            Spacer(modifier = Modifier.height(12.dp.scaled(screenScale)))
+                            Text(
+                                text = stringResource(id = R.string.no_notifications),
+                                color = Theme.colors.text,
+                                fontSize = baseFontSize.sp,
+                                fontFamily = notifFontFamilyGlobal,
+                                textAlign = TextAlign.Center
+                            )
                         }
-                    } else {
-                        MergedNotificationCards(
-                            prefs = prefs,
-                            notifications = displayNotifications,
-                            isDpadMode = isDpadMode,
-                            focusZone = focusZone.value,
-                            selectedNotificationIndex = selectedNotificationIndex.intValue,
-                            isEditMode = isEditMode,
-                            onEditModeTap = onNotificationEditModeClick
-                        )
                     }
+                } else {
+                    MergedNotificationCards(
+                        prefs = prefs,
+                        notifications = displayNotifications,
+                        isDpadMode = isDpadMode,
+                        focusZone = focusZone.value,
+                        selectedNotificationIndex = selectedNotificationIndex.intValue,
+                        isEditMode = isEditMode,
+                        onEditModeTap = onNotificationEditModeClick
+                    )
                 }
-                Spacer(modifier = Modifier.width(20.dp))
             }
         }
 
-        if (pagerState.pageCount > 1) {
-            Box(
-                modifier = Modifier
-                    .align(if (prefs.homePagerAlign == 0) Alignment.CenterStart else Alignment.CenterEnd)
-                    .padding(
-                        start = if (prefs.homePagerAlign == 0) 12.dp.scaled(screenScale) else 0.dp,
-                        end = if (prefs.homePagerAlign == 0) 0.dp else 12.dp.scaled(screenScale)
-                    )
-            ) {
-                NotificationPageIndicator(
-                    prefs = prefs,
-                    currentPage = pagerState.currentPage,
-                    pageCount = pagerState.pageCount
-                )
-            }
-        }
+        NotificationPageIndicatorOverlay(
+            prefs = prefs,
+            listBounds = trayListBounds,
+            rootWidthPx = trayRootSize.width,
+            currentPage = pagerState.currentPage,
+            pageCount = pagerState.pageCount
+        )
         if (isEditMode) {
             EditModeOverlay()
         }
