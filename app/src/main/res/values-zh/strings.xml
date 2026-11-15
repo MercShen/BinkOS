@@ -66,7 +66,6 @@
     <string name="cd_next_event">下一个事件</string>
     <string name="cd_left_shortcut">左侧快捷方式</string>
     <string name="cd_right_shortcut">右侧快捷方式</string>
-    <string name="cd_edit_widget">编辑小部件</string>
     <string name="cd_decrease">减少</string>
     <string name="cd_increase">增加</string>
     <string name="cd_delete_font">删除字体</string>
