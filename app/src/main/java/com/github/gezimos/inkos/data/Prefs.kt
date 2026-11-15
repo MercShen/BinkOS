@@ -949,7 +949,7 @@ class Prefs(val context: Context) {
 
 
     var homeReset: Boolean
-        get() = prefs.getBoolean(HOME_PAGE_RESET, true)
+        get() = prefs.getBoolean(HOME_PAGE_RESET, false)
         set(value) = prefs.edit { putBoolean(HOME_PAGE_RESET, value) }
 
     var homeAppsNum: Int

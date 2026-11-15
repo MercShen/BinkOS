@@ -319,6 +319,8 @@ class MainActivity : AppCompatActivity() {
                         viewModel.previousPage()
                         Log.d(TAG, "home_prev after: page=${viewModel.homeUiState.value.currentPage}/${viewModel.homeUiState.value.homePagesNum}")
                     }
+                    "home_reset_off" -> viewModel.setHomeReset(false)
+                    "home_reset_on" -> viewModel.setHomeReset(true)
                     "pager_margin" -> viewModel.setPageIndicatorMargin(intent.getIntExtra("value", 0))
                     "pager_on" -> viewModel.setPageIndicatorVisible(true)
                     "pager_off" -> viewModel.setPageIndicatorVisible(false)

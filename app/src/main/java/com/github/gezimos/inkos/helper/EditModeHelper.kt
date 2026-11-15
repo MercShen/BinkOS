@@ -1147,6 +1147,7 @@ object EditModeHelper {
                                 val maxShiftY = (((cfg.screenHeightDp - 64).coerceAtLeast(120) - 120) / 2f).toInt().coerceAtLeast(0)
                                 var xOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftX.coerceIn(-maxShiftX, maxShiftX)) }
                                 var yOffset by remember { androidx.compose.runtime.mutableIntStateOf(shiftY.coerceIn(-maxShiftY, maxShiftY)) }
+                                var pagerMargin by remember { androidx.compose.runtime.mutableIntStateOf(prefs.pageIndicatorMargin) }
 
                                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                     Text(
@@ -1227,6 +1228,27 @@ object EditModeHelper {
                                         },
                                         minValue = -maxShiftY,
                                         maxValue = maxShiftY
+                                    )
+
+                                    Text(
+                                        stringResource(R.string.edit_menu_page_indicator_margin_fmt, pagerMargin),
+                                        style = SettingsTheme.typography.item,
+                                        color = Theme.colors.text
+                                    )
+                                    com.github.gezimos.inkos.ui.dialogs.StepperSlider(
+                                        value = pagerMargin,
+                                        onValueChange = { value ->
+                                            pagerMargin = value
+                                            try {
+                                                val vmRef = androidx.lifecycle.ViewModelProvider(fragment.requireActivity())[com.github.gezimos.inkos.MainViewModel::class.java]
+                                                vmRef.setPageIndicatorMargin(value)
+                                            } catch (_: Exception) {
+                                                prefs.pageIndicatorMargin = value
+                                            }
+                                            onUpdate()
+                                        },
+                                        minValue = 0,
+                                        maxValue = 32
                                     )
                                 }
                             }

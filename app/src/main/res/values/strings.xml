@@ -838,6 +838,7 @@
     <string name="edit_menu_value_set">Set</string>
     <string name="edit_menu_apps_alignment">Apps Alignment</string>
     <string name="edit_menu_page_indicator">Page Indicator</string>
+    <string name="edit_menu_page_indicator_margin_fmt">Page indicators margin: %1$d</string>
     <string name="edit_menu_top_widget_offset_fmt">Top widget offset: %1$d</string>
     <string name="edit_menu_bottom_widget_offset_fmt">Bottom widget offset: %1$d</string>
     <string name="edit_menu_home_apps_x_offset_fmt">Home apps X-offset: %1$d</string>

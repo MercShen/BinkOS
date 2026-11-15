@@ -838,6 +838,7 @@
     <string name="edit_menu_value_set">设置</string>
     <string name="edit_menu_apps_alignment">应用对齐</string>
     <string name="edit_menu_page_indicator">页码指示器</string>
+    <string name="edit_menu_page_indicator_margin_fmt">页码指示器留白：%1$d</string>
     <string name="edit_menu_top_widget_offset_fmt">顶部小部件偏移：%1$d</string>
     <string name="edit_menu_bottom_widget_offset_fmt">底部小部件偏移：%1$d</string>
     <string name="edit_menu_home_apps_x_offset_fmt">主屏应用横向偏移：%1$d</string>
