@@ -390,8 +390,8 @@ class ComposeBottomSheetHost(private val activity: Activity) {
                                 Box(
                                     modifier = Modifier
                                         .align(Alignment.TopCenter)
-.offset(y = 3.dp.scaled(screenScale))
-                                        .size(width = 40.dp.scaled(screenScale), height = 6.dp.scaled(screenScale))
+                                        .offset(y = (-2).dp.scaled(screenScale))
+                                        .size(width = 80.dp.scaled(screenScale), height = 6.dp.scaled(screenScale))
                                         .background(
                                             Theme.colors.text,
                                             RoundedCornerShape(3.dp.scaled(screenScale))
