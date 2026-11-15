@@ -841,7 +841,7 @@
     <string name="edit_panel_clock">Clock</string>
     <string name="edit_panel_date">Date</string>
     <string name="edit_panel_apps">Apps</string>
-    <string name="edit_panel_background">Background</string>
+    <string name="edit_panel_background">Theme</string>
     <string name="edit_panel_desc_style">Font, size and layout</string>
     <string name="edit_panel_desc_function">Visibility, format and behaviour</string>
     <string name="edit_panel_desc_gestures">Tap and gesture actions</string>
