@@ -70,4 +70,15 @@ class AutomationContractTest {
             "home_prev", "editmode", "editmode_on", "shortswipe")) assertTrue(accepted("dest" to dest).needsHome)
         assertFalse(accepted("dest" to "settings").needsHome)
     }
+    @Test fun onboardingPageIsIntegerBoundedAndOnboardingOnly() {
+        rejected("dest" to "onboarding", "onboarding_page" to 7)
+        rejected("dest" to "onboarding", "onboarding_page" to -1, "confirm_write" to true)
+        rejected("dest" to "onboarding", "onboarding_page" to 8, "confirm_write" to true)
+        rejected("dest" to "onboarding", "onboarding_page" to "7", "confirm_write" to true)
+        rejected("dest" to "settings", "onboarding_page" to 0, "confirm_write" to true)
+        assertEquals(7, accepted("dest" to "onboarding", "onboarding_page" to 7,
+            "confirm_write" to true).onboardingPage)
+        assertTrue(accepted("dest" to "onboarding", "onboarding_page" to 7,
+            "confirm_write" to true).writesPreferences)
+    }
 }

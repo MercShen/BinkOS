@@ -199,6 +199,7 @@ class MainActivity : AppCompatActivity() {
      * 额外开关：
      *    --ez skip_onboarding true   清掉首启标记（不再卡在引导）
      *    --ez refresh_eink true      打开界面后强制一次 GC16 全刷
+     *    --ei onboarding_page N     仅 dest=onboarding，直接打开第 N 页（0..7，需 confirm_write）
      *
      * @return true 表示这条 intent 已被自动化入口处理，调用方不必再走普通分支。
      */
@@ -247,7 +248,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleAutomationIntent(intent: Intent?): Boolean {
         intent ?: return false
         val keys = listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
-            "tab", "value", "type", "confirm_write", "request_id")
+            "onboarding_page", "tab", "value", "type", "confirm_write", "request_id")
         // Ordinary launcher intents are not automation requests. Never consume their product extras.
         if (!listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
                 "request_id").any { intent.hasExtra(it) }) return false
@@ -360,7 +361,10 @@ class MainActivity : AppCompatActivity() {
             "colors" -> navController.navigate(R.id.colorEditorFragment)
             "themes" -> navController.navigate(R.id.themePresetsFragment)
             "guide" -> navController.navigate(R.id.guideFragment)
-            "onboarding" -> navController.navigate(R.id.onboardingFragment)
+            "onboarding" -> {
+                request.onboardingPage?.let { prefs.onboardingPage = it }
+                navController.navigate(R.id.onboardingFragment)
+            }
             "editmode" -> EditModeHelper.toggleEditMode()
             "editmode_on" -> EditModeHelper.setEditMode(true)
             "editmode_off" -> EditModeHelper.setEditMode(false)

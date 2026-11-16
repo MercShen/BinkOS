@@ -29,10 +29,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.ArrowDownward
-import androidx.compose.material.icons.rounded.ArrowForward
-import androidx.compose.material.icons.rounded.ArrowUpward
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.ClearAll
 import androidx.compose.material.icons.rounded.Close
@@ -478,10 +474,9 @@ object GuideScreen {
         textColor: androidx.compose.ui.graphics.Color
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(20.dp.scaled(screenScale))) {
-            GuideItem(Icons.Rounded.ArrowUpward, "Swipe Up", "App Drawer — the list of all your apps", titleFontSize, bodyFontSize, screenScale, textColor)
-            GuideItem(Icons.Rounded.ArrowDownward, "Swipe Down", "Simple Tray — Android-style notifications", titleFontSize, bodyFontSize, screenScale, textColor)
-            GuideItem(Icons.Rounded.ArrowBack, "Swipe Left", "Letters — cached long-form notifications", titleFontSize, bodyFontSize, screenScale, textColor)
-            GuideItem(Icons.Rounded.ArrowForward, "Swipe Right", "Recents — recently used apps", titleFontSize, bodyFontSize, screenScale, textColor)
+            GuideItem(Icons.Rounded.SwipeVertical, "Long swipe", "Opens the screen assigned in Settings / Gestures", titleFontSize, bodyFontSize, screenScale, textColor)
+            GuideItem(Icons.Rounded.SwipeVertical, "Short swipe", "Moves between home pages", titleFontSize, bodyFontSize, screenScale, textColor)
+            GuideItem(Icons.Rounded.Settings, "Pinch (zoom out)", "In empty areas to open the Quick Menu", titleFontSize, bodyFontSize, screenScale, textColor)
         }
     }
 

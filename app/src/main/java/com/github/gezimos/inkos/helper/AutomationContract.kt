@@ -10,10 +10,11 @@ object AutomationContract {
         val value: Int? = null,
         val type: String? = null,
         val skipOnboarding: Boolean = false,
-        val refreshEink: Boolean = false
+        val refreshEink: Boolean = false,
+        val onboardingPage: Int? = null
     ) {
         val isStateCommand: Boolean get() = dest in stateCommands
-        val writesPreferences: Boolean get() = isStateCommand || skipOnboarding
+        val writesPreferences: Boolean get() = isStateCommand || skipOnboarding || onboardingPage != null
         val needsHome: Boolean get() = dest in homeCommands
     }
 
@@ -137,7 +138,21 @@ object AutomationContract {
             if (extras.containsKey("type")) return reject("type is not supported for $dest")
             null
         }
-        val request = Request(dest, tab, value, type, extras["skip_onboarding"] == true, extras["refresh_eink"] == true)
+        val onboardingPage = if (dest == "onboarding") {
+            if (extras.containsKey("onboarding_page")) {
+                val number = extras["onboarding_page"] as? Int
+                    ?: return reject("onboarding_page must be an integer (--ei)")
+                if (number !in 0..7) return reject("onboarding_page must be in 0..7")
+                number
+            } else null
+        } else {
+            if (extras.containsKey("onboarding_page")) {
+                return reject("onboarding_page is only supported for onboarding")
+            }
+            null
+        }
+        val request = Request(dest, tab, value, type, extras["skip_onboarding"] == true,
+            extras["refresh_eink"] == true, onboardingPage)
         if ((request.writesPreferences || request.refreshEink) && extras["confirm_write"] != true) {
             return reject("This command changes settings or forces a refresh; pass --ez confirm_write true only after authorization")
         }

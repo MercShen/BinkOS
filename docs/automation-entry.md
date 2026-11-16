@@ -114,7 +114,7 @@ GUID 生成依赖 uuidgen 或 Python。Windows 不使用 Bash 的 `\` 续行；�
 | `colors` / `coloreditor` | 颜色编辑器 |
 | `themes` / `themepresets` | 主题预设 |
 | `guide` | 使用引导 |
-| `onboarding` | 直接导航首启页，不要求/不永久修改 firstOpen |
+| `onboarding` | 可选 `--ei onboarding_page 0..7`；0 欢迎、1 隐私、2 通知、3 默认桌面、7 厂商 e-ink 页、4 设置、5 主题、6 收藏 | 直接导航首启页，不要求/不永久修改 firstOpen；带 `onboarding_page` 时写 `onboardingPage`，需 `confirm_write` |
 | `editfavorites` / `edit_favorites` | 编辑收藏，选择操作可能修改配置；进入本身不等于修改 |
 
 无“打开任意页面”的保证：WIDGET、小部件二级选择、语言/字体等子 sheet 暂无独立 dest，按真实产品入口操作。重复导航会改变返回栈；用 home 清理测试路径，不无限叠加同一页。
@@ -167,8 +167,16 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 
 附加extra：
 - `skip_onboarding=true` 永久将firstOpen置false；`refresh_eink=true` 请求刷新。两者都要确认闸门，**必须搭配dest**；脚本暂不封装这两个extra。
+- `onboarding_page=0..7` 只允许与 `dest onboarding` 搭配，写入 `onboardingPage` 后导航；需要 `--ei` + `--ez confirm_write true`。用于直接打开指定引导页，例如：
+
+```powershell
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest onboarding --ei onboarding_page 7 --ez confirm_write true
+```
+
+页面索引：0 欢迎、1 隐私、2 通知、3 默认桌面、7 厂商 e-ink（Regal/HD256 说明在此页）、4 设置、5 主题、6 收藏。`onboarding_page` 与 `skip_onboarding` 可同时使用；前者只改引导页，后者才永久关闭首启。
 - refresh先尝试系统全刷（仅einkSystemFullRefresh开启且厂商调用可用），否则100ms覆盖层闪屏；不保证物理GC16或任何波形实际效果。
-- 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
+- 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget；onboarding_page只允许onboarding且为0..7。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
 - dest值不区分大小写，extra名称区分；request_id用短可打印串(≤128字符)，推荐UUID。脚本对dest/type还做安全字符校验。
 
 ## 7. status（纯只读）

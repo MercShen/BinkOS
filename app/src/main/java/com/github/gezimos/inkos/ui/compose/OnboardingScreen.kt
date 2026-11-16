@@ -30,7 +30,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -101,6 +103,8 @@ class OnboardingFragment : Fragment() {
 
 object OnboardingScreen {
 
+    private const val REFRESH_ANIMATION_SCOPE_TOOLTIP = "tooltip_refresh_animation_scope_shown"
+
     private fun isNotificationListenerEnabled(context: android.content.Context): Boolean {
         return NotificationManagerCompat.getEnabledListenerPackages(context)
             .contains(context.packageName)
@@ -127,6 +131,7 @@ object OnboardingScreen {
         val settingsSize = (prefs.settingsSize - 3)
         val titleFontSize = (settingsSize * 1.5f * screenScaleRaw).sp
         val bodyFontSize = (settingsSize * 1.2f * screenScaleRaw).sp
+        val extraTitleFontSize = (settingsSize * 1.5f).sp
         val bigTitleSize = (settingsSize * 3f * screenScaleRaw).sp
 
         val systemDark = isSystemInDarkTheme()
@@ -175,6 +180,7 @@ object OnboardingScreen {
         // 大我专属开关：打开即刻生效（全刷立即触发 GC16，动画立即播放一次演示）
         var bigmeFullRefresh by remember { mutableStateOf(prefs.einkSystemFullRefresh) }
         var bigmePageTurnAnim by remember { mutableStateOf(prefs.einkPageTurnAnimation) }
+        var showRefreshScopeDialog by remember { mutableStateOf(false) }
 
         // 插入额外页后，页码显示需要重排：0,1,2,3,[大我页],4,5,6
         fun onboardingPosition(p: Int): Int = if (!supportsBigmeTweaks) p + 1 else when {
@@ -407,9 +413,9 @@ object OnboardingScreen {
                         if (page == 7) {
                             Spacer(modifier = Modifier.height(24.dp.scaled(screenScale)))
                             SettingsComposable.SettingsSwitch(
-                                text = stringResource(R.string.settings_system_full_refresh),
-                                fontSize = (bodyFontSize.value * 0.9f).sp,
-                                description = stringResource(R.string.settings_desc_system_full_refresh),
+                                text = stringResource(R.string.onboarding_eink_full_refresh_title),
+                                fontSize = extraTitleFontSize,
+                                description = stringResource(R.string.onboarding_eink_full_refresh_desc),
                                 defaultState = bigmeFullRefresh,
                                 horizontalPadding = 0.dp,
                                 onCheckedChange = { enabled ->
@@ -426,24 +432,35 @@ object OnboardingScreen {
                             )
                             Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
                             SettingsComposable.SettingsSwitch(
-                                text = stringResource(R.string.settings_page_turn_animation),
-                                fontSize = (bodyFontSize.value * 0.9f).sp,
-                                description = stringResource(R.string.settings_desc_page_turn_animation),
+                                text = stringResource(R.string.onboarding_eink_page_turn_title),
+                                fontSize = extraTitleFontSize,
+                                description = stringResource(R.string.onboarding_eink_page_turn_desc),
                                 defaultState = bigmePageTurnAnim,
                                 horizontalPadding = 0.dp,
                                 onCheckedChange = { enabled ->
                                     bigmePageTurnAnim = enabled
                                     if (viewModel != null) viewModel.setEinkPageTurnAnimation(enabled) else prefs.einkPageTurnAnimation = enabled
+                                    if (enabled && !prefs.isTooltipShown(REFRESH_ANIMATION_SCOPE_TOOLTIP)) {
+                                        showRefreshScopeDialog = true
+                                        prefs.markTooltipShown(REFRESH_ANIMATION_SCOPE_TOOLTIP)
+                                    }
                                 }
                             )
-                            Text(
-                                text = stringResource(R.string.onboarding_eink_animation_scope),
-                                style = SettingsTheme.typography.body,
-                                fontSize = (bodyFontSize.value * 0.72f).sp,
-                                lineHeight = (bodyFontSize.value * 1.15f).sp,
-                                color = textColor.copy(alpha = 0.75f),
-                                modifier = Modifier.padding(top = 6.dp.scaled(screenScale))
-                            )
+                            if (showRefreshScopeDialog) {
+                                AlertDialog(
+                                    onDismissRequest = { showRefreshScopeDialog = false },
+                                    title = { Text(stringResource(R.string.settings_page_turn_animation)) },
+                                    text = { Text(stringResource(R.string.onboarding_eink_animation_scope)) },
+                                    containerColor = Theme.colors.background,
+                                    titleContentColor = Theme.colors.text,
+                                    textContentColor = Theme.colors.text,
+                                    confirmButton = {
+                                        TextButton(onClick = { showRefreshScopeDialog = false }) {
+                                            Text(stringResource(R.string.done))
+                                        }
+                                    }
+                                )
+                            }
                         }
 
                         // Pinch animation on settings page

@@ -716,7 +716,7 @@ class Prefs(val context: Context) {
         set(value) = prefs.edit { putInt(NOTIFICATIONS_PER_PAGE, value.coerceIn(1, 5)) }
 
     var edgeSwipeBackEnabled: Boolean
-        get() = prefs.getBoolean(EDGE_SWIPE_BACK_ENABLED, true)
+        get() = prefs.getBoolean(EDGE_SWIPE_BACK_ENABLED, false)
         set(value) {
             prefs.edit { putBoolean(EDGE_SWIPE_BACK_ENABLED, value) }
             try { _edgeSwipeBackEnabledFlow.value = value } catch (e: Exception) { Log.w("Prefs", "edgeSwipeBackEnabledFlow update failed", e) }

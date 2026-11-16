@@ -115,7 +115,7 @@
  <string name="community">社区</string>
  <string name="about">关于</string>
  <string name="desc_about">鸣谢与支持</string>
- <string name="tooltip_pinch_settings">在空白处双指捏合可打开设置</string>
+ <string name="tooltip_pinch_settings">在空白处双指捏合可打开快捷菜单</string>
  <string name="extra_features">更多功能</string>
  <string name="icons_buttons">图标与按钮</string>
  <string name="text_islands_section">文字岛</string>
@@ -476,7 +476,7 @@
  <string name="icon_minimal">字形</string>
  <string name="icon_filled">实心</string>
  <string name="icon_tint_contrast">着色对比度</string>
- <string name="desc_icon_tint_contrast">调整着色图标的对比度（0.0× 柔和，1.0× 正常，3.0× 极强）</string>
+ <string name="desc_icon_tint_contrast">调整着色图标的对比度</string>
  <string name="icon_system">系统</string>
  <string name="icon_preview_text">Ab</string>
 
@@ -784,7 +784,7 @@
  <string name="desc_swipe_down">向下滑操作</string>
  <string name="desc_short_swipe">短滑灵敏度</string>
  <string name="desc_long_swipe">长滑灵敏度</string>
- <string name="desc_edge_swipe">边缘滑动返回</string>
+ <string name="desc_edge_swipe">使用 BinkOS 边缘滑动返回</string>
  <string name="desc_universal_font">所有文字统一字体</string>
  <string name="desc_universal_font_select">选择通用字体</string>
  <string name="desc_settings_font">设置字体</string>
@@ -902,11 +902,11 @@
  <string name="settings_fork_title">inkOS 的分支</string>
  <string name="settings_fork_description">Bink OS 是 gezimos 的 inkOS 的个人分支，感谢原作者。</string>
  <string name="settings_system_full_refresh">系统全刷（Bigme）</string>
- <string name="settings_desc_system_full_refresh">所有刷新都使用厂商 GC16 全刷</string>
+ <string name="settings_desc_system_full_refresh">使用厂商全刷</string>
  <string name="settings_page_turn_animation">翻页动画（Bigme）</string>
- <string name="settings_desc_page_turn_animation">使用厂商的翻页刷新动画</string>
+ <string name="settings_desc_page_turn_animation">启用厂商刷新动画</string>
  <string name="settings_page_turn_animation_style">翻页动画风格</string>
- <string name="settings_desc_page_turn_animation_style">Directional 跟随手势方向；Ripple 使用大我圆形动画（打开 10 / 关闭 9）</string>
+ <string name="settings_desc_page_turn_animation_style">Directional 跟随手势方向；Ripple 使用圆形动画</string>
  <string name="option_page_turn_directional">Directional</string>
  <string name="option_page_turn_ripple">Ripple</string>
  <string name="settings_desc_choose_launcher">选择要使用的桌面</string>
@@ -939,7 +939,7 @@
  <!-- Home tooltips and widgets (HomeUI) -->
  <string name="home_tooltip_pages_title">主屏页面</string>
  <string name="home_tooltip_swipe_pages">上下滑动可切换页面</string>
- <string name="home_tooltip_long_swipe_drawer">长距离向上滑可打开应用抽屉</string>
+ <string name="home_tooltip_long_swipe_drawer">长距离滑动已分配的方向可打开对应界面</string>
  <string name="home_tooltip_next">下一步</string>
  <string name="home_tap_to_choose_widget">点按选择小部件</string>
  <string name="home_events_today_fmt">今天 %1$s</string>
@@ -971,9 +971,9 @@
  <!-- Onboarding & guide -->
  <string name="onboarding_desc_0">专注、无干扰的界面，为墨水屏设备与全键盘 / T9 手机优化。</string>
  <string name="onboarding_desc_1">Bink OS 不收集、不存储、不分享任何数据。没有服务器连接，也没有追踪，一切都在你的设备上完成。</string>
- <string name="onboarding_desc_2">想获得完整体验，请授予通知权限，这样 Bink OS 才能把 Android 通知显示在主屏、Letters 或 Simple Tray 中。</string>
+ <string name="onboarding_desc_2">授予通知访问权限，Bink OS 才能在主页、Letters、Simple Tray 或 Hub 显示 Android 通知。</string>
  <string name="onboarding_desc_3">要让 Bink OS 成为你的新桌面，请把它设为默认桌面。之后也可以在设置里更改。</string>
- <string name="onboarding_desc_4">打开设置：在主屏空白处双指缩小（Pinch）即可打开快捷设置，进入全部设置或启用编辑模式。</string>
+ <string name="onboarding_desc_4">在主屏空白处双指捏合打开快捷菜单，可进入全部设置或编辑模式。</string>
  <string name="onboarding_desc_5">选择一个配色预设，或跳过以保留当前主题、从零开始。</string>
  <string name="onboarding_desc_6">选择主屏快捷方式，并用「编辑常用应用」调整顺序。仍然可以长按单个应用来逐个替换。</string>
  <string name="onboarding_confirm_read">我确认已阅读</string>
@@ -1001,8 +1001,12 @@
  <string name="settings_label">设置</string>
  <string name="desc_simple_tray_brightness">在 Simple Tray 顶部显示亮度调节条</string>
  <string name="onboarding_eink_title">更多功能</string>
- <string name="onboarding_eink_desc">你的设备支持这些厂商墨水屏特性，打开即时生效：</string>
- <string name="onboarding_eink_animation_scope">翻页动画只在 Regal 与 高清256 刷新模式下生效</string>
+     <string name="onboarding_eink_full_refresh_title">系统全刷</string>
+    <string name="onboarding_eink_full_refresh_desc">使用Bigme 厂商全刷</string>
+    <string name="onboarding_eink_page_turn_title">翻页动画</string>
+    <string name="onboarding_eink_page_turn_desc">使用Bigme 厂商刷新动画</string>
+<string name="onboarding_eink_desc">你的设备支持这些厂商墨水屏特性，打开即时生效：</string>
+ <string name="onboarding_eink_animation_scope">只有在刷新模式设为 Regal 或 HD256 时才能看到刷新动画。</string>
  <string name="tooltip_edit_favorites_title">编辑常用应用</string>
  <string name="tooltip_edit_favorites_line1">点顶部的数字可修改每页应用数与页数。</string>
  <string name="tooltip_edit_favorites_line2">拖动 = 图标可以调整应用顺序。</string>
@@ -1014,9 +1018,9 @@
  <string name="tooltip_recents_line1">点击标题可在「最近任务」和「最常使用」之间切换。</string>
  <string name="tooltip_letters_title">Letters</string>
  <string name="tooltip_letters_line1">上下滑动可切换通知。</string>
- <string name="tooltip_letters_line2">长按「忽略」可清空全部通知。</string>
+ <string name="tooltip_letters_line2">长按「忽略」按钮可清空全部通知。</string>
  <string name="tooltip_edit_bg_title">背景</string>
- <string name="tooltip_edit_bg_line">点击空白区域可修改主题、对齐等设置。</string>
+ <string name="tooltip_edit_bg_line">点击背景可修改主题、对齐等设置。</string>
  <string name="tooltip_edit_clock_title">时钟</string>
  <string name="tooltip_edit_clock_line">点击时钟可修改时钟样式、字号与时间格式。</string>
  <string name="tooltip_edit_date_title">日期</string>

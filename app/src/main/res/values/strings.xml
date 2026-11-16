@@ -115,7 +115,7 @@
     <string name="community">Community</string>
     <string name="about">About</string>
     <string name="desc_about">Credits &amp; support</string>
-    <string name="tooltip_pinch_settings">Pinch in empty areas to open Settings</string>
+    <string name="tooltip_pinch_settings">Pinch in empty areas to open the Quick Menu</string>
     <string name="extra_features">Extras</string>
     <string name="icons_buttons">Icons &amp; Buttons</string>
     <string name="text_islands_section">Text Islands</string>
@@ -476,7 +476,7 @@
     <string name="icon_minimal">Glyph</string>
     <string name="icon_filled">Filled</string>
     <string name="icon_tint_contrast">Tint Contrast</string>
-    <string name="desc_icon_tint_contrast">Adjust contrast of Tinted icons (0.0× soft, 1.0× normal, 3.0× extreme)</string>
+    <string name="desc_icon_tint_contrast">Adjust the contrast of tinted icons</string>
     <string name="icon_system">System</string>
     <string name="icon_preview_text">Ab</string>
 
@@ -784,7 +784,7 @@
     <string name="desc_swipe_down">Swipe down action</string>
     <string name="desc_short_swipe">Short swipe sensitivity</string>
     <string name="desc_long_swipe">Long swipe sensitivity</string>
-    <string name="desc_edge_swipe">Edge swipe to go back</string>
+    <string name="desc_edge_swipe">Use Bink OS edge swipe to go back</string>
     <string name="desc_universal_font">One font for everything</string>
     <string name="desc_universal_font_select">Choose the universal font</string>
     <string name="desc_settings_font">Settings font</string>
@@ -902,12 +902,12 @@
     <string name="settings_fork_title">Fork of inkOS</string>
     <string name="settings_fork_description">Bink OS is a personal fork of inkOS by gezimos, with thanks to the original author.</string>
     <string name="settings_system_full_refresh">System Full Refresh (Bigme)</string>
-    <string name="settings_desc_system_full_refresh">Use the vendor GC16 waveform for every refresh</string>
+    <string name="settings_desc_system_full_refresh">Use vendor full refresh</string>
     <string name="settings_page_turn_animation">Page Turn Animation (Bigme)</string>
-    <string name="settings_desc_page_turn_animation">Enable vendor page turn animations</string>
+    <string name="settings_desc_page_turn_animation">Enable vendor refresh animations</string>
 
     <string name="settings_page_turn_animation_style">Page Turn Animation Style</string>
-    <string name="settings_desc_page_turn_animation_style">Directional follows the gesture; Ripple uses Bigme circle animations (open 10 / close 9)</string>
+    <string name="settings_desc_page_turn_animation_style">Directional follows the gesture; Ripple uses a circular animation</string>
     <string name="option_page_turn_directional">Directional</string>
     <string name="option_page_turn_ripple">Ripple</string>
     <string name="settings_desc_choose_launcher">Choose which launcher to use</string>
@@ -940,7 +940,7 @@
     <!-- Home tooltips and widgets (HomeUI) -->
     <string name="home_tooltip_pages_title">Home Pages</string>
     <string name="home_tooltip_swipe_pages">Swipe up/down to move between pages</string>
-    <string name="home_tooltip_long_swipe_drawer">Long swipe up to open App Drawer</string>
+    <string name="home_tooltip_long_swipe_drawer">Long swipe an assigned direction to open its screen</string>
     <string name="home_tooltip_next">Next</string>
     <string name="home_tap_to_choose_widget">Tap to choose widget</string>
     <string name="home_events_today_fmt">Today %1$s</string>
@@ -972,9 +972,9 @@
     <!-- Onboarding & guide -->
     <string name="onboarding_desc_0">A distraction-free interface for clarity and focus. Optimized for e-ink devices, QWERTY and T9 phones.</string>
     <string name="onboarding_desc_1">Bink OS does not collect, store, or share any data. There are no server connections and no tracking. Everything stays on your device.</string>
-    <string name="onboarding_desc_2">To get the most out of Bink OS, grant notification permissions so Bink OS can forward you Android notifications in Home, Letters or Simple Tray.</string>
+    <string name="onboarding_desc_2">Grant notification access so Bink OS can show Android notifications in Home, Letters, Simple Tray or Hub.</string>
     <string name="onboarding_desc_3">To make Bink OS your new app home, set it as a default launcher. You can change this later in Settings.</string>
-    <string name="onboarding_desc_4">To access settings, Pinch (zoom out) in home (empty areas) to open the quick settings. That will allow you to access All Settings or enable Edit Mode for the front-end editor.</string>
+    <string name="onboarding_desc_4">Pinch in empty areas to open the Quick Menu. From there, open All Settings or Edit Mode.</string>
     <string name="onboarding_desc_5">Choose a color preset for your launcher, or skip to keep your current theme and start from scratch.</string>
     <string name="onboarding_desc_6">Select your home shortcuts and order them using Edit Favorites. You can still longpress on single apps in home to replace them individually like before.</string>
     <string name="onboarding_confirm_read">I CONFIRM THAT I\'VE READ</string>
@@ -1002,8 +1002,12 @@
     <string name="settings_label">Settings</string>
     <string name="desc_simple_tray_brightness">Show the brightness bar at the top of Simple Tray</string>
     <string name="onboarding_eink_title">EXTRAS</string>
-    <string name="onboarding_eink_desc">Your device supports these vendor e-ink features; they apply as soon as you turn them on:</string>
-    <string name="onboarding_eink_animation_scope">Page-turn animation only plays in Regal or HD256 refresh mode.</string>
+        <string name="onboarding_eink_full_refresh_title">Full Refresh</string>
+    <string name="onboarding_eink_full_refresh_desc">Use Bigme vendor full refresh</string>
+    <string name="onboarding_eink_page_turn_title">Page Turn Animation</string>
+    <string name="onboarding_eink_page_turn_desc">Use Bigme vendor refresh animations</string>
+<string name="onboarding_eink_desc">Your device supports these vendor e-ink features; they apply as soon as you turn them on:</string>
+    <string name="onboarding_eink_animation_scope">Refresh animations is only visible when refresh mode is set to Regal or HD256.</string>
     <string name="tooltip_edit_favorites_title">Edit Favorites</string>
     <string name="tooltip_edit_favorites_line1">Tap the numbers on top to change the number of apps/pages.</string>
     <string name="tooltip_edit_favorites_line2">Drag the = icon to re-order apps.</string>
@@ -1015,9 +1019,9 @@
     <string name="tooltip_recents_line1">Tap the title to toggle between Recents and Most Used</string>
     <string name="tooltip_letters_title">Letters</string>
     <string name="tooltip_letters_line1">Swipe up and down to move between notifications.</string>
-    <string name="tooltip_letters_line2">Long press dismiss to dismiss all notifications.</string>
+    <string name="tooltip_letters_line2">Long press the Dismiss button to dismiss all notifications.</string>
     <string name="tooltip_edit_bg_title">Background</string>
-    <string name="tooltip_edit_bg_line">Tap on background (empty areas) to edit theme, alignment, etc</string>
+    <string name="tooltip_edit_bg_line">Tap the background to edit theme, alignment and more</string>
     <string name="tooltip_edit_clock_title">Clock</string>
     <string name="tooltip_edit_clock_line">Tap on clock to edit clock widget, font size, clock format etc</string>
     <string name="tooltip_edit_date_title">Date</string>

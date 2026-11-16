@@ -175,7 +175,7 @@ data class HomeUiState(
     val swipeUpAction: Constants.Action = Constants.Action.Disabled,
     val swipeDownAction: Constants.Action = Constants.Action.Disabled,
     val quoteAction: Constants.Action = Constants.Action.Disabled,
-    val edgeSwipeBackEnabled: Boolean = true,
+    val edgeSwipeBackEnabled: Boolean = false,
 
     // Drawer Settings
     val appDrawerSize: Int = Constants.DEFAULT_APP_DRAWER_SIZE,
