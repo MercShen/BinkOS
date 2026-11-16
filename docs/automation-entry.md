@@ -33,6 +33,8 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 本机路径/序列号只是示例，脚本支持 `-AdbPath` 或 PATH/SDK 环境变量，不再依赖仓库外的 home 脚本。`tools/home.ps1` 设置/检查的是默认 HOME，不保证页面已渲染。
 
+- 设备测试产物统一放 `/sdcard/BinkOS-Test/v<versionName>/`，按 `screenshots/`、`ui/`、`tmp/`、`evidence/` 分类；截图/XML 用 `<目的>-<yyyyMMdd-HHmmss>` 命名，禁止散落 `/sdcard` 根目录。详见 [testing-playbook.md](<testing-playbook.md#11-设备测试产物管理>)。
+
 ## 2. 推荐调用与结果协议
 
 ```powershell

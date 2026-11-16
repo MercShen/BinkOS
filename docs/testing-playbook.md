@@ -31,6 +31,31 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 脚本支持自动唯一设备/adb发现，仓库外脚本不再是依赖。版本字符串未变不意味着运行了新代码，还要核对install与进程/更新时间。
 
+
+### 1.1 设备测试产物管理
+
+自动化/调试只要会在设备上生成文件，就必须统一收纳，不得散落在 `/sdcard` 根目录。
+
+- 主目录：`/sdcard/BinkOS-Test/`
+- 版本目录：`/sdcard/BinkOS-Test/v<versionName>/`（例如 `v0.2.7`；版本未知用 `unversioned`）
+- 子目录：
+  - `screenshots/`：截图
+  - `ui/`：`uiautomator dump` XML
+  - `tmp/`：本轮临时文件，结束删除
+  - `evidence/`：需要复用的证据/基准
+- 文件名：`<简短目的>-<yyyyMMdd-HHmmss>.<ext>`，例如 `onboarding-refresh-demo-20261117-032500.png`。
+- 不用 `/sdcard/*.png`、`/sdcard/*.xml` 这种根目录落盘；脚本必须 `mkdir -p` 目标目录。
+- 设备产物需要带回仓库时，落到工作区的版本化目录（如 `emulator/artifacts/<version>/`），不要把设备根目录文件直接拷散。
+
+```powershell
+$ROOT = '/sdcard/BinkOS-Test/v0.2.7'
+& $ADB -s $SERIAL shell mkdir -p "$ROOT/screenshots" "$ROOT/ui" "$ROOT/tmp" "$ROOT/evidence"
+& $ADB -s $SERIAL shell screencap -p "$ROOT/screenshots/onboarding-refresh-demo-20261117-032500.png"
+& $ADB -s $SERIAL shell uiautomator dump "$ROOT/ui/settings-extras-20261117-032500.xml"
+```
+
+历史遗留的 `/sdcard` 根文件不自动清理；由设备所有者决定是否删除。新调试一律按上述路径。
+
 ## 2. 每个 UI 场景的黄金流程
 
 **发请求 → 看该requestId结果 → 等目标UI锚点 → 读UI树/看截图 → 核对状态与副作用。**
