@@ -14,7 +14,7 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 ### Notifications, Tray and Hub
 - Add per-row dismiss buttons in Tray and Hub for dismissible notifications; keep ongoing / no-clear notifications non-dismissible.
 - Exclude media/transport notifications from Home and Tray message counts while retaining the Tray media card.
-- Let Hub switch category tabs with a horizontal swipe on empty space, without interfering with per-row swipe-to-dismiss.
+- Let Hub switch category tabs with a horizontal swipe on empty space; per-notification deletion uses the row X button, not a row swipe.
 - Pin the Hub “clear all” row to the midpoint between the full notification frame and screen bottom, so it no longer moves with the notification count.
 - Align Hub/Tray page dots between the message frame and screen edge, and close Tray/Hub on reverse long swipe only when the corresponding open gesture is bound.
 
