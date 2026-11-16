@@ -115,6 +115,7 @@ GUID 生成依赖 uuidgen 或 Python。Windows 不使用 Bash 的 `\` 续行；�
 | `themes` / `themepresets` | 主题预设 |
 | `guide` | 使用引导 |
 | `onboarding` | 可选 `--ei onboarding_page 0..7`；0 欢迎、1 隐私、2 通知、3 默认桌面、7 厂商 e-ink 页、4 设置、5 主题、6 收藏 | 直接导航首启页，不要求/不永久修改 firstOpen；带 `onboarding_page` 时写 `onboardingPage`，需 `confirm_write` |
+| `firsttime` / `first_time` / `preview_guide` | `--es guide NAME` 必填 | Debug 首次引导后门：直接展示，不改任何偏好/已读状态；无需 confirm_write；`guide=close` 关闭当前提示；见下方 guide 列表 |
 | `editfavorites` / `edit_favorites` | 编辑收藏，选择操作可能修改配置；进入本身不等于修改 |
 
 无“打开任意页面”的保证：WIDGET、小部件二级选择、语言/字体等子 sheet 暂无独立 dest，按真实产品入口操作。重复导航会改变返回栈；用 home 清理测试路径，不无限叠加同一页。
@@ -175,8 +176,36 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 ```
 
 页面索引：0 欢迎、1 隐私、2 通知、3 默认桌面、7 厂商 e-ink（Regal/HD256 说明在此页）、4 设置、5 主题、6 收藏。`onboarding_page` 与 `skip_onboarding` 可同时使用；前者只改引导页，后者才永久关闭首启。
+
+### firsttime：首次引导后门（Debug）
+
+用于不 reset 状态、不重装，直接复查首次点击才出现的提示/弹窗。仅 Debug 构建可用；不会写/清 tooltip flag，也不会改动画/引导已读状态；`editmode` 只临时进入编辑模式，`guide=close` 会恢复打开前的状态；打开后可再用 `guide=close` 关闭。
+
+```powershell
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest firsttime --es guide recents
+```
+
+| guide | 直接打开/展示 |
+|---|---|
+| `home` / `home_pinch` / `home_swipe_pages` / `home_long_swipe` | 主页三连提示的指定步骤 |
+| `recents` | Recents 首次提示 |
+| `letters` | Letters 首次提示 |
+| `editfavorites` | App Drawer → Edit Favorites 首次提示 |
+| `hiddenapps` | App Drawer → Hidden Apps 首次提示 |
+| `edit_hiddenapps` | App Drawer → Edit Hidden Apps 首次提示 |
+| `editmode` | 主页编辑模式五步引导（从第 1 步开始） |
+| `refresh_animation` | onboarding 厂商页 + Regal/HD256 刷新动画弹窗 |
+| `close` | 关闭当前由 firsttime 打开的提示/弹窗 |
+
+- 这些命令**不改**任何偏好或首次已读状态；不是 `pm clear`，也不是“清 flag 再触发”。关闭提示不会把已读状态写成 true。
+- `home*` 和 `editmode` 会先回主页；其余按对应界面导航。
+- `refresh_animation` 只临时跳到第 7 页并弹窗，不写 `onboardingPage`，不要求动画开关当前为 on。
+- `editmode` 需要临时进入编辑模式才能显示五步引导；`guide=close` 会恢复到打开前的编辑模式状态。
+
+首次开启 refresh animations 的 Regal/HD256 弹窗没有独立 extra，需在该页 UI 点开关；完整复位与验收步骤见 [testing-playbook.md](<testing-playbook.md#首次开启-refresh-animations-的引导弹窗>)。
 - refresh先尝试系统全刷（仅einkSystemFullRefresh开启且厂商调用可用），否则100ms覆盖层闪屏；不保证物理GC16或任何波形实际效果。
-- 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget；onboarding_page只允许onboarding且为0..7。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
+- 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget；onboarding_page只允许onboarding且为0..7；guide只允许firsttime且必须是表中名称。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
 - dest值不区分大小写，extra名称区分；request_id用短可打印串(≤128字符)，推荐UUID。脚本对dest/type还做安全字符校验。
 
 ## 7. status（纯只读）

@@ -291,8 +291,26 @@ class HomeFragmentCompose : Fragment() {
                     // One-time edit mode tooltip — multi-step with Next button
                     val editTooltipKey = "tooltip_edit_mode_shown"
                     var editTooltipStep by remember { mutableIntStateOf(0) }
+                    var debugForcedEdit by remember { mutableStateOf(false) }
                     LaunchedEffect(isEditMode) {
                         editTooltipStep = if (isEditMode && !prefs.isTooltipShown(editTooltipKey)) 1 else 0
+                    }
+                    LaunchedEffect(Unit) {
+                        com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedEditModeGuide.collect { forced ->
+                            if (forced) {
+                                debugForcedEdit = true
+                                editTooltipStep = 1
+                                com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedEditModeGuide.value = false
+                            }
+                        }
+                    }
+                    LaunchedEffect(Unit) {
+                        com.github.gezimos.inkos.helper.DebugFirstTimeGuide.closeRequest.collect { request ->
+                            if (request != 0L && editTooltipStep in 1..5) {
+                                editTooltipStep = 0
+                                debugForcedEdit = false
+                            }
+                        }
                     }
                     if (isEditMode && editTooltipStep in 1..5) {
                         val isLastEditStep = editTooltipStep == 5
@@ -322,7 +340,14 @@ class HomeFragmentCompose : Fragment() {
                             nextLabel = if (isLastEditStep) stringResource(R.string.done) else stringResource(R.string.home_tooltip_next),
                             minContentHeight = 80.dp,
                             onNext = {
-                                if (isLastEditStep) {
+                                if (debugForcedEdit) {
+                                    if (isLastEditStep) {
+                                        editTooltipStep = 0
+                                        debugForcedEdit = false
+                                    } else {
+                                        editTooltipStep++
+                                    }
+                                } else if (isLastEditStep) {
                                     prefs.markTooltipShown(editTooltipKey)
                                     editTooltipStep = 0
                                 } else {
@@ -330,8 +355,9 @@ class HomeFragmentCompose : Fragment() {
                                 }
                             },
                             onDismiss = {
-                                prefs.markTooltipShown(editTooltipKey)
+                                if (!debugForcedEdit) prefs.markTooltipShown(editTooltipKey)
                                 editTooltipStep = 0
+                                debugForcedEdit = false
                             }
                         )
                     }

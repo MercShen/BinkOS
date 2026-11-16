@@ -62,6 +62,7 @@ import com.github.gezimos.inkos.MainViewModel
 import com.github.gezimos.inkos.data.Constants
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.ShapeHelper
+import com.github.gezimos.inkos.helper.DebugFirstTimeGuide
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
 import com.github.gezimos.inkos.style.rememberScreenScale
@@ -181,6 +182,30 @@ object OnboardingScreen {
         var bigmeFullRefresh by remember { mutableStateOf(prefs.einkSystemFullRefresh) }
         var bigmePageTurnAnim by remember { mutableStateOf(prefs.einkPageTurnAnimation) }
         var showRefreshScopeDialog by remember { mutableStateOf(false) }
+
+        LaunchedEffect(Unit) {
+            DebugFirstTimeGuide.forceRefreshAnimationScope.collect { forced ->
+                if (forced) {
+                    showRefreshScopeDialog = true
+                }
+            }
+        }
+        LaunchedEffect(Unit) {
+            DebugFirstTimeGuide.closeRequest.collect { request ->
+                if (request != 0L) {
+                    if (showRefreshScopeDialog) showRefreshScopeDialog = false
+                    DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
+                    DebugFirstTimeGuide.forcedOnboardingPage.value = null
+                }
+            }
+        }
+        LaunchedEffect(Unit) {
+            DebugFirstTimeGuide.forcedOnboardingPage.collect { forced ->
+                if (forced != null) {
+                    page = forced
+                }
+            }
+        }
 
         // 插入额外页后，页码显示需要重排：0,1,2,3,[大我页],4,5,6
         fun onboardingPosition(p: Int): Int = if (!supportsBigmeTweaks) p + 1 else when {
@@ -448,14 +473,20 @@ object OnboardingScreen {
                             )
                             if (showRefreshScopeDialog) {
                                 AlertDialog(
-                                    onDismissRequest = { showRefreshScopeDialog = false },
-                                    title = { Text(stringResource(R.string.settings_page_turn_animation)) },
+                                    onDismissRequest = {
+                                        showRefreshScopeDialog = false
+                                        DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
+                                    },
+                                    title = { Text(stringResource(R.string.onboarding_eink_page_turn_title)) },
                                     text = { Text(stringResource(R.string.onboarding_eink_animation_scope)) },
                                     containerColor = Theme.colors.background,
                                     titleContentColor = Theme.colors.text,
                                     textContentColor = Theme.colors.text,
                                     confirmButton = {
-                                        TextButton(onClick = { showRefreshScopeDialog = false }) {
+                                        TextButton(onClick = {
+                                            showRefreshScopeDialog = false
+                                            DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
+                                        }) {
                                             Text(stringResource(R.string.done))
                                         }
                                     }

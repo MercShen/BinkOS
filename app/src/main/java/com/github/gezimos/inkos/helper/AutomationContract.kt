@@ -11,11 +11,13 @@ object AutomationContract {
         val type: String? = null,
         val skipOnboarding: Boolean = false,
         val refreshEink: Boolean = false,
-        val onboardingPage: Int? = null
+        val onboardingPage: Int? = null,
+        val guide: String? = null
     ) {
         val isStateCommand: Boolean get() = dest in stateCommands
         val writesPreferences: Boolean get() = isStateCommand || skipOnboarding || onboardingPage != null
-        val needsHome: Boolean get() = dest in homeCommands
+        val needsHome: Boolean get() = dest in homeCommands ||
+            (dest == "firsttime" && guide != null && guide in firstTimeHomeGuides)
     }
 
     sealed interface Validation {
@@ -48,6 +50,7 @@ object AutomationContract {
         names("themes", "themepresets")
         names("guide")
         names("onboarding")
+        names("firsttime", "first_time", "preview_guide")
         names("editmode", "edit_mode")
         names("editmode_on", "edit_on")
         names("editmode_off", "edit_off")
@@ -104,6 +107,13 @@ object AutomationContract {
         "quick_menu", "edit_bg", "edit_bg_theme", "edit_bg_align", "edit_bg_islands", "edit_bg_gestures",
         "edit_clock", "edit_date", "edit_apps", "editmode", "editmode_on", "shortswipe", "home_next", "home_prev"
     )
+    private val firstTimeHomeGuides = setOf(
+        "home", "home_pinch", "home_swipe_pages", "home_long_swipe", "editmode"
+    )
+    private val firstTimeGuides = setOf(
+        "home", "home_pinch", "home_swipe_pages", "home_long_swipe", "recents", "letters",
+        "editfavorites", "hiddenapps", "edit_hiddenapps", "editmode", "refresh_animation", "close"
+    )
 
     fun validate(extras: Map<String, Any?>, debug: Boolean): Validation {
         fun reject(message: String) = Validation.Rejected(message)
@@ -151,8 +161,17 @@ object AutomationContract {
             }
             null
         }
+        val guide = if (dest == "firsttime") {
+            val raw = extras["guide"] as? String ?: return reject("firsttime requires --es guide NAME")
+            val name = raw.trim().lowercase(Locale.ROOT)
+            if (name !in firstTimeGuides) return reject("Unknown firsttime guide")
+            name
+        } else {
+            if (extras.containsKey("guide")) return reject("guide is only supported for firsttime")
+            null
+        }
         val request = Request(dest, tab, value, type, extras["skip_onboarding"] == true,
-            extras["refresh_eink"] == true, onboardingPage)
+            extras["refresh_eink"] == true, onboardingPage, guide)
         if ((request.writesPreferences || request.refreshEink) && extras["confirm_write"] != true) {
             return reject("This command changes settings or forces a refresh; pass --ez confirm_write true only after authorization")
         }

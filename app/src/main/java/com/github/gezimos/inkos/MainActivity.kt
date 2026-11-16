@@ -248,7 +248,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleAutomationIntent(intent: Intent?): Boolean {
         intent ?: return false
         val keys = listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
-            "onboarding_page", "tab", "value", "type", "confirm_write", "request_id")
+            "onboarding_page", "guide", "tab", "value", "type", "confirm_write", "request_id")
         // Ordinary launcher intents are not automation requests. Never consume their product extras.
         if (!listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
                 "request_id").any { intent.hasExtra(it) }) return false
@@ -364,6 +364,58 @@ class MainActivity : AppCompatActivity() {
             "onboarding" -> {
                 request.onboardingPage?.let { prefs.onboardingPage = it }
                 navController.navigate(R.id.onboardingFragment)
+            }
+            "firsttime" -> {
+                val guide = requireNotNull(request.guide) { "firsttime guide missing" }
+                fun replayTooltip(key: String) {
+                    com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedTooltipKey.value = key
+                }
+                when (guide) {
+                    "home" -> com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedHomeStep.value = 1
+                    "home_pinch" -> com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedHomeStep.value = 1
+                    "home_swipe_pages" -> com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedHomeStep.value = 2
+                    "home_long_swipe" -> com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedHomeStep.value = 3
+                    "recents" -> {
+                        replayTooltip("tooltip_recents_shown")
+                        navController.navigate(R.id.recentsFragment)
+                    }
+                    "letters" -> {
+                        replayTooltip("tooltip_letters_shown")
+                        navController.navigate(R.id.lettersFragment)
+                    }
+                    "editfavorites" -> {
+                        replayTooltip("tooltip_edit_favorites_shown")
+                        navController.navigate(R.id.appsFragment, androidx.core.os.bundleOf("flag" to "EditFavorites", "n" to 0))
+                    }
+                    "hiddenapps" -> {
+                        replayTooltip("tooltip_hidden_apps_shown")
+                        navController.navigate(R.id.appsFragment, androidx.core.os.bundleOf("flag" to "HiddenApps", "n" to 0))
+                    }
+                    "edit_hiddenapps" -> {
+                        replayTooltip("tooltip_edit_hidden_apps_shown")
+                        navController.navigate(R.id.appsFragment, androidx.core.os.bundleOf("flag" to "EditHiddenApps", "n" to 0))
+                    }
+                    "editmode" -> {
+                        if (!com.github.gezimos.inkos.helper.DebugFirstTimeGuide.debugOpenedEditMode) {
+                            com.github.gezimos.inkos.helper.DebugFirstTimeGuide.editModeWasEnabled = EditModeHelper.isEditMode()
+                            com.github.gezimos.inkos.helper.DebugFirstTimeGuide.debugOpenedEditMode = true
+                        }
+                        com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedEditModeGuide.value = true
+                        EditModeHelper.setEditMode(true)
+                    }
+                    "refresh_animation" -> {
+                        com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedOnboardingPage.value = 7
+                        com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forceRefreshAnimationScope.value = true
+                        navController.navigate(R.id.onboardingFragment)
+                    }
+                    "close" -> {
+                        com.github.gezimos.inkos.helper.DebugFirstTimeGuide.closeRequest.value = System.nanoTime()
+                        if (com.github.gezimos.inkos.helper.DebugFirstTimeGuide.debugOpenedEditMode) {
+                            EditModeHelper.setEditMode(com.github.gezimos.inkos.helper.DebugFirstTimeGuide.editModeWasEnabled)
+                            com.github.gezimos.inkos.helper.DebugFirstTimeGuide.debugOpenedEditMode = false
+                        }
+                    }
+                }
             }
             "editmode" -> EditModeHelper.toggleEditMode()
             "editmode_on" -> EditModeHelper.setEditMode(true)

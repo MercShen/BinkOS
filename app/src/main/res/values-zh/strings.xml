@@ -1003,7 +1003,7 @@
  <string name="onboarding_eink_title">更多功能</string>
      <string name="onboarding_eink_full_refresh_title">系统全刷</string>
     <string name="onboarding_eink_full_refresh_desc">使用Bigme 厂商全刷</string>
-    <string name="onboarding_eink_page_turn_title">翻页动画</string>
+    <string name="onboarding_eink_page_turn_title">刷新动画</string>
     <string name="onboarding_eink_page_turn_desc">使用Bigme 厂商刷新动画</string>
 <string name="onboarding_eink_desc">你的设备支持这些厂商墨水屏特性，打开即时生效：</string>
  <string name="onboarding_eink_animation_scope">只有在刷新模式设为 Regal 或 HD256 时才能看到刷新动画。</string>

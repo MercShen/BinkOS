@@ -254,6 +254,7 @@ fun HomeUI(
             val tooltipKeySwipePages = "tooltip_home_swipe_pages"
             val tooltipKeyLongSwipeDrawer = "tooltip_home_long_swipe_drawer"
             var tooltipStep by remember { mutableIntStateOf(-1) }
+            var debugForcedHome by remember { mutableStateOf(false) }
             LaunchedEffect(prefs.firstOpen) {
                 tooltipStep = if (prefs.firstOpen) 0
                 else when {
@@ -261,6 +262,23 @@ fun HomeUI(
                     !prefs.isTooltipShown(tooltipKeySwipePages) -> 2
                     !prefs.isTooltipShown(tooltipKeyLongSwipeDrawer) -> 3
                     else -> 0
+                }
+            }
+            LaunchedEffect(Unit) {
+                com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedHomeStep.collect { forced ->
+                    if (forced != null) {
+                        debugForcedHome = true
+                        tooltipStep = forced
+                        com.github.gezimos.inkos.helper.DebugFirstTimeGuide.forcedHomeStep.value = null
+                    }
+                }
+            }
+            LaunchedEffect(Unit) {
+                com.github.gezimos.inkos.helper.DebugFirstTimeGuide.closeRequest.collect { request ->
+                    if (request != 0L && tooltipStep in 1..3) {
+                        tooltipStep = 0
+                        debugForcedHome = false
+                    }
                 }
             }
             if (tooltipStep in 1..3) {
@@ -290,19 +308,27 @@ fun HomeUI(
                     alignment = Alignment.Center,
                     nextLabel = if (isLastStep) stringResource(R.string.done) else stringResource(R.string.home_tooltip_next),
                     onNext = {
-                        prefs.markTooltipShown(currentKey)
-                        tooltipStep = when {
-                            !prefs.isTooltipShown(tooltipKeyPinch) -> 1
-                            !prefs.isTooltipShown(tooltipKeySwipePages) -> 2
-                            !prefs.isTooltipShown(tooltipKeyLongSwipeDrawer) -> 3
-                            else -> 0
+                        if (debugForcedHome) {
+                            tooltipStep = if (isLastStep) 0 else tooltipStep + 1
+                            if (isLastStep) debugForcedHome = false
+                        } else {
+                            prefs.markTooltipShown(currentKey)
+                            tooltipStep = when {
+                                !prefs.isTooltipShown(tooltipKeyPinch) -> 1
+                                !prefs.isTooltipShown(tooltipKeySwipePages) -> 2
+                                !prefs.isTooltipShown(tooltipKeyLongSwipeDrawer) -> 3
+                                else -> 0
+                            }
                         }
                     },
                     onDismiss = {
-                        prefs.markTooltipShown(tooltipKeyPinch)
-                        prefs.markTooltipShown(tooltipKeySwipePages)
-                        prefs.markTooltipShown(tooltipKeyLongSwipeDrawer)
+                        if (!debugForcedHome) {
+                            prefs.markTooltipShown(tooltipKeyPinch)
+                            prefs.markTooltipShown(tooltipKeySwipePages)
+                            prefs.markTooltipShown(tooltipKeyLongSwipeDrawer)
+                        }
                         tooltipStep = 0
+                        debugForcedHome = false
                     }
                 )
             }

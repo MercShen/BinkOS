@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.github.gezimos.inkos.data.Prefs
+import com.github.gezimos.inkos.helper.DebugFirstTimeGuide
 import com.github.gezimos.inkos.helper.ShapeHelper
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
@@ -62,17 +63,36 @@ fun OneTimeTooltip(
     val context = LocalContext.current
     val prefs = remember { Prefs(context) }
     var show by remember { mutableStateOf(false) }
+    var debugForced by remember { mutableStateOf(false) }
 
     LaunchedEffect(trigger) {
         if (trigger && !prefs.isTooltipShown(key)) {
             show = true
         }
     }
+    LaunchedEffect(Unit) {
+        DebugFirstTimeGuide.forcedTooltipKey.collect { forced ->
+            if (forced == key) {
+                debugForced = true
+                show = true
+                DebugFirstTimeGuide.forcedTooltipKey.value = null
+            }
+        }
+    }
+    LaunchedEffect(Unit) {
+        DebugFirstTimeGuide.closeRequest.collect { request ->
+            if (request != 0L && show) {
+                show = false
+                debugForced = false
+            }
+        }
+    }
 
     if (show) {
         TooltipBubble(title = title, lines = lines, icon = icon, animFrames = animFrames, alignment = alignment) {
-            prefs.markTooltipShown(key)
+            if (!debugForced) prefs.markTooltipShown(key)
             show = false
+            debugForced = false
         }
     }
 }

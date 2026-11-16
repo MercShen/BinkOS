@@ -130,6 +130,34 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - Simple Tray 的反向长滑关闭与 Hub 同规则：`OpenSimpleTray` 绑定时（当前下滑开→上滑关）才关闭；未绑定不关闭，也不播动画。
 - 媒体通知（Spotify/网易云/Audible 等 `CATEGORY_TRANSPORT`）不计入主页全局通知数量，也不计入 Tray 顶部数字；Tray 是否显示媒体卡由 Simple Tray 白名单决定；Letters 永不显示 transport/媒体持续通知。
 
+### 首次开启 Refresh animations 的引导弹窗
+
+Debug 构建可直接用后门打开，不需要清数据/改开关（见 [automation-entry.md](<automation-entry.md#firsttime首次引导后门debug>)）：
+
+```powershell
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest firsttime --es guide refresh_animation
+# 关闭弹窗，不写任何已读状态：
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest firsttime --es guide close
+```
+
+需要验证“真正首次点击”时再用下面的清数据流程（会清掉本包设置；仅在测试机/获得授权时用）：
+
+```powershell
+& $ADB -s $SERIAL shell pm clear $PKG
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest onboarding --ei onboarding_page 7 --ez confirm_write true
+if ($LASTEXITCODE -ne 0) { throw 'onboarding page 7 failed' }
+# 在 5/8 页点击「翻页动画」开关；期望弹出标题「翻页动画」、正文：
+# 只有在刷新模式设为 Regal 或 HD256 时才能看到刷新动画。
+```
+
+- `onboarding_page 7` 的契约见 [automation-entry.md](<automation-entry.md>)；该弹窗没有独立自动化 extra，仍需在 UI 点开关。
+- 验证副作用：`EINK_PAGE_TURN_ANIMATION=true`，`tooltip_refresh_animation_scope_shown=true`；点「完成」关闭弹窗。
+- 不能清数据时：force-stop 后把 `EINK_PAGE_TURN_ANIMATION` 置 false、删除 `tooltip_refresh_animation_scope_shown`，再按上面跳页；不要依赖直接改 XML 后不重启进程。
+- 在非清数据场景重复验证时，先确认这两个键的状态；只删 tooltip 不关动画，开关已经是 on，不会再次触发弹窗。
+
 ## 6. 构建与离线回归
 
 ```powershell

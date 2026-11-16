@@ -1042,6 +1042,7 @@ class Prefs(val context: Context) {
     /** Generic one-time flag accessor for tooltips */
     fun isTooltipShown(key: String): Boolean = prefs.getBoolean(key, false)
     fun markTooltipShown(key: String) = prefs.edit { putBoolean(key, true) }
+    fun clearTooltipShown(key: String) = prefs.edit { remove(key) }
 
     var einkHelperMode: Int
         get() = prefs.getInt("eink_helper_mode", 0)

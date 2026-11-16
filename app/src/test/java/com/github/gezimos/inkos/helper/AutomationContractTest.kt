@@ -81,4 +81,16 @@ class AutomationContractTest {
         assertTrue(accepted("dest" to "onboarding", "onboarding_page" to 7,
             "confirm_write" to true).writesPreferences)
     }
+    @Test fun firstTimeGuidesAreNamedAndHomeAware() {
+        rejected("dest" to "firsttime")
+        rejected("dest" to "firsttime", "guide" to "unknown")
+        rejected("dest" to "settings", "guide" to "home")
+        val refresh = accepted("dest" to "firsttime", "guide" to "refresh_animation")
+        assertEquals("refresh_animation", refresh.guide)
+        assertFalse(refresh.writesPreferences)
+        assertTrue(accepted("dest" to "firsttime", "guide" to "home").needsHome)
+        assertTrue(accepted("dest" to "firsttime", "guide" to "editmode").needsHome)
+        assertFalse(accepted("dest" to "firsttime", "guide" to "recents").needsHome)
+        assertFalse(accepted("dest" to "firsttime", "guide" to "close").needsHome)
+    }
 }

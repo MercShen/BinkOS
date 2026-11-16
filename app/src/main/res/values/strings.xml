@@ -1004,7 +1004,7 @@
     <string name="onboarding_eink_title">EXTRAS</string>
         <string name="onboarding_eink_full_refresh_title">Full Refresh</string>
     <string name="onboarding_eink_full_refresh_desc">Use Bigme vendor full refresh</string>
-    <string name="onboarding_eink_page_turn_title">Page Turn Animation</string>
+    <string name="onboarding_eink_page_turn_title">Refresh Animation</string>
     <string name="onboarding_eink_page_turn_desc">Use Bigme vendor refresh animations</string>
 <string name="onboarding_eink_desc">Your device supports these vendor e-ink features; they apply as soon as you turn them on:</string>
     <string name="onboarding_eink_animation_scope">Refresh animations is only visible when refresh mode is set to Regal or HD256.</string>
