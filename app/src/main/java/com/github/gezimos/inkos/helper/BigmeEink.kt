@@ -2,6 +2,8 @@ package com.github.gezimos.inkos.helper
 
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.WindowManager
@@ -39,8 +41,13 @@ object BigmeEink {
     private const val TAG = "BigmeEink"
     private const val CLASS_NAME = "xrz.framework.manager.XrzEinkManager"
     private const val ANIMATION_METHOD = "setEinkAnimationTimeout"
+    private const val APP_ANIMATION_METHOD = "setEinkAnimationForPackage"
     private const val REGAL_MODE = 180
     private const val HD_256_MODE = 0x800000B1.toInt()
+    private const val PAGE_TURN_STYLE_RIPPLE = 1
+    /** OEM appEinkAnimation codes: 10 = circle→middle (open), 9 = middle→circle (close). */
+    private const val APP_ANIMATION_RIPPLE_OPEN = 10
+    private const val APP_ANIMATION_RIPPLE_CLOSE = 9
 
     /** 触发后动画模式的保持时长：要覆盖「调用 → 真正重绘」的间隔。 */
     private const val DURATION_MS = 500L
@@ -61,6 +68,7 @@ object BigmeEink {
 
     @Volatile private var policy: Any? = null
     @Volatile private var animationMethod: Method? = null
+    @Volatile private var appAnimationMethod: Method? = null
     @Volatile private var policyGetter: Method? = null
     @Volatile private var refreshModeSetter: Method? = null
     @Volatile private var initialized = false
@@ -68,7 +76,10 @@ object BigmeEink {
 
     @Volatile private var lastSwipe: Direction? = null
     @Volatile private var lastSwipeAt = 0L
+    @Volatile private var lastAppAnimationCode = -1
     private var lastTriggerAt = 0L
+    private val resetHandler = Handler(Looper.getMainLooper())
+    private var pendingReset: Runnable? = null
 
     val isAvailable: Boolean get() = available
 
@@ -101,6 +112,13 @@ object BigmeEink {
 
                 policy = p
                 animationMethod = m
+                appAnimationMethod = runCatching {
+                    p.javaClass.getMethod(
+                        APP_ANIMATION_METHOD,
+                        String::class.java,
+                        Int::class.javaPrimitiveType
+                    ).apply { isAccessible = true }
+                }.getOrNull()
                 policyGetter = runCatching {
                     p.javaClass.getMethod("getPolicyByPackage", String::class.java)
                         .apply { isAccessible = true }
@@ -159,12 +177,72 @@ object BigmeEink {
 
     /** 打开一个由手势绑定的界面：按 [direction] 播放。 */
     fun onScreenOpened(context: Context, direction: Direction) {
+        val ctx = context.applicationContext
+        if (isRippleStyle(ctx) && applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_OPEN)) {
+            scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_OPEN)
+            return
+        }
+        // Directional 模式不能残留上一次的 Ripple 固定样式。
+        applyAppAnimation(ctx, 0)
         trigger(context, direction, "open")
     }
 
     /** 关闭同一个界面：按关闭方向 [direction] 播放。 */
     fun onScreenClosed(context: Context, direction: Direction) {
+        val ctx = context.applicationContext
+        if (isRippleStyle(ctx) && applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_CLOSE)) {
+            scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_CLOSE)
+            return
+        }
+        applyAppAnimation(ctx, 0)
         trigger(context, direction, "close")
+    }
+
+    /** 固定样式只服务于这一次界面切换；动画结束后回到 none，避免时钟等刷新一直播 Ripple。 */
+    private fun scheduleAppAnimationReset(context: Context, code: Int) {
+        pendingReset?.let { resetHandler.removeCallbacks(it) }
+        val runnable = Runnable {
+            if (lastAppAnimationCode == code) {
+                applyAppAnimation(context, 0)
+            }
+        }
+        pendingReset = runnable
+        resetHandler.postDelayed(runnable, 800L)
+    }
+
+    private fun isRippleStyle(context: Context): Boolean = try {
+        com.github.gezimos.inkos.data.Prefs(context).einkPageTurnAnimationStyle == PAGE_TURN_STYLE_RIPPLE
+    } catch (_: Throwable) {
+        false
+    }
+
+    /**
+     * 设置 OEM 的固定按应用动画（appEinkAnimation）。
+     * 10 = 中间→圆周（打开），9 = 圆周→中间（关闭），0 = none。
+     */
+    private fun applyAppAnimation(context: Context, code: Int): Boolean {
+        if (!available || policy == null) return false
+        val method = appAnimationMethod ?: return false
+        if (lastAppAnimationCode == code) return true
+        return try {
+            val result = method.invoke(policy, context.packageName, code)
+            if (result is Boolean && !result) return false
+            lastAppAnimationCode = code
+            Log.d(TAG, "appEinkAnimation=$code pkg=${context.packageName}")
+            true
+        } catch (t: Throwable) {
+            Log.w(TAG, "setEinkAnimationForPackage($code) failed: ${t.javaClass.simpleName}: ${t.message}")
+            false
+        }
+    }
+
+    /** 关闭翻页动画或切回 Directional 时清掉固定样式，避免残留 Ripple。 */
+    fun resetAppEinkAnimation(context: Context) {
+        pendingReset?.let { resetHandler.removeCallbacks(it) }
+        pendingReset = null
+        if (applyAppAnimation(context.applicationContext, 0)) {
+            Log.i(TAG, "appEinkAnimation reset to 0")
+        }
     }
 
     /**

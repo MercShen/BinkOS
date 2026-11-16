@@ -141,6 +141,7 @@ data class HomeUiState(
     val einkRefreshDelay: Int = 0,
     val einkSystemFullRefresh: Boolean = false,
     val einkPageTurnAnimation: Boolean = false,
+    val einkPageTurnAnimationStyle: Int = 0,
     val useVolumeKeysForPages: Boolean = false,
     val selectedAppShortcuts: Set<String>? = null, // null means all selected by default
     val einkHelperMode: Int = 0,
@@ -585,6 +586,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         einkRefreshDelay = prefs.einkRefreshDelay,
         einkSystemFullRefresh = prefs.einkSystemFullRefresh,
         einkPageTurnAnimation = prefs.einkPageTurnAnimation,
+        einkPageTurnAnimationStyle = prefs.einkPageTurnAnimationStyle,
         useVolumeKeysForPages = prefs.useVolumeKeysForPages,
         selectedAppShortcuts = prefs.selectedAppShortcuts.takeIf { it.isNotEmpty() },
         einkHelperMode = prefs.einkHelperMode,
@@ -2631,6 +2633,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setEinkPageTurnAnimation(enabled: Boolean) {
         prefs.einkPageTurnAnimation = enabled
         _homeUiState.value = _homeUiState.value.copy(einkPageTurnAnimation = enabled)
+        if (!enabled) {
+            try { com.github.gezimos.inkos.helper.BigmeEink.resetAppEinkAnimation(appContext) } catch (_: Exception) {}
+        }
+    }
+
+    fun setEinkPageTurnAnimationStyle(style: Int) {
+        val value = style.coerceIn(0, 1)
+        prefs.einkPageTurnAnimationStyle = value
+        _homeUiState.value = _homeUiState.value.copy(einkPageTurnAnimationStyle = value)
+        if (value == 0) {
+            try { com.github.gezimos.inkos.helper.BigmeEink.resetAppEinkAnimation(appContext) } catch (_: Exception) {}
+        }
     }
 
     fun setEinkSystemFullRefresh(enabled: Boolean) {

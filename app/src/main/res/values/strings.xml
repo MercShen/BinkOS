@@ -906,6 +906,10 @@
     <string name="settings_page_turn_animation">Page Turn Animation (Bigme)</string>
     <string name="settings_desc_page_turn_animation">Enable vendor page turn animations</string>
 
+    <string name="settings_page_turn_animation_style">Page Turn Animation Style</string>
+    <string name="settings_desc_page_turn_animation_style">Directional follows the gesture; Ripple uses Bigme circle animations (open 10 / close 9)</string>
+    <string name="option_page_turn_directional">Directional</string>
+    <string name="option_page_turn_ripple">Ripple</string>
     <string name="settings_desc_choose_launcher">Choose which launcher to use</string>
     <string name="settings_desc_view_onboarding">View the setup wizard again</string>
     <string name="settings_desc_guide">Learn gestures and interactions</string>

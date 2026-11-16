@@ -191,7 +191,11 @@ object OnboardingScreen {
                 val direction =
                     if (forward) com.github.gezimos.inkos.helper.BigmeEink.Direction.R2L
                     else com.github.gezimos.inkos.helper.BigmeEink.Direction.L2R
-                com.github.gezimos.inkos.helper.BigmeEink.onScreenOpened(context, direction)
+                if (forward) {
+                    com.github.gezimos.inkos.helper.BigmeEink.onScreenOpened(context, direction)
+                } else {
+                    com.github.gezimos.inkos.helper.BigmeEink.onScreenClosed(context, direction)
+                }
             } catch (_: Throwable) {
             }
         }

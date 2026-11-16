@@ -125,6 +125,8 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - Hub 清除全部按钮固定在“满页消息框底边与屏幕底边”的中点，不随每页消息数量上下移动；点击后清空并自动回主页。
 - Hub 行右侧小叉只对可清除通知显示；`FLAG_NO_CLEAR` / `FLAG_ONGOING_EVENT` / `isOngoing` 的系统通知不显示小叉（USB 调试通知是最方便的回归样本）。
 - Simple Tray 行右侧同样有小叉（仅可清除通知）；点击删除单条，长按仍保留媒体停止/删除行为。
+- Extra → Page Turn Animation Style 只在翻页动画开关启用时出现：`Directional` 走 `setEinkAnimationTimeout`；`Ripple` 用 `appEinkAnimation`，打开下发 10、关闭下发 9，800ms 后回 0，避免时钟等刷新持续播 Ripple。Ripple 不再只认“从主页进入”：App Drawer/其它页进入子页播 10，返回 App Drawer/主页播 9。
+- 设置页允许从图标/齿轮直接点入：`OpenSettings` 未绑定长滑时也会用默认 R2L 打开、L2R 关闭；但反向长滑仍然不关闭（仍需显式绑定）。
 - Simple Tray 的反向长滑关闭与 Hub 同规则：`OpenSimpleTray` 绑定时（当前下滑开→上滑关）才关闭；未绑定不关闭，也不播动画。
 - 媒体通知（Spotify/网易云/Audible 等 `CATEGORY_TRANSPORT`）不计入主页全局通知数量，也不计入 Tray 顶部数字；Tray 是否显示媒体卡由 Simple Tray 白名单决定；Letters 永不显示 transport/媒体持续通知。
 

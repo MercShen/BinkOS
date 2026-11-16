@@ -128,6 +128,7 @@ private const val HOME_PAGER_ALIGN = "HOME_PAGER_ALIGN"
 private const val PAGE_INDICATOR_MARGIN = "PAGE_INDICATOR_MARGIN"
 private const val EINK_SYSTEM_FULL_REFRESH = "EINK_SYSTEM_FULL_REFRESH"
 private const val EINK_PAGE_TURN_ANIMATION = "EINK_PAGE_TURN_ANIMATION"
+private const val EINK_PAGE_TURN_ANIMATION_STYLE = "EINK_PAGE_TURN_ANIMATION_STYLE"
 private const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
 private const val HOME_ALIGNMENT = "HOME_ALIGNMENT"
 private const val TEXT_ISLANDS = "TEXT_ISLANDS"
@@ -1748,6 +1749,11 @@ var pageIndicatorMargin: Int
     var einkPageTurnAnimation: Boolean
         get() = prefs.getBoolean(EINK_PAGE_TURN_ANIMATION, false)
         set(value) = prefs.edit { putBoolean(EINK_PAGE_TURN_ANIMATION, value) }
+
+    /** 翻页动画风格：0=Directional（方向擦除），1=Ripple（打开 10 / 关闭 9） */
+    var einkPageTurnAnimationStyle: Int
+        get() = prefs.getInt(EINK_PAGE_TURN_ANIMATION_STYLE, 0).coerceIn(0, 1)
+        set(value) = prefs.edit { putInt(EINK_PAGE_TURN_ANIMATION_STYLE, value.coerceIn(0, 1)) }
     /** 用大我系统的 GC16 全刷代替原来的整屏闪烁 */
     var einkSystemFullRefresh: Boolean
         get() = prefs.getBoolean(EINK_SYSTEM_FULL_REFRESH, false)

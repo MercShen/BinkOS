@@ -905,6 +905,10 @@
  <string name="settings_desc_system_full_refresh">所有刷新都使用厂商 GC16 全刷</string>
  <string name="settings_page_turn_animation">翻页动画（Bigme）</string>
  <string name="settings_desc_page_turn_animation">使用厂商的翻页刷新动画</string>
+ <string name="settings_page_turn_animation_style">翻页动画风格</string>
+ <string name="settings_desc_page_turn_animation_style">Directional 跟随手势方向；Ripple 使用大我圆形动画（打开 10 / 关闭 9）</string>
+ <string name="option_page_turn_directional">Directional</string>
+ <string name="option_page_turn_ripple">Ripple</string>
  <string name="settings_desc_choose_launcher">选择要使用的桌面</string>
  <string name="settings_desc_view_onboarding">再次查看设置向导</string>
  <string name="settings_desc_guide">了解手势与交互</string>

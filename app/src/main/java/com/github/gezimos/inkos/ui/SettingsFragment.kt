@@ -293,10 +293,17 @@ class SettingsFragment : Fragment() {
             } else {
                 com.github.gezimos.inkos.helper.BigmeEink.Direction.L2R
             }
-            com.github.gezimos.inkos.helper.BigmeEink.onScreenOpened(
-                requireContext().applicationContext,
-                direction
-            )
+            if (forward) {
+                com.github.gezimos.inkos.helper.BigmeEink.onScreenOpened(
+                    requireContext().applicationContext,
+                    direction
+                )
+            } else {
+                com.github.gezimos.inkos.helper.BigmeEink.onScreenClosed(
+                    requireContext().applicationContext,
+                    direction
+                )
+            }
         } catch (_: Exception) {}
     }
 
@@ -860,6 +867,25 @@ class SettingsFragment : Fragment() {
                 defaultState = uiState.einkPageTurnAnimation,
                 onCheckedChange = { viewModel.setEinkPageTurnAnimation(it) }
             )
+            if (uiState.einkPageTurnAnimation) {
+                SettingsSelect(
+                    title = stringResource(R.string.settings_page_turn_animation_style),
+                    option = stringResource(
+                        if (uiState.einkPageTurnAnimationStyle == 1) {
+                            R.string.option_page_turn_ripple
+                        } else {
+                            R.string.option_page_turn_directional
+                        }
+                    ),
+                    fontSize = titleFontSize,
+                    description = stringResource(R.string.settings_desc_page_turn_animation_style),
+                    onClick = {
+                        viewModel.setEinkPageTurnAnimationStyle(
+                            if (uiState.einkPageTurnAnimationStyle == 1) 0 else 1
+                        )
+                    }
+                )
+            }
         }
     }
 
