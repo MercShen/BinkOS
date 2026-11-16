@@ -203,7 +203,7 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 - `refresh_animation` 只临时跳到第 7 页并弹窗，不写 `onboardingPage`，不要求动画开关当前为 on。
 - `editmode` 需要临时进入编辑模式才能显示五步引导；`guide=close` 会恢复到打开前的编辑模式状态。
 
-首次开启 refresh animations 的 Regal/HD256 弹窗没有独立 extra，需在该页 UI 点开关；完整复位与验收步骤见 [testing-playbook.md](<testing-playbook.md#首次开启-refresh-animations-的引导弹窗>)。
+首次开启 refresh animations 的 Regal/HD256 弹窗没有独立 extra，需在 onboarding 或 Settings 打开动画开关；完整验收步骤见 [testing-playbook.md](<testing-playbook.md#regalhd256-刷新动画引导>)。
 - refresh先尝试系统全刷（仅einkSystemFullRefresh开启且厂商调用可用），否则100ms覆盖层闪屏；不保证物理GC16或任何波形实际效果。
 - 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget；onboarding_page只允许onboarding且为0..7；guide只允许firsttime且必须是表中名称。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
 - dest值不区分大小写，extra名称区分；request_id用短可打印串(≤128字符)，推荐UUID。脚本对dest/type还做安全字符校验。

@@ -30,9 +30,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +61,7 @@ import com.github.gezimos.inkos.data.Constants
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.ShapeHelper
 import com.github.gezimos.inkos.helper.DebugFirstTimeGuide
+import com.github.gezimos.inkos.helper.RefreshAnimationDemo
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
 import com.github.gezimos.inkos.style.rememberScreenScale
@@ -104,7 +103,6 @@ class OnboardingFragment : Fragment() {
 
 object OnboardingScreen {
 
-    private const val REFRESH_ANIMATION_SCOPE_TOOLTIP = "tooltip_refresh_animation_scope_shown"
 
     private fun isNotificationListenerEnabled(context: android.content.Context): Boolean {
         return NotificationManagerCompat.getEnabledListenerPackages(context)
@@ -178,9 +176,10 @@ object OnboardingScreen {
         }
 
 
-        // 大我专属开关：打开即刻生效（全刷立即触发 GC16，动画立即播放一次演示）
+        // 大我专属开关：打开即刻生效（全刷立即触发 GC16）
         var bigmeFullRefresh by remember { mutableStateOf(prefs.einkSystemFullRefresh) }
         var bigmePageTurnAnim by remember { mutableStateOf(prefs.einkPageTurnAnimation) }
+        var bigmePageTurnStyle by remember { mutableIntStateOf(prefs.einkPageTurnAnimationStyle) }
         var showRefreshScopeDialog by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
@@ -459,36 +458,53 @@ object OnboardingScreen {
                             SettingsComposable.SettingsSwitch(
                                 text = stringResource(R.string.onboarding_eink_page_turn_title),
                                 fontSize = extraTitleFontSize,
-                                description = stringResource(R.string.onboarding_eink_page_turn_desc),
+                                description = stringResource(R.string.settings_desc_page_turn_animation),
                                 defaultState = bigmePageTurnAnim,
                                 horizontalPadding = 0.dp,
                                 onCheckedChange = { enabled ->
                                     bigmePageTurnAnim = enabled
-                                    if (viewModel != null) viewModel.setEinkPageTurnAnimation(enabled) else prefs.einkPageTurnAnimation = enabled
-                                    if (enabled && !prefs.isTooltipShown(REFRESH_ANIMATION_SCOPE_TOOLTIP)) {
+                                    if (viewModel != null) viewModel.setEinkPageTurnAnimation(enabled)
+                                    else prefs.einkPageTurnAnimation = enabled
+                                    if (enabled && RefreshAnimationDemo.shouldShow(prefs)) {
+                                        RefreshAnimationDemo.markShown(prefs)
                                         showRefreshScopeDialog = true
-                                        prefs.markTooltipShown(REFRESH_ANIMATION_SCOPE_TOOLTIP)
                                     }
+                                    if (!enabled) showRefreshScopeDialog = false
                                 }
                             )
+                            if (bigmePageTurnAnim) {
+                                Spacer(modifier = Modifier.height(4.dp.scaled(screenScale)))
+                                SettingsComposable.SettingsSelect(
+                                    title = stringResource(R.string.settings_page_turn_animation_style),
+                                    option = stringResource(
+                                        if (bigmePageTurnStyle == 1) R.string.option_page_turn_ripple
+                                        else R.string.option_page_turn_directional
+                                    ),
+                                    fontSize = extraTitleFontSize,
+                                    description = stringResource(R.string.settings_desc_page_turn_animation_style),
+                                    horizontalPadding = 0.dp,
+                                    onClick = {
+                                        val next = if (bigmePageTurnStyle == 1) 0 else 1
+                                        bigmePageTurnStyle = next
+                                        if (viewModel != null) viewModel.setEinkPageTurnAnimationStyle(next)
+                                        else prefs.einkPageTurnAnimationStyle = next
+                                    }
+                                )
+                            }
                             if (showRefreshScopeDialog) {
-                                AlertDialog(
-                                    onDismissRequest = {
+                                TooltipBubble(
+                                    title = stringResource(R.string.onboarding_eink_page_turn_title),
+                                    lines = listOf(stringResource(R.string.onboarding_eink_animation_scope)),
+                                    alignment = Alignment.Center,
+                                    nextLabel = stringResource(R.string.done),
+                                    onNext = {
                                         showRefreshScopeDialog = false
                                         DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
                                     },
-                                    title = { Text(stringResource(R.string.onboarding_eink_page_turn_title)) },
-                                    text = { Text(stringResource(R.string.onboarding_eink_animation_scope)) },
-                                    containerColor = Theme.colors.background,
-                                    titleContentColor = Theme.colors.text,
-                                    textContentColor = Theme.colors.text,
-                                    confirmButton = {
-                                        TextButton(onClick = {
-                                            showRefreshScopeDialog = false
-                                            DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
-                                        }) {
-                                            Text(stringResource(R.string.done))
-                                        }
+                                    extraContent = { RefreshAnimationGuideContent() },
+                                    onDismiss = {
+                                        showRefreshScopeDialog = false
+                                        DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
                                     }
                                 )
                             }

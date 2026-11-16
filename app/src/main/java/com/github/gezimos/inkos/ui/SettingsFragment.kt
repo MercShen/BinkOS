@@ -104,6 +104,9 @@ import com.github.gezimos.inkos.helper.CalendarEventsHelper
 import com.github.gezimos.inkos.helper.IconPackUtility
 import com.github.gezimos.inkos.helper.IconUtility
 import com.github.gezimos.inkos.helper.ShapeHelper
+import com.github.gezimos.inkos.helper.RefreshAnimationDemo
+import com.github.gezimos.inkos.ui.compose.RefreshAnimationGuideContent
+import com.github.gezimos.inkos.ui.compose.TooltipBubble
 import com.github.gezimos.inkos.helper.getHexForOpacity
 import com.github.gezimos.inkos.helper.getTrueSystemFont
 import com.github.gezimos.inkos.helper.hideNavigationBar
@@ -800,6 +803,7 @@ class SettingsFragment : Fragment() {
     private fun ExtrasContent(fontSize: TextUnit) {
         val titleFontSize = if (fontSize.isSpecified) (fontSize.value * 1.5).sp else fontSize
         val uiState by viewModel.homeUiState.collectAsState()
+        var showRefreshAnimationDemo by remember { mutableStateOf(false) }
         val isMuditaDevice = remember { EinkHelper.isMuditaKompakt() }
         Column(modifier = Modifier.fillMaxSize()) {
             if (isMuditaDevice) {
@@ -865,7 +869,14 @@ class SettingsFragment : Fragment() {
                 fontSize = titleFontSize,
                 description = stringResource(R.string.settings_desc_page_turn_animation),
                 defaultState = uiState.einkPageTurnAnimation,
-                onCheckedChange = { viewModel.setEinkPageTurnAnimation(it) }
+                onCheckedChange = { enabled ->
+                    viewModel.setEinkPageTurnAnimation(enabled)
+                    if (enabled && RefreshAnimationDemo.shouldShow(prefs)) {
+                        RefreshAnimationDemo.markShown(prefs)
+                        showRefreshAnimationDemo = true
+                    }
+                    if (!enabled) showRefreshAnimationDemo = false
+                }
             )
             if (uiState.einkPageTurnAnimation) {
                 SettingsSelect(
@@ -884,6 +895,16 @@ class SettingsFragment : Fragment() {
                             if (uiState.einkPageTurnAnimationStyle == 1) 0 else 1
                         )
                     }
+                )
+            }
+            if (showRefreshAnimationDemo) {
+                TooltipBubble(
+                    title = stringResource(R.string.settings_page_turn_animation),
+                    lines = listOf(stringResource(R.string.onboarding_eink_animation_scope)),
+                    nextLabel = stringResource(R.string.done),
+                    extraContent = { RefreshAnimationGuideContent() },
+                    onNext = { showRefreshAnimationDemo = false },
+                    onDismiss = { showRefreshAnimationDemo = false }
                 )
             }
         }

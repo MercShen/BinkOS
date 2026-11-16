@@ -106,6 +106,7 @@ fun TooltipBubble(
     nextLabel: String? = null,
     onNext: (() -> Unit)? = null,
     minContentHeight: Dp = 0.dp,
+    extraContent: (@Composable () -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     var visible by remember { mutableStateOf(false) }
@@ -234,6 +235,11 @@ fun TooltipBubble(
                                 )
                             }
                         }
+                    }
+
+                    if (extraContent != null) {
+                        Spacer(modifier = Modifier.height(10.dp.scaled(screenScale)))
+                        extraContent()
                     }
 
                     if (nextLabel != null && onNext != null) {

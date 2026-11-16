@@ -903,10 +903,10 @@
     <string name="settings_fork_description">Bink OS is a personal fork of inkOS by gezimos, with thanks to the original author.</string>
     <string name="settings_system_full_refresh">System Full Refresh (Bigme)</string>
     <string name="settings_desc_system_full_refresh">Use vendor full refresh</string>
-    <string name="settings_page_turn_animation">Page Turn Animation (Bigme)</string>
+    <string name="settings_page_turn_animation">Refresh Animation</string>
     <string name="settings_desc_page_turn_animation">Enable vendor refresh animations</string>
 
-    <string name="settings_page_turn_animation_style">Page Turn Animation Style</string>
+    <string name="settings_page_turn_animation_style">Refresh Animation Style</string>
     <string name="settings_desc_page_turn_animation_style">Directional follows the gesture; Ripple uses a circular animation</string>
     <string name="option_page_turn_directional">Directional</string>
     <string name="option_page_turn_ripple">Ripple</string>
@@ -1005,9 +1005,8 @@
         <string name="onboarding_eink_full_refresh_title">Full Refresh</string>
     <string name="onboarding_eink_full_refresh_desc">Use Bigme vendor full refresh</string>
     <string name="onboarding_eink_page_turn_title">Refresh Animation</string>
-    <string name="onboarding_eink_page_turn_desc">Use Bigme vendor refresh animations</string>
 <string name="onboarding_eink_desc">Your device supports these vendor e-ink features; they apply as soon as you turn them on:</string>
-    <string name="onboarding_eink_animation_scope">Refresh animations is only visible when refresh mode is set to Regal or HD256.</string>
+<string name="onboarding_eink_animation_scope">Refresh animations is only visible when refresh mode is set to Regal or HD256.</string>
     <string name="tooltip_edit_favorites_title">Edit Favorites</string>
     <string name="tooltip_edit_favorites_line1">Tap the numbers on top to change the number of apps/pages.</string>
     <string name="tooltip_edit_favorites_line2">Drag the = icon to re-order apps.</string>
