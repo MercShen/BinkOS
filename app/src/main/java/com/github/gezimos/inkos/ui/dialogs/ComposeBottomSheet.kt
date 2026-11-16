@@ -1413,32 +1413,13 @@ fun MultiChoiceSheet(
                     )
                 }
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-                    .border(1.5.dp, textColor, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp)
-            ) {
-                if (query.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.search_apps_hint),
-                        style = SettingsTheme.typography.item,
-                        color = textColor.copy(alpha = 0.5f)
-                    )
-                }
-                androidx.compose.foundation.text.BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = androidx.compose.ui.text.TextStyle(
-                        color = textColor,
-                        fontSize = 16.sp.scaled(screenScale)
-                    ),
-                    cursorBrush = androidx.compose.ui.graphics.SolidColor(textColor),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
+            // 与其他搜索入口共用同一个组件（药丸 + 居中半透明「搜索」+ 输入后右侧清除叉）。
+            com.github.gezimos.inkos.ui.compose.InkSearchField(
+                value = query,
+                onValueChange = { query = it },
+                placeholder = stringResource(R.string.search_placeholder),
+                fontSize = 16.sp.scaled(screenScale)
+            )
 
             if (visibleIndices.isEmpty()) {
                 Spacer(modifier = Modifier.height(rowHeight * rowsPerPage))

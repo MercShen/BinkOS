@@ -80,7 +80,7 @@ internal fun WidgetAppListContent(
     val gesturePageCount = remember { java.util.concurrent.atomic.AtomicInteger(1) }
     val emptyLabel = stringResource(R.string.widget_no_matching_app)
     val title = stringResource(R.string.choose_app)
-    val searchHint = stringResource(R.string.search_apps_hint)
+    val searchPlaceholder = stringResource(R.string.search_placeholder)
     val backLabel = stringResource(R.string.btn_back)
     val nextLabel = stringResource(R.string.home_tooltip_next)
 
@@ -107,14 +107,13 @@ internal fun WidgetAppListContent(
                     Text(title, style = SettingsTheme.typography.header, fontWeight = FontWeight.Bold,
                         color = Theme.colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                BasicTextField(query, { query = it; page = 0 }, singleLine = true,
-                    textStyle = textStyle.copy(color = Theme.colors.text), cursorBrush = SolidColor(Theme.colors.text),
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
-                        .border(1.5.dp, Theme.colors.text, androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    decorationBox = { inner ->
-                        Box { if (query.isEmpty()) Text(searchHint, style = textStyle, color = Theme.colors.text.copy(alpha = 0.5f)); inner() }
-                    })
+                com.github.gezimos.inkos.ui.compose.InkSearchField(
+                    value = query,
+                    onValueChange = { query = it; page = 0 },
+                    placeholder = searchPlaceholder,
+                    fontSize = textStyle.fontSize,
+                    fontFamily = textStyle.fontFamily
+                )
             }
         }.single().measure(loose)
         // Measure a footer with the maximum possible number of dots, then compute final row count.

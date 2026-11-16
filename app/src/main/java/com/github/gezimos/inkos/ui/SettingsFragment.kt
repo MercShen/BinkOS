@@ -1365,68 +1365,91 @@ class SettingsFragment : Fragment() {
                     fontSize = titleFontSize, onClick = { viewModel.setHomeQuoteAlignment((homeUiState.quoteAlignment + 1) % 3) })
             }
             if (homeUiState.bottomWidgetType == Constants.BottomWidgetType.AndroidWidget.value) {
+                val appWidgetHelper = remember { com.github.gezimos.inkos.helper.AppWidgetHelper.getInstance(requireContext()) }
                 val widgetLabel = remember(homeUiState.androidWidgetId) {
-                    com.github.gezimos.inkos.helper.AppWidgetHelper.getInstance(requireContext())
-                        .getCurrentWidgetLabel() ?: getString(R.string.text_none)
+                    appWidgetHelper.getCurrentWidgetLabel() ?: getString(R.string.text_none)
                 }
+                // 与编辑模式的小组件面板对齐：先「选择应用」，再「选择小部件」。
+                // 标签不能只依赖组件缓存（未加载完会回退成包名），先按包名直接查应用名兜底。
+                val widgetAppsForLabel by appWidgetHelper.widgetAppsState.collectAsState()
+                LaunchedEffect(Unit) { appWidgetHelper.preloadWidgetApps() }
+                val currentWidgetAppLabel = remember(homeUiState.androidWidgetId, widgetAppsForLabel) {
+                    val pkg = if (homeUiState.androidWidgetId != -1) {
+                        appWidgetHelper.getWidgetInfo(homeUiState.androidWidgetId)?.provider?.packageName
+                    } else null
+                    pkg?.let { p ->
+                        widgetAppsForLabel?.firstOrNull { it.packageName == p }?.appLabel
+                            ?: runCatching {
+                                val pm = requireContext().packageManager
+                                pm.getApplicationLabel(pm.getApplicationInfo(p, 0)).toString()
+                            }.getOrNull()
+                            ?: p
+                    } ?: getString(R.string.text_none)
+                }
+                // startAtAppList=true：先出应用列表（「选择应用」）；
+                // false：优先停在当前组件所属应用的小组件列表（「选择小部件」）。
+                fun openWidgetPicker(startAtAppList: Boolean) {
+                    appWidgetHelper.preloadWidgetApps()
+                    val ctx = requireContext()
+                    dialogBuilder.showSheet {
+                        val snapshot by appWidgetHelper.widgetAppsState.collectAsState()
+                        androidx.compose.runtime.LaunchedEffect(appWidgetHelper) { appWidgetHelper.loadWidgetApps() }
+                        val widgetApps = snapshot
+                        if (widgetApps == null) {
+                            com.github.gezimos.inkos.helper.WidgetAppsLoadingContent()
+                            return@showSheet
+                        }
+                        // 优先定位到“当前正在使用的组件所属 App”，否则直接显示应用列表
+                        val currentProviderPkg = if (homeUiState.androidWidgetId != -1) {
+                            appWidgetHelper.getWidgetInfo(homeUiState.androidWidgetId)?.provider?.packageName
+                        } else null
+                        val initialApp = remember(widgetApps, startAtAppList, currentProviderPkg) {
+                            if (startAtAppList) null
+                            else widgetApps.firstOrNull { it.packageName == currentProviderPkg }
+                        }
+                        val selectedApp = remember { mutableStateOf(initialApp) }
+                        val app = selectedApp.value
+                        if (app == null) {
+                            com.github.gezimos.inkos.helper.WidgetAppListContent(
+                                context = ctx, widgetApps = widgetApps,
+                                onAppSelected = {
+                                    // 不再记忆上次选择的应用
+                                    selectedApp.value = it
+                                },
+                                onClose = { dialogBuilder.dismissAll() },
+                                textIslandsShape = prefs.textIslandsShape
+                            )
+                        } else {
+                            com.github.gezimos.inkos.helper.WidgetListContent(
+                                app = app, appWidgetHelper = appWidgetHelper,
+                                onBack = { selectedApp.value = null },
+                                onWidgetPicked = { providerInfo ->
+                                    dialogBuilder.dismissAll()
+                                    appWidgetHelper.pickWidgetFromProvider(
+                                        providerInfo = providerInfo,
+                                        // helper 内部完成 bind/configure 后才会回调成功
+                                        onSuccess = { widgetId -> viewModel.setAndroidWidgetId(widgetId) },
+                                        onNeedsPermission = { widgetId, bindIntent ->
+                                            handOffWidgetBinding(widgetId, bindIntent, configure = false)
+                                        },
+                                        onNeedsConfigure = { widgetId, configIntent ->
+                                            handOffWidgetBinding(widgetId, configIntent, configure = true)
+                                        }
+                                    )
+                                }
+                            )
+                        }
+                    }
+                }
+                SettingsSelect(
+                    title = stringResource(R.string.choose_app_title), option = currentWidgetAppLabel, fontSize = titleFontSize,
+                    description = stringResource(R.string.desc_choose_app),
+                    onClick = { openWidgetPicker(startAtAppList = true) }
+                )
                 SettingsSelect(
                     title = stringResource(R.string.choose_android_widget), option = widgetLabel, fontSize = titleFontSize,
                     description = stringResource(R.string.desc_choose_widget),
-                    onClick = {
-                        val appWidgetHelper = com.github.gezimos.inkos.helper.AppWidgetHelper.getInstance(requireContext())
-                        appWidgetHelper.preloadWidgetApps()
-                        val ctx = requireContext()
-                        val navController = findNavController()
-                        dialogBuilder.showSheet {
-                            val snapshot by appWidgetHelper.widgetAppsState.collectAsState()
-                            androidx.compose.runtime.LaunchedEffect(appWidgetHelper) { appWidgetHelper.loadWidgetApps() }
-                            val widgetApps = snapshot
-                            if (widgetApps == null) {
-                                com.github.gezimos.inkos.helper.WidgetAppsLoadingContent()
-                                return@showSheet
-                            }
-                            // 优先定位到“当前正在使用的组件所属 App”，否则直接显示应用列表
-                            val currentProviderPkg = if (homeUiState.androidWidgetId != -1) {
-                                appWidgetHelper.getWidgetInfo(homeUiState.androidWidgetId)?.provider?.packageName
-                            } else null
-                            val startPackage = currentProviderPkg
-                            val initialApp = remember(widgetApps, startPackage) {
-                                widgetApps.firstOrNull { it.packageName == startPackage }
-                            }
-                            val selectedApp = remember { mutableStateOf(initialApp) }
-                            val app = selectedApp.value
-                            if (app == null) {
-                                com.github.gezimos.inkos.helper.WidgetAppListContent(
-                                    context = ctx, widgetApps = widgetApps,
-                                    onAppSelected = {
-                                        // 不再记忆上次选择的应用
-                                        selectedApp.value = it
-                                    },
-                                    onClose = { dialogBuilder.dismissAll() },
-                                    textIslandsShape = prefs.textIslandsShape
-                                )
-                            } else {
-                                com.github.gezimos.inkos.helper.WidgetListContent(
-                                    app = app, appWidgetHelper = appWidgetHelper,
-                                    onBack = { selectedApp.value = null },
-                                    onWidgetPicked = { providerInfo ->
-                                        dialogBuilder.dismissAll()
-                                        appWidgetHelper.pickWidgetFromProvider(
-                                            providerInfo = providerInfo,
-                                            // helper 内部完成 bind/configure 后才会回调成功
-                                            onSuccess = { widgetId -> viewModel.setAndroidWidgetId(widgetId) },
-                                            onNeedsPermission = { widgetId, bindIntent ->
-                                                handOffWidgetBinding(widgetId, bindIntent, configure = false)
-                                            },
-                                            onNeedsConfigure = { widgetId, configIntent ->
-                                                handOffWidgetBinding(widgetId, configIntent, configure = true)
-                                            }
-                                        )
-                                    }
-                                )
-                            }
-                        }
-                    }
+                    onClick = { openWidgetPicker(startAtAppList = false) }
                 )
                 SettingsSelect(
                     title = stringResource(R.string.android_widget_height), option = "${homeUiState.androidWidgetHeight}dp", fontSize = titleFontSize,

@@ -726,6 +726,8 @@
     <string name="desc_quote_text">自定义引言文字</string>
     <string name="desc_quote_alignment">对齐底部小部件</string>
     <string name="desc_choose_widget">选择一个 Android 小部件</string>
+    <string name="desc_choose_app">选择要显示哪个应用的组件</string>
+    <string name="search_placeholder">搜索</string>
     <string name="desc_widget_height">Android 小部件高度</string>
     <string name="desc_widget_margin_start">小部件左边距</string>
     <string name="desc_widget_margin_end">小部件右边距</string>

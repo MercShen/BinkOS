@@ -726,6 +726,8 @@
     <string name="desc_quote_text">Custom quote text</string>
     <string name="desc_quote_alignment">Align bottom widget</string>
     <string name="desc_choose_widget">Select an Android widget</string>
+    <string name="desc_choose_app">Which app\'s widget to show</string>
+    <string name="search_placeholder">Search</string>
     <string name="desc_widget_height">Android widget height</string>
     <string name="desc_widget_margin_start">Widget left margin</string>
     <string name="desc_widget_margin_end">Widget right margin</string>
