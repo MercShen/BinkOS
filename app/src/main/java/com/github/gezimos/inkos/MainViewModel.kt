@@ -677,18 +677,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
             else -> {
-                // SimpleTray: count live system notifications
+                // SimpleTray: count live system notifications.
+                // Media/transport notifications are controls, not messages: never add them to the
+                // global count (they may still be shown in Tray through its media card).
                 val allowed = homeUi.allowedSimpleTrayApps
                 val notificationManager = NotificationManager.getInstance(appContext)
-                val notificationsFromSbn = rawNotifications.count { sbn ->
+                rawNotifications.count { sbn ->
                     if (sbn.notification.category == android.app.Notification.CATEGORY_TRANSPORT) {
                         return@count false
                     }
                     !notificationManager.isNotificationSummary(sbn) &&
                     (allowed.isEmpty() || allowed.contains(sbn.packageName))
                 }
-                val mediaCount = if (mediaInfo != null && (allowed.isEmpty() || allowed.contains(mediaInfo.packageName))) 1 else 0
-                notificationsFromSbn + mediaCount
             }
         }
         

@@ -217,10 +217,10 @@ class HomeFragmentCompose : Fragment() {
                         onCustomFontSelected?.invoke(typeface, fontFile.absolutePath)
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        dialogManager.showErrorDialog(requireContext(), title = "Invalid Font File", message = "The selected file could not be loaded as a font. Please choose a valid font file.")
+                        dialogManager.showErrorDialog(requireContext(), title = requireContext().getString(R.string.settings_invalid_font_title), message = requireContext().getString(R.string.settings_invalid_font_message))
                     }
                 } else {
-                    dialogManager.showErrorDialog(requireContext(), title = "File Error", message = "Could not copy the selected file. Please try again.")
+                    dialogManager.showErrorDialog(requireContext(), title = requireContext().getString(R.string.settings_file_error_title), message = requireContext().getString(R.string.settings_file_error_message))
                 }
             }
         }

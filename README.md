@@ -50,12 +50,12 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 
 ### Bigme HiBreak integration
 - **Vendor GC16 full refresh** — force the vendor full refresh for every refresh, including gesture-triggered ones.
-- **Vendor page-turn animation** — play the Bigme e-ink page-turn effect when opening/closing screens.
+- **Vendor page-turn animation** — play the Bigme e-ink page-turn effect when opening/closing surfaces that are bound to a long-swipe gesture.
 - **E-ink refresh control** — auto refresh, home-only refresh, configurable refresh delay.
 
 ### Gestures that don't fight the system
 - **Short swipe zone** — restrict page-turn swipes to a configurable vertical band, so the system's edge gestures (home / back) still work. Edit mode dims everything outside the band and gives you a drag handle on each boundary; the zone counts from 30 dp so it never hides under the status bar.
-- **Reverse long swipe closes** — every surface (app drawer, recents, letters, hub, simple tray, settings) closes with the long swipe opposite to the one that opened it. Detected on the initial pointer pass, so inner scrolling pages can't swallow the gesture.
+- **Reverse long swipe closes** — a surface that is bound to a long-swipe gesture (app drawer, recents, letters, hub, simple tray, settings) closes with the long swipe opposite to the one that opened it. Detected on the initial pointer pass, so inner scrolling pages can't swallow the gesture. Surfaces with no bound opening gesture (for example Settings opened from its icon) do not exit on a long swipe.
 - Bind 4 swipe directions, double tap, and clock/date/quote taps to 15+ actions.
 
 ### Layout without digging through menus
@@ -63,7 +63,8 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 - Alignment, margins and offsets in one dialog, with drag handles and hold-to-repeat steppers whose ranges match what the layout can actually use.
 
 ### Localization ready
-- **Simplified Chinese is fully supported** — the whole UI is translated (zh-CN), the app has its own language picker, and inkOS internal shortcuts (drawer, letters, tray, hub, recents, settings) follow the in-app language instead of the system one.
+- **Simplified Chinese is fully supported** — the whole UI is translated (zh-CN), the app has its own language picker, and inkOS internal shortcuts (drawer, Letters, Simple Tray, Hub, recents, settings) follow the in-app language instead of the system one.
+- Translating or changing UI copy? Read the [terminology & localization guide](docs/terminology.md) first; `python tools/check-locales.py` keeps EN/ZH keys and placeholders in sync.
 
 ### Backup & restore
 - ZIP backup containing layout, aliases, preferences and wallpaper, restorable from the settings screen.

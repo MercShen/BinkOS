@@ -212,6 +212,9 @@ object BackupZipHelper {
                 return Result(false, message = "Cannot read file or file is too large")
             }
             val json = tmp.readText(Charsets.UTF_8)
+            BackupJsonValidator.validateTheme(json, Prefs.THEME_FORMAT_VERSION)?.let { reason ->
+                return Result(false, message = reason)
+            }
             when (val result = BackupZipEngine.applyPrefsOnly(AndroidRestoreTarget(prefs), newRecoveryDir(context)) {
                 prefs.loadThemeFromJson(json)
             }) {
@@ -255,6 +258,9 @@ object BackupZipHelper {
     private fun importLegacyJsonLocked(context: Context, prefs: Prefs, tmp: File): Result {
         val json = tmp.readText(Charsets.UTF_8)
         if (isThemePayload(json)) {
+            BackupJsonValidator.validateTheme(json, Prefs.THEME_FORMAT_VERSION)?.let { reason ->
+                return Result(false, message = reason)
+            }
             return when (val result = BackupZipEngine.applyPrefsOnly(AndroidRestoreTarget(prefs), newRecoveryDir(context)) {
                 prefs.loadThemeFromJson(json)
             }) {
@@ -350,6 +356,7 @@ object BackupZipHelper {
 
         override fun repair() {
             prefs.repairWallpaperPath()
+            prefs.repairFontPaths()
         }
     }
 }

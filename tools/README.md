@@ -7,6 +7,7 @@
 |---|---|
 | `home.ps1` | 查看 / 设置 / 校验默认桌面（debug / release / ensure），仓库内独立版本 |
 | `automate.ps1` | 封装 `adb ... --es dest`，用 `request_id` + automation_result 判定结果 |
+| `check-locales.py` | 校验 EN/ZH 字符串 key 对齐、占位符、重复/空值，并告警非术语表写法 |
 | `tests/` | 离线测试：fake adb + 参数契约 + 状态机断言（不连真机、不构建） |
 | `notifprobe/` | 三个通知探针 APK（alpha/beta/gamma），见其 README |
 
@@ -33,6 +34,9 @@
 
 - 设置后一定重新 `cmd package resolve-activity` + `cmd role get-role-holders` 校验；
   先检查目标包已安装（精确整行匹配，`app.binkos` 不会误判成 `app.binkos.debug`）。
+- `adb install -r` debug 包后 HOME 可能变成“role 仍指向 debug、resolve 却落到 android”的半坏状态；
+  `home.ps1 debug`/`ensure` 会补 role 再 set-home 并校验。只是临时装包测试时，收尾按
+  `docs/testing-playbook.md` §7 恢复安装前桌面（release 或第三方），卸载 debug 前也要先切走。
 - 退出码：`0` 成功 / `2` 参数错误 / `7` adb发现/设备选择/查询错误 / `9` 设置或校验失败（包括目标包不存在、设置命令失败、半坏状态修复后仍不对）。
 
 Bash 等价：

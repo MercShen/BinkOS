@@ -80,6 +80,8 @@ import com.github.gezimos.inkos.style.rememberScreenScale
 import com.github.gezimos.inkos.style.scaled
 import com.github.gezimos.inkos.ui.compose.SettingsComposable
 import com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost
+import com.github.gezimos.inkos.ui.dialogs.SheetPanelDescription
+import com.github.gezimos.inkos.ui.dialogs.SheetPanelTitle
 import com.github.gezimos.inkos.ui.dialogs.SheetTitle
 import com.github.gezimos.inkos.ui.dialogs.ComposeDialogManager
 import com.github.gezimos.inkos.ui.dialogs.ShortcutGroup
@@ -295,12 +297,9 @@ fun showClockSettings(context: Context, fragment: Fragment, prefs: Prefs, initia
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
             val clockTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_style); 1 -> stringResource(R.string.edit_panel_desc_function); else -> stringResource(R.string.edit_panel_desc_gestures) }
-            SheetTitle(stringResource(R.string.edit_panel_clock), fontScale = 1.35f)
-            Text(
+            SheetPanelTitle(stringResource(R.string.edit_panel_clock))
+            SheetPanelDescription(
                 text = clockTabDesc,
-                style = SettingsTheme.typography.item,
-                fontSize = (SettingsTheme.typography.item.fontSize.value * 0.85f).sp,
-                color = Theme.colors.text,
                 modifier = Modifier.padding(bottom = 8.dp.scaled(screenScale))
             )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -473,12 +472,9 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
             val dateTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_style); 1 -> stringResource(R.string.edit_panel_desc_function); else -> stringResource(R.string.edit_panel_desc_gestures) }
-            SheetTitle(stringResource(R.string.edit_panel_date), fontScale = 1.35f)
-            Text(
+            SheetPanelTitle(stringResource(R.string.edit_panel_date))
+            SheetPanelDescription(
                 text = dateTabDesc,
-                style = SettingsTheme.typography.item,
-                fontSize = (SettingsTheme.typography.item.fontSize.value * 0.85f).sp,
-                color = Theme.colors.text,
                 modifier = Modifier.padding(bottom = 8.dp.scaled(screenScale))
             )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -753,12 +749,9 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                 return@showDialog
             }
             val widgetTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_widget_function); 1 -> stringResource(R.string.edit_panel_desc_widget_style); else -> stringResource(R.string.edit_panel_desc_widget_gestures) }
-            SheetTitle(stringResource(R.string.edit_panel_widget), fontScale = 1.35f)
-            Text(
+            SheetPanelTitle(stringResource(R.string.edit_panel_widget))
+            SheetPanelDescription(
                 text = widgetTabDesc,
-                style = SettingsTheme.typography.item,
-                fontSize = (SettingsTheme.typography.item.fontSize.value * 0.85f).sp,
-                color = Theme.colors.text,
                 modifier = Modifier.padding(bottom = 8.dp.scaled(screenScale))
             )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -1116,12 +1109,9 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
             val screenScale = rememberScreenScale()
             val uiState by vm.homeUiState.collectAsState()
             val bgTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_theme); 1 -> stringResource(R.string.edit_panel_desc_alignment); 2 -> stringResource(R.string.edit_panel_desc_islands); else -> stringResource(R.string.edit_panel_desc_gestures) }
-            SheetTitle(stringResource(R.string.edit_panel_background), fontScale = 1.35f)
-            Text(
+            SheetPanelTitle(stringResource(R.string.edit_panel_background))
+            SheetPanelDescription(
                 text = bgTabDesc,
-                style = SettingsTheme.typography.item,
-                fontSize = (SettingsTheme.typography.item.fontSize.value * 0.85f).sp,
-                color = Theme.colors.text,
                 modifier = Modifier.padding(bottom = 8.dp.scaled(screenScale))
             )
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
@@ -1483,12 +1473,9 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
         val selectedTabIndex = remember { mutableStateOf(initialTabIndex.coerceIn(0, 3)) }
         val uiState by vm.homeUiState.collectAsState()
             val appTabDesc = when (selectedTabIndex.value) { 0 -> stringResource(R.string.edit_panel_desc_apps_style); 1 -> stringResource(R.string.edit_panel_desc_apps_icons); 2 -> stringResource(R.string.edit_panel_desc_apps_function); else -> stringResource(R.string.edit_panel_desc_apps_type) }
-            SheetTitle(stringResource(R.string.edit_panel_apps), fontScale = 1.35f)
-            Text(
+            SheetPanelTitle(stringResource(R.string.edit_panel_apps))
+            SheetPanelDescription(
                 text = appTabDesc,
-                style = SettingsTheme.typography.item,
-                fontSize = (SettingsTheme.typography.item.fontSize.value * 0.85f).sp,
-                color = Theme.colors.text,
                 modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
             )
         Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {

@@ -8,7 +8,7 @@
 
 - 仓库根运行命令。选择 **debug 包 `app.binkos.debug`**，Activity 类名仍为 `com.github.gezimos.inkos.MainActivity`；release 包 `app.binkos` 不接受 automation。
 - 每条命令显式指定设备，或使用脚本的“唯一在线设备”选择；多设备且无 `-Serial` 时拒绝。不要假定连接的设备就是 B651。
-- 安装新 debug APK 后：`install -r -t` 成功 → force-stop → 设置并校验 debug 为默认 HOME → 启动 → 核对版本、lastUpdateTime、PID。测试后保留该默认桌面，不改回正式包。
+- 安装新 debug APK 后：`install -r -t` 成功 → force-stop → 设置并校验 debug 为默认 HOME → 启动 → 核对版本、lastUpdateTime、PID。`install -r` 可能把 HOME 解析重置为 `android` resolver；只看 `roleHolders` 仍是 debug 不算正常，必须确认 `resolve-activity` 解析到 debug（`tools/home.ps1 debug/ensure` 会校验）。测试期间保留 debug 为默认；测试结束后若设备继续用于 debug 验收则保留，否则按 [测试 Playbook 的收尾步骤](<testing-playbook.md#7-已知风险与收尾>) 恢复安装前的桌面。
 - 不自动清白名单、执行 `pm clear`、导入/恢复或改变用户配置。写操作先获授权并记录旧值；破坏性测试先保存完整设置和 filesDir 快照，且验证快照可用。
 - `confirm_write`/`confirm_clear` 是防误操作闸门，不是身份认证。debug 构建只用于受控设备，不对第三方应用提供安全边界。
 - 不全局清 logcat。只取本进程/本 request_id 的结果，避免打印不相关通知内容。
@@ -99,9 +99,9 @@ GUID 生成依赖 uuidgen 或 Python。Windows 不使用 Bash 的 `\` 续行；�
 | `home` | 主屏，关闭所有可见/待展示 sheet；applied message 的 currentDestination=mainFragment |
 | `drawer` / `apps` / `applist` | 应用抽屉；内容依赖安装应用与搜索设置 |
 | `recents` | 最近任务；空列表不一定是失败 |
-| `tray` / `simpletray` | 简易托盘 |
+| `tray` / `simpletray` | Simple Tray |
 | `hub` | 通知中心 |
-| `letters` / `notifications` | 来信列表 |
+| `letters` / `notifications` | Letters |
 | `settings` | 设置根；SETTINGS |
 | `lookfeel` | 设置→Look & Feel |
 | `fonts` / `typography` | 设置→Typography |
@@ -117,7 +117,7 @@ GUID 生成依赖 uuidgen 或 Python。Windows 不使用 Bash 的 `\` 续行；�
 | `onboarding` | 直接导航首启页，不要求/不永久修改 firstOpen |
 | `editfavorites` / `edit_favorites` | 编辑收藏，选择操作可能修改配置；进入本身不等于修改 |
 
-无“打开任意页面”的保证：WIDGET、小组件二级选择、语言/字体等子 sheet 暂无独立 dest，按真实产品入口操作。重复导航会改变返回栈；用 home 清理测试路径，不无限叠加同一页。
+无“打开任意页面”的保证：WIDGET、小部件二级选择、语言/字体等子 sheet 暂无独立 dest，按真实产品入口操作。重复导航会改变返回栈；用 home 清理测试路径，不无限叠加同一页。
 
 ## 4. 编辑模式与面板
 
@@ -158,7 +158,7 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 | `pager_on/off` | 无 | 保存主页页码显示开关 |
 | `pager_margin` | value **必填整数0..12** | 保存页码留白；0是安全框边缘基准，不等于物理屏幕0px |
 | `home_reset_on/off` | 无 | 保存回主页重置页码开关 |
-| `bottomwidget` / `bottom_widget` | type必填 | 保存底部组件类型，不自动导航/打开组件选择器 |
+| `bottomwidget` / `bottom_widget` | type必填 | 保存底部小部件类型，不自动导航/打开小部件选择器 |
 | `bottom_android/shortcuts/quote/events/usage/pagedots/off` | 无 | 分别设置对应类型 |
 | `allowlist_clear` | 无 | 清掉托盘+Hub用户白名单，不清通知；**空集合=不过滤应用** |
 | `allowlist_tray_clear` / `allowlist_hub_clear` | 无 | 分别清掉一个白名单；不是“关闭全部通知” |
@@ -234,8 +234,8 @@ BackupCompatTestActivity 用 DebugProbeContract 校验：一次只能选一个op
 
 - 后续修复已恢复字体/长文双向滚动及ⓘ许可页；host采用最新请求代次，替换/HOME/STOP不触发旧父页回调。仍要回归认证、返回栈和生命周期，不能以Handler.post证明旧Dialog已销毁。
 - ZIP恢复先受限解压/类型校验，再快照prefs和files、提交；普通异常回滚，回滚失败的恢复点保留在noBackupFilesDir。旧JSON/主题是合并，不清files。**尚不保证进程强杀/断电跨prefs+files的原子性**，恢复测试仍须隔离。
-- 组件枚举是后台单飞快照，标题/搜索区实测后计算分页，预览图片后台加载；首次字体文件加载/文件元数据读取等仍需关注，未给出全机型性能保证。
-- WIDGET编辑面板里的Choose App/Choose Widget同sheet切状态，组件列表箭头回WIDGET；设置→Home/Widgets的Choose Widget箭头回应用列表。需按入口区分。
+- 小部件枚举是后台单飞快照，标题/搜索区实测后计算分页，预览图片后台加载；首次字体文件加载/文件元数据读取等仍需关注，未给出全机型性能保证。
+- WIDGET编辑面板里的Choose App/Choose Widget同sheet切状态，小部件列表箭头回WIDGET；设置→Home/Widgets的Choose Widget箭头回应用列表。需按入口区分。
 - 想截图分页，不用主页横滑代替home_next/prev；通知区/卡片自身仍按其实现支持翻页。字节大小/哈希仅证明变化，不证明正确。
 - 功能依赖：通知访问权、POST_NOTIFICATIONS、系统相机/日历/蓝牙权限、已装组件、锁屏认证会改变结果。脚本不自动授予BinkOS权限或关闭设置锁。
 

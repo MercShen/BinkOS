@@ -6,7 +6,7 @@
 
 1. 先读用户要求，记录基线 `git status`/版本；不要把既有问题当本轮回归，也不要以“已知问题”跳过验收。
 2. `adb devices` 选目标；多设备显式 Serial。命令默认不要碰正式包、其它应用或其它设备。
-3. 装新的 debug 后：检查 install 成功 → force-stop → `tools/home.ps1 debug` 设置并校验默认桌面 → 启动 → 核对版本、lastUpdateTime、PID。
+3. 装新的 debug 后：**先记录当前默认 HOME**（`resolve-activity` + `role get-role-holders`）→ install 成功 → force-stop → `tools/home.ps1 debug` 设置并校验默认桌面 → 启动 → 核对版本、lastUpdateTime、PID。`install -r` 可能把 HOME 解析重置成 `android` resolver，`roleHolders` 仍显示 debug 也不代表正常；必须以 `isDefault=true` / `resolve-activity` 指向 debug 为准。
 4. 请求 `status` 保存 page/pageCount/editMode/bottomWidget/pagerVisible/pagerMargin/homeReset/currentDestination。需修改白名单等未暴露字段时，另外安全保存原值；不要顺手清空。
 5. 不跑用户数据恢复/pm clear。必须做破坏测试时先获得具体授权、保存且验证prefs+filesDir完整快照，在隔离测试数据上进行。
 
@@ -16,6 +16,9 @@ $SERIAL = 'B651D2W2GAPA006000108'                   # 改为实际目标
 $PKG = 'app.binkos.debug'
 $MAIN = 'com.github.gezimos.inkos.MainActivity'
 & $ADB devices
+# 先记录安装前默认桌面，测试后要恢复时用
+& $ADB -s $SERIAL shell cmd package resolve-activity -a android.intent.action.MAIN -c android.intent.category.HOME
+& $ADB -s $SERIAL shell cmd role get-role-holders android.app.role.HOME
 & $ADB -s $SERIAL install -r -t '.\app\build\outputs\apk\debug\app.binkos_v0.2.6-Debug.apk'
 if ($LASTEXITCODE -ne 0) { throw 'install failed' }
 & $ADB -s $SERIAL shell am force-stop $PKG
@@ -87,18 +90,18 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - 返回、HOME、快速两请求、离开Activity分别回归；不以随意post延迟证明旧窗口销毁。
 - 子页面返回可能保留或重置Tab，按实际契约记录，不泛化所有sheet。
 
-### 小组件：两处产品入口
+### 小部件：两处产品入口
 
-| 入口 | 进入路径 | 组件列表箭头目标 |
+| 入口 | 进入路径 | 小部件列表箭头目标 |
 |---|---|---|
-| 编辑模式 | 已有Android组件本体→WIDGET→Choose App/Choose Widget | WIDGET面板 |
+| 编辑模式 | 已有 Android 小部件本体→WIDGET→Choose App/Choose Widget | WIDGET面板 |
 | 设置 | SETTINGS根→Home（Widgets分组）→Choose Widget | CHOOSE APP应用列表 |
 
-没有直达WIDGET或组件选择器dest，不杜撰。bottom_android只改类型，不绑定组件、不直接打开选择器。已有组件时设置入口优先显示该App组件；没有绑定时可能先显示App列表。需要授权/配置Activity的组件可能跳到系统UI，不能只验证列表点击。
+没有直达 WIDGET 或小部件选择器 dest，不杜撰。bottom_android只改类型，不绑定小部件、不直接打开选择器。已有小部件时设置入口优先显示该 App 小部件；没有绑定时可能先显示App列表。需要授权/配置 Activity 的小部件可能跳到系统UI，不能只验证列表点击。
 
-点击App列表与组件列表的下滑、横向翻页、搜索、空结果、末页、大字号，检查底部不露主页/截翻页条。编辑模式App列表内部下滑不应关闭；组件预览仍是可滚列表，不能无条件吞其下滑回滚（**第二级组件列表的滚动是设计选择，不是缺陷**，见 [ui-scroll-vs-paged.md](ui-scroll-vs-paged.md)「有意保留滚动」，不要把它当分页改造的 TODO 提）。字体等已有单向滚问题另记。
+点击 App 列表与小部件列表的下滑、横向翻页、搜索、空结果、末页、大字号，检查底部不露主页/截翻页条。编辑模式App列表内部下滑不应关闭；小部件预览仍是可滚列表，不能无条件吞其下滑回滚（**第二级小部件列表的滚动是设计选择，不是缺陷**，见 [ui-scroll-vs-paged.md](ui-scroll-vs-paged.md)「有意保留滚动」，不要把它当分页改造的 TODO 提）。字体等已有单向滚问题另记。
 
-**必测边界：应用列表只剩一页。** 在应用列表搜索框里过滤到只剩 1 个应用（如 `Maps`）、或设备上带组件的应用本来就少，列表 `pageCount == 1`，`PagedNavRow` 不发射节点；此处曾崩在 `WidgetPickerContent.kt` 的 `subcompose("footer").single()`。验收以“搜索到单页仍能选中应用”为准，不只验收多页翻页。BinkOS issue #2 即此场景。
+**必测边界：应用列表只剩一页。** 在应用列表搜索框里过滤到只剩 1 个应用（如 `Maps`）、或设备上带小部件的应用本来就少，列表 `pageCount == 1`，`PagedNavRow` 不发射节点；此处曾崩在 `WidgetPickerContent.kt` 的 `subcompose("footer").single()`。验收以“搜索到单页仍能选中应用”为准，不只验收多页翻页。BinkOS issue #2 即此场景。
 
 ### 卡片/页码
 
@@ -116,6 +119,14 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - 先数探针自己的消息ID 1001..1005，再打开tray/hub检验分类/过滤/分页。Android可能额外生成ranker_group汇总，计数应排除summary。用户同时新增通知会影响全局总数，不断言“系统总通知恰好12”。
 - 脚本不得用Clear All清所有用户通知。清场只清探针自己的通知，且获得必要授权。
 - 托盘和Hub白名单独立；媒体、summary通知过滤不同，数据源可能不同，按产品契约比较而非硬要求屏幕计数相等。
+- Hub 分类 tab 支持整页任意位置左右短滑切换（阈值 48dp）；单条消息删除用行右侧小叉，行上横滑也切 tab，不再触发消除。旧 commit `cdd943c` 曾随反向长滑一起删除，2026-11-16 恢复。
+- Hub 的反向长滑关闭同样依赖 `OpenHub` 已绑定打开方向；当前绑定下滑打开，所以上滑关闭。未绑定时不关闭，也不播动画。
+- Hub 侧边页码点验收：点在屏幕边缘与消息框边框之间的水平中点；左右两种 `homePagerAlign` 都要量一下两段间距是否一致。
+- Hub 清除全部按钮固定在“满页消息框底边与屏幕底边”的中点，不随每页消息数量上下移动；点击后清空并自动回主页。
+- Hub 行右侧小叉只对可清除通知显示；`FLAG_NO_CLEAR` / `FLAG_ONGOING_EVENT` / `isOngoing` 的系统通知不显示小叉（USB 调试通知是最方便的回归样本）。
+- Simple Tray 行右侧同样有小叉（仅可清除通知）；点击删除单条，长按仍保留媒体停止/删除行为。
+- Simple Tray 的反向长滑关闭与 Hub 同规则：`OpenSimpleTray` 绑定时（当前下滑开→上滑关）才关闭；未绑定不关闭，也不播动画。
+- 媒体通知（Spotify/网易云/Audible 等 `CATEGORY_TRANSPORT`）不计入主页全局通知数量，也不计入 Tray 顶部数字；Tray 是否显示媒体卡由 Simple Tray 白名单决定；Letters 永不显示 transport/媒体持续通知。
 
 ## 6. 构建与离线回归
 
@@ -135,10 +146,29 @@ if ($LASTEXITCODE -ne 0) { throw 'script tests failed' }
 
 ## 7. 已知风险与收尾
 
-已修复：字体/长文双向滚动、ⓘ许可页跳转、组件后台单飞/图片加载、自适应分页、通知合并原子写、托盘对称注销与手电筒真值、时钟分钟对齐、恢复校验与普通异常回滚。
+已修复：字体/长文双向滚动、ⓘ许可页跳转、小部件后台单飞/图片加载、自适应分页、通知合并原子写、托盘对称注销与手电筒真值、时钟分钟对齐、恢复校验与普通异常回滚。
 仍需验证边界：相机/蓝牙权限未授权设备的开关链、旧系统API、现代PinItemRequest OEM确认流程、大字号/键盘布局、恢复中进程强杀/断电。首次自定义字体解析仍可能同步；没有Profiler量化的耗时/内存数字不能写成改善百分比。
 
-收尾：退出编辑模式→home关sheet→恢复获准写的旧状态→`tools/home.ps1 ensure debug`校验→记录版本/PID/测试证据→保留用户可人工验收的环境。
+收尾：退出编辑模式→home关sheet→恢复获准写的旧状态→记录版本/PID/测试证据→保留用户可人工验收的环境。
+
+**默认桌面必须收尾**（`adb install -r` debug 后经常出现 role 仍在、HOME 解析落到 `android` 的半坏状态）：
+
+- 继续用 debug：`tools/home.ps1 ensure debug`；
+- 回到正式包：`tools/home.ps1 release`；
+- 回到第三方桌面：`cmd package set-home-activity <pkg>/<activity>`，必要时先 `cmd role add-role-holders android.app.role.HOME <pkg>`；
+- 卸载 debug 前先切到目标桌面，卸载后再校验一次；
+- 只认 `resolve-activity` 解析到目标且 `isDefault=true`；`role get-role-holders` 单独显示目标包不算正常。
+- 自动化测试结束的汇报必须明确写出当前默认 launcher 是否是 debug 包（给出 `package=... isDefault=... roleHolders=...`）；不要只写“已校验”。
+
+```powershell
+# 安装前记录的原桌面；按需选择下面一种恢复
+pwsh -NoProfile -File ./tools/home.ps1 ensure debug -Serial $SERIAL -AdbPath $ADB
+pwsh -NoProfile -File ./tools/home.ps1 release -Serial $SERIAL -AdbPath $ADB
+# 第三方桌面示例（把 pkg/activity 换成实际值）：
+# & $ADB -s $SERIAL shell cmd role add-role-holders android.app.role.HOME com.example.launcher
+# & $ADB -s $SERIAL shell cmd package set-home-activity com.example.launcher/.MainActivity
+# 最后必须重新 resolve + role 校验
+```
 
 ```powershell
 pwsh -NoProfile -File ./tools/automate.ps1 -Dest editmode_off -Serial $SERIAL -AdbPath $ADB

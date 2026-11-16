@@ -425,10 +425,6 @@ class LettersFragment : Fragment() {
         val actionBarBottomPadding = 0.dp
         val contentTopPadding = 0.dp
 
-        val lettersCloseDirection = remember(prefs) {
-            com.github.gezimos.inkos.helper.GestureBindings
-                .closeDirection(com.github.gezimos.inkos.data.Constants.Action.OpenLettersScreen, prefs)
-        }
         Box(
             modifier = Modifier
                 .fillMaxSize()

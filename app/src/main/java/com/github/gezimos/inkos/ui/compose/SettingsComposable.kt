@@ -310,6 +310,9 @@ object SettingsComposable {
         valueFontSize: TextUnit = TextUnit.Unspecified,
         onClick: () -> Unit = {},
         titleFontSize: TextUnit = TextUnit.Unspecified,
+        descriptionColor: Color? = null,
+        modifier: Modifier = Modifier,
+        fillWidth: Boolean = true,
         horizontalPadding: Dp = SettingsTheme.color.horizontalPadding,
         verticalPadding: Dp = 10.dp.scaled(rememberScreenScale()),
         focusVerticalPadding: Dp = 12.dp.scaled(rememberScreenScale()),
@@ -322,8 +325,8 @@ object SettingsComposable {
         val prefBackgroundColor = Theme.colors.background
         val screenScale = rememberScreenScale()
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
+            modifier = modifier
+                .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor, outerVertical = focusVerticalPadding)
@@ -362,7 +365,12 @@ object SettingsComposable {
                 )
                 Spacer(modifier = Modifier.width(16.dp.scaled(screenScale)))
             }
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = if (fillWidth) Modifier.weight(1f) else Modifier) {
+                val descBaseFontSize = if (titleFontSize.isSpecified) {
+                    (titleFontSize.value * 0.65f).sp
+                } else {
+                    (SettingsTheme.typography.title.fontSize.value * 0.65f).sp
+                }
                 Text(
                     text = title,
                     style = SettingsTheme.typography.title,
@@ -370,12 +378,15 @@ object SettingsComposable {
                     color = if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.title.color
                 )
                 if (description != null) {
-                    val descFontSize = if (titleFontSize.isSpecified) (titleFontSize.value * 0.65f).sp else (SettingsTheme.typography.title.fontSize.value * 0.65f).sp
                     Text(
                         text = description,
                         style = SettingsTheme.typography.title,
-                        fontSize = descFontSize,
-                        color = if (isHighlighted) prefBackgroundColor else SettingsTheme.typography.title.color
+                        fontSize = descBaseFontSize,
+                        color = if (isHighlighted) {
+                            prefBackgroundColor
+                        } else {
+                            descriptionColor ?: SettingsTheme.typography.title.color
+                        }
                     )
                 }
             }

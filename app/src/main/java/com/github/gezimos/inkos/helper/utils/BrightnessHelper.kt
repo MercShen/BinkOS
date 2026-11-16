@@ -2,6 +2,7 @@ package com.github.gezimos.inkos.helper.utils
 
 import android.content.Context
 import android.widget.Toast
+import com.github.gezimos.inkos.R
 import com.github.gezimos.inkos.data.Prefs
 import androidx.core.net.toUri
 
@@ -14,7 +15,7 @@ object BrightnessHelper {
             context.startActivity(intent)
             Toast.makeText(
                 context,
-                "Please enable 'Modify system settings' for Bink OS to use brightness gesture. This is a feature for Mudita Kompakt.",
+                context.getString(R.string.brightness_write_settings_required),
                 Toast.LENGTH_LONG
             ).show()
             return
@@ -53,7 +54,7 @@ object BrightnessHelper {
                 params.screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
                 window.attributes = params
 
-                Toast.makeText(context, "Brightness restored to $savedBrightness", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.brightness_restored_fmt, savedBrightness), Toast.LENGTH_SHORT).show()
             } else {
                 if (currentSystemBrightness > 0) {
                     prefs.lastBrightnessLevel = currentSystemBrightness
@@ -72,14 +73,14 @@ object BrightnessHelper {
                 params.screenBrightness = android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
                 window.attributes = params
 
-                Toast.makeText(context, "Brightness dimmed (saved: $currentSystemBrightness)", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.brightness_dimmed_fmt, currentSystemBrightness), Toast.LENGTH_SHORT).show()
             }
     } catch (_: android.provider.Settings.SettingNotFoundException) {
             // Fallback if system brightness can't be read
-            Toast.makeText(context, "Brightness control not available", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.brightness_unavailable), Toast.LENGTH_SHORT).show()
     } catch (_: SecurityException) {
             // Handle permission issues
-            Toast.makeText(context, "Permission required for brightness control", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.brightness_permission_required), Toast.LENGTH_SHORT).show()
         }
     }
     fun setBrightness(context: Context, prefs: Prefs, level: Int): Boolean {

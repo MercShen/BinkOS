@@ -907,12 +907,6 @@ class SettingsFragment : Fragment() {
                 onClick = { dialogBuilder.showBackupRestoreDialog() }
             )
             SettingsHomeItem(
-                title = stringResource(R.string.theme_export_import),
-                description = stringResource(R.string.desc_theme_export_import),
-                titleFontSize = titleFontSize,
-                onClick = { dialogBuilder.showThemeDialog() }
-            )
-            SettingsHomeItem(
                 title = stringResource(changeLauncherText) + if (!isinkosDefault(requireContext())) "*" else "",
                 description = stringResource(R.string.settings_desc_choose_launcher),
                 titleFontSize = titleFontSize,
@@ -1824,6 +1818,13 @@ class SettingsFragment : Fragment() {
                     description = stringResource(R.string.desc_theme_preset),
                     onClick = { navController.navigate(R.id.themePresetsFragment) }
                 )
+                SettingsHomeItem(
+                    title = stringResource(R.string.theme_export_import),
+                    description = stringResource(R.string.desc_theme_export_import),
+                    titleFontSize = titleFontSize,
+                    descriptionColor = Color.Black,
+                    onClick = { dialogBuilder.showThemeDialog() }
+                )
                 SettingsSelect(
                     title = stringResource(id = R.string.theme_mode),
                     option = when (uiState.appTheme) { Dark -> stringResource(R.string.dark); Constants.Theme.Light -> stringResource(R.string.light); Constants.Theme.System -> stringResource(R.string.system_default) },
@@ -2330,7 +2331,7 @@ class SettingsFragment : Fragment() {
                     }
                 )
             }
-            SettingsSwitch(text = stringResource(R.string.universal_custom_font), fontSize = titleFontSize,
+            SettingsSwitch(text = stringResource(R.string.universal_font_toggle), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_universal_font),
                 defaultState = universalFontEnabledState,
                 onCheckedChange = { enabled ->
@@ -2347,7 +2348,7 @@ class SettingsFragment : Fragment() {
                         settingsFontState = font
                     }
                 })
-            SettingsSelect(title = stringResource(R.string.universal_custom_font),
+            SettingsSelect(title = stringResource(R.string.universal_font_choose),
                 option = getFontDisplayName(universalFontState, "universal"), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_universal_font_select),
                 onClick = {

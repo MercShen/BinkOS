@@ -533,8 +533,8 @@ class RecentsFragment : Fragment() {
                                     onLongSwipe = { direction ->
                                         try {
                                             val closeDirection = com.github.gezimos.inkos.helper.GestureBindings
-                                                .closeDirection(com.github.gezimos.inkos.data.Constants.Action.OpenRecentsScreen, prefs)
-                                            if (direction == closeDirection) {
+                                                .closeDirectionOrNull(com.github.gezimos.inkos.data.Constants.Action.OpenRecentsScreen, prefs)
+                                            if (closeDirection != null && direction == closeDirection) {
                                                 vibratePage()
                                                 findNavController().popBackStack()
                                             }

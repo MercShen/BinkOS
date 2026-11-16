@@ -228,7 +228,7 @@ private fun NotificationPageIndicator(
     }
 }
 
-/** 把页码点放在消息框边框与屏幕边缘的中点（垂直居中），不依赖具体机型的边距数值。 */
+/** 把页码点放在消息框边框与屏幕边缘的中点（水平、垂直居中），不依赖具体机型的边距数值。 */
 @Composable
 private fun BoxScope.NotificationPageIndicatorOverlay(
     prefs: Prefs,
@@ -239,11 +239,16 @@ private fun BoxScope.NotificationPageIndicatorOverlay(
 ) {
     if (pageCount <= 1 || rootWidthPx <= 0 || listBounds.width <= 0f) return
     val leftAlign = prefs.homePagerAlign == 0
-    val dotWidthPx = with(LocalDensity.current) { 12.dp.toPx() }
-    val marginDp = prefs.pageIndicatorMargin
-    // margin 0 = 贴在安全区虚线内侧（基准 12dp），每加 1 让圆点再远离 1dp
-    val edgeInsetPx = with(LocalDensity.current) { (12 + marginDp).dp.toPx() }
-    val leftPx = if (leftAlign) edgeInsetPx else rootWidthPx - edgeInsetPx - dotWidthPx
+    val density = LocalDensity.current
+    val screenScale = rememberScreenScale()
+    val dotWidthPx = with(density) { 12.dp.scaled(screenScale).toPx() }
+    // 页码点组的水平中点 = 屏幕边缘与消息框边框之间空隙的中点。
+    val desiredLeftPx = if (leftAlign) {
+        (listBounds.left - dotWidthPx) / 2f
+    } else {
+        listBounds.right + (rootWidthPx - listBounds.right - dotWidthPx) / 2f
+    }
+    val leftPx = desiredLeftPx.coerceIn(0f, (rootWidthPx - dotWidthPx).coerceAtLeast(0f))
     Box(
         modifier = Modifier
             .align(Alignment.CenterStart)
@@ -260,6 +265,12 @@ private fun BoxScope.NotificationPageIndicatorOverlay(
 internal fun vibratePaging(context: Context) {
     VibrationHelper.trigger(VibrationHelper.Effect.PAGE)
 }
+
+/** 系统是否允许用户清除这条通知（ongoing / FLAG_NO_CLEAR 不允许）。 */
+private fun isNotificationDismissible(sbn: StatusBarNotification): Boolean =
+    !sbn.isOngoing &&
+        (sbn.notification.flags and
+            (Notification.FLAG_NO_CLEAR or Notification.FLAG_ONGOING_EVENT)) == 0
 
 internal fun openNotificationSettingsForPackage(context: Context, packageName: String) {
     try {
@@ -569,6 +580,9 @@ fun HubScreen(
     ) }
     var hubListBounds by remember { mutableStateOf(Rect.Zero) }
     var hubRootSize by remember { mutableStateOf(IntSize.Zero) }
+    var hubFrameTop by remember { mutableStateOf(0f) }
+    var hubRowHeightPx by remember { mutableIntStateOf(0) }
+    var hubClearButtonHeightPx by remember { mutableIntStateOf(0) }
     val itemHeightPx = remember(density) { with(density) { 96.dp.toPx() }.toInt() }
     val hubOverheadPx = remember(density) { with(density) { 8.dp.toPx() }.toInt() }
 
@@ -691,6 +705,31 @@ fun HubScreen(
                 )
             }
                 .onSizeChanged { hubRootSize = it }
+                .closeOnReverseLongSwipe(
+                    action = com.github.gezimos.inkos.data.Constants.Action.OpenHub,
+                    prefs = prefs
+                ) {
+                    try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
+                    onNavigateBack()
+                }
+                .pointerInput(categoryTabs.size, selectedCategoryIndex.intValue) {
+                    // 整页任意位置横向短滑切分类；通知行自己的横向 drag 在 Main pass 先消费，
+                    // 所以行上横滑仍是“消除通知”，其余区域切 tab。
+                    var dragSum = 0f
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount -> dragSum += dragAmount },
+                        onDragEnd = {
+                            val threshold = with(density) { 48.dp.toPx() }
+                            val idx = selectedCategoryIndex.intValue
+                            if (dragSum < -threshold && idx < categoryTabs.size - 1) {
+                                selectedCategoryIndex.intValue = idx + 1
+                            } else if (dragSum > threshold && idx > 0) {
+                                selectedCategoryIndex.intValue = idx - 1
+                            }
+                            dragSum = 0f
+                        }
+                    )
+                }
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
     ) {
@@ -747,28 +786,6 @@ fun HubScreen(
             )
 
             Spacer(modifier = Modifier.height(12.dp.scaled(screenScale)))
-
-            if (filteredNotifications.isNotEmpty()) {
-                HubClearAllRow(
-                    prefs = prefs,
-                    isFocused = isDpadMode && focusZone.value == HubFocusZone.CLEAR_ALL,
-                    total = null,
-                    isAllTab = selectedCategoryIndex.intValue == 0,
-                    categoryLabel = categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All",
-                    onClearAll = {
-                        try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                        filteredNotifications.forEach { hn ->
-                            try {
-                                if (hn.notif.notificationKey != null) {
-                                    NotificationService.dismissNotification(hn.notif.notificationKey)
-                                }
-                                NotificationManager.getInstance(ctx).removeConversationNotification(hn.packageName, hn.notif.conversationId)
-                            } catch (_: Exception) {}
-                        }
-                    },
-                    fontFamily = notifFontFamilyGlobal
-                )
-            }
 
             Box(
                 modifier = Modifier
@@ -836,7 +853,12 @@ fun HubScreen(
                             NotificationManager.getInstance(ctx).removeConversationNotification(hn.packageName, hn.notif.conversationId)
                             expandedNotificationKey = null
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        onRowHeightMeasured = { hubRowHeightPx = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .onGloballyPositioned { coords ->
+                                hubFrameTop = coords.boundsInRoot().top
+                            }
                     )
                 }
             }
@@ -849,6 +871,51 @@ fun HubScreen(
             currentPage = pagerState.currentPage,
             pageCount = pagerState.pageCount
         )
+
+        if (filteredNotifications.isNotEmpty()) {
+            // 以“满页时消息框的最低位置”和屏幕底部的中点为固定锚点：
+            // 用分页时的行高上限计算满页底边，消息少时也不会跟着内容上移。
+            val frameTop = if (hubFrameTop > 0f) hubFrameTop else hubListBounds.top
+            val topPaddingPx = with(density) { 12.dp.toPx() }
+            val bottomPaddingPx = with(density) { 16.dp.toPx() }
+            val rowHeightPx = if (hubRowHeightPx > 0) hubRowHeightPx.toFloat() else itemHeightPx.toFloat()
+            val fullFrameBottom = frameTop + topPaddingPx +
+                itemsPerPage * rowHeightPx + bottomPaddingPx
+            val targetCenterY = (fullFrameBottom + hubRootSize.height) / 2f
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .offset {
+                        IntOffset(
+                            0,
+                            (targetCenterY - hubClearButtonHeightPx / 2f).roundToInt().coerceAtLeast(0)
+                        )
+                    }
+                    .onSizeChanged { hubClearButtonHeightPx = it.height }
+            ) {
+                HubClearAllRow(
+                    prefs = prefs,
+                    isFocused = isDpadMode && focusZone.value == HubFocusZone.CLEAR_ALL,
+                    total = null,
+                    isAllTab = selectedCategoryIndex.intValue == 0,
+                    categoryLabel = categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All",
+                    onClearAll = {
+                        try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
+                        filteredNotifications.forEach { hn ->
+                            try {
+                                if (hn.notif.notificationKey != null) {
+                                    NotificationService.dismissNotification(hn.notif.notificationKey)
+                                }
+                                NotificationManager.getInstance(ctx).removeConversationNotification(hn.packageName, hn.notif.conversationId)
+                            } catch (_: Exception) {}
+                        }
+                        onNavigateBack()
+                    },
+                    fontFamily = notifFontFamilyGlobal
+                )
+            }
+        }
         if (isEditMode) {
             Box(
                 modifier = Modifier
@@ -983,6 +1050,7 @@ private fun HubNotificationList(
     onExpandToggle: (String) -> Unit = {},
     onActionClick: (notifKey: String, actionIndex: Int) -> Unit = { _, _ -> },
     onDismiss: (HubNotification) -> Unit = {},
+    onRowHeightMeasured: (Int) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val notificationBoxShape = remember(prefs.textIslandsShape) {
@@ -1031,7 +1099,11 @@ private fun HubNotificationList(
                         try { openNotificationSettingsForPackage(ctx, hn.packageName) } catch (_: Exception) {}
                     },
                     isFirst = index == 0,
-                    isLast = index == notifications.lastIndex
+                    isLast = index == notifications.lastIndex,
+                    canDismiss = isNotificationDismissible(hn.sbn),
+                    modifier = if (index == 0) {
+                        Modifier.onGloballyPositioned { coords -> onRowHeightMeasured(coords.size.height) }
+                    } else Modifier
                 )
             }
         }
@@ -1058,7 +1130,9 @@ private fun HubNotificationItem(
     onDismiss: () -> Unit = {},
     onIconTap: () -> Unit = {},
     isFirst: Boolean = false,
-    isLast: Boolean = false
+    isLast: Boolean = false,
+    canDismiss: Boolean = true,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val screenScale = rememberScreenScale()
@@ -1109,7 +1183,6 @@ private fun HubNotificationItem(
     } else null
 
     val highlightColor = Theme.colors.text.copy(alpha = 0.3f)
-    val density = LocalDensity.current
     val textIslandsShape = prefs.textIslandsShape
     val highlightShape = remember(textIslandsShape, isFirst, isLast) {
         val r = when (textIslandsShape) {
@@ -1128,6 +1201,7 @@ private fun HubNotificationItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .then(modifier)
             .then(
                 if (isDpadMode && isFocused) {
                     Modifier.background(color = highlightColor, shape = highlightShape)
@@ -1139,20 +1213,6 @@ private fun HubNotificationItem(
                     onLongPress = {
                         try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
                         onLongPress()
-                    }
-                )
-            }
-            .pointerInput(Unit) {
-                var dragSum = 0f
-                detectHorizontalDragGestures(
-                    onHorizontalDrag = { _, dragAmount -> dragSum += dragAmount },
-                    onDragEnd = {
-                        val threshold = with(density) { 60.dp.toPx() }
-                        if (kotlin.math.abs(dragSum) > threshold) {
-                            try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                            onDismiss()
-                        }
-                        dragSum = 0f
                     }
                 )
             }
@@ -1276,16 +1336,21 @@ private fun HubNotificationItem(
                 }
             }
 
-            if (isExpanded) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.Rounded.Close,
-                    contentDescription = stringResource(R.string.cd_dismiss),
-                    tint = Theme.colors.text,
+            Spacer(modifier = Modifier.width(8.dp))
+            if (canDismiss) {
+                Box(
                     modifier = Modifier
-                        .size(20.dp)
-                        .clickable(onClick = onDismiss)
-                )
+                        .size(32.dp)
+                        .clickable(onClick = onDismiss),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Close,
+                        contentDescription = stringResource(R.string.cd_dismiss),
+                        tint = Theme.colors.text,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
         }
     }
@@ -1357,7 +1422,7 @@ private fun HubClearAllRow(
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (total == null) Arrangement.End else Arrangement.SpaceBetween,
+        horizontalArrangement = if (total == null) Arrangement.Center else Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (total != null) {
@@ -1580,6 +1645,11 @@ fun SimpleTrayScreen(
         }
         .map { sbn -> sbn.packageName to convertSbnToSimpleTrayConversationNotification(ctx, prefsLocal, sbn) }
 
+    val dismissibleNotificationKeys = rawNotifications
+        .filter { isNotificationDismissible(it) }
+        .map { it.key }
+        .toSet()
+
     val audioWidgetHelper = AudioWidgetHelper.getInstance(ctx)
     val currentMediaPlayer by audioWidgetHelper.mediaPlayerState.collectAsState()
     val mediaNotifications: List<Pair<String, NotificationManager.ConversationNotification>> =
@@ -1602,6 +1672,10 @@ fun SimpleTrayScreen(
 
     val validNotifications = (notificationsFromSbn + mediaNotifications)
         .sortedByDescending { (_, notif) -> notif.timestamp }
+    // 媒体卡只是控制项，不计入“消息通知数量”；Tray 顶部数字与全局计数保持一致。
+    val messageNotificationCount = validNotifications.count { (_, notif) ->
+        notif.category != Notification.CATEGORY_TRANSPORT
+    }
 
     val isDpadModeState = remember { mutableStateOf(false) }
     var isDpadMode by isDpadModeState
@@ -2146,6 +2220,13 @@ fun SimpleTrayScreen(
                 } else Modifier
             )
                 .onSizeChanged { trayRootSize = it }
+                .closeOnReverseLongSwipe(
+                    action = com.github.gezimos.inkos.data.Constants.Action.OpenSimpleTray,
+                    prefs = prefs
+                ) {
+                    try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
+                    onNavigateBack()
+                }
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
     ) {
@@ -2285,7 +2366,7 @@ fun SimpleTrayScreen(
                 SimpleTrayClearAllRow(
                     prefs = prefs,
                     isFocused = isDpadMode && focusZone.value == SimpleTrayFocusZone.CLEAR_ALL,
-                    total = validNotifications.size,
+                    total = messageNotificationCount.takeIf { it > 0 },
                     onClearAll = {
                         try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
                         validNotifications.forEach { (pkg, notif) ->
@@ -2354,7 +2435,16 @@ fun SimpleTrayScreen(
                         focusZone = focusZone.value,
                         selectedNotificationIndex = selectedNotificationIndex.intValue,
                         isEditMode = isEditMode,
-                        onEditModeTap = onNotificationEditModeClick
+                        onEditModeTap = onNotificationEditModeClick,
+                        dismissibleNotificationKeys = dismissibleNotificationKeys,
+                        onDismiss = { pkg, notif ->
+                            try {
+                                if (notif.notificationKey != null) {
+                                    NotificationService.dismissNotification(notif.notificationKey)
+                                }
+                                NotificationManager.getInstance(ctx).removeConversationNotification(pkg, notif.conversationId)
+                            } catch (_: Exception) {}
+                        }
                     )
                 }
             }
@@ -2937,7 +3027,9 @@ private fun MergedNotificationCards(
     focusZone: SimpleTrayFocusZone,
     selectedNotificationIndex: Int,
     isEditMode: Boolean = false,
-    onEditModeTap: () -> Unit = {}
+    onEditModeTap: () -> Unit = {},
+    dismissibleNotificationKeys: Set<String> = emptySet(),
+    onDismiss: (String, NotificationManager.ConversationNotification) -> Unit = { _, _ -> }
 ) {
     val notificationBoxShape = remember(prefs.textIslandsShape) {
         when (prefs.textIslandsShape) {
@@ -2965,7 +3057,9 @@ private fun MergedNotificationCards(
                     isEditMode = isEditMode,
                     onEditModeTap = onEditModeTap,
                     isFirst = index == 0,
-                    isLast = index == notifications.lastIndex
+                    isLast = index == notifications.lastIndex,
+                    canDismiss = notif.notificationKey in dismissibleNotificationKeys,
+                    onDismiss = { onDismiss(packageName, notif) }
                 )
             }
         }
@@ -2983,7 +3077,9 @@ private fun NotificationCardItem(
     isEditMode: Boolean = false,
     onEditModeTap: () -> Unit = {},
     isFirst: Boolean = false,
-    isLast: Boolean = false
+    isLast: Boolean = false,
+    canDismiss: Boolean = true,
+    onDismiss: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val screenScale = rememberScreenScale()
@@ -3171,7 +3267,7 @@ private fun NotificationCardItem(
                 )
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (isMediaNotification && mediaController != null) {
@@ -3180,7 +3276,7 @@ private fun NotificationCardItem(
                             contentDescription = "Previous",
                             tint = Theme.colors.text,
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(32.dp)
                                 .clickable {
                                     try { mediaController.transportControls.skipToPrevious() } catch (_: Exception) {}
                                 }
@@ -3190,7 +3286,7 @@ private fun NotificationCardItem(
                             contentDescription = if (isPlaying) "Pause" else "Play",
                             tint = Theme.colors.text,
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(32.dp)
                                 .clickable {
                                     try {
                                         if (isPlaying) mediaController.transportControls.pause()
@@ -3203,7 +3299,7 @@ private fun NotificationCardItem(
                             contentDescription = "Next",
                             tint = Theme.colors.text,
                             modifier = Modifier
-                                .size(24.dp)
+                                .size(32.dp)
                                 .clickable {
                                     try { mediaController.transportControls.skipToNext() } catch (_: Exception) {}
                                 }
@@ -3219,6 +3315,21 @@ private fun NotificationCardItem(
                                 try { openNotificationSettingsForPackage(context, packageName) } catch (_: Exception) {}
                             }
                     )
+                    if (canDismiss) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clickable(onClick = onDismiss),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Close,
+                                contentDescription = stringResource(R.string.cd_dismiss),
+                                tint = Theme.colors.text,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
                 }
             }
 

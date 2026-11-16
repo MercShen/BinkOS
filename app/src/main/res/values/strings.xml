@@ -38,7 +38,7 @@
     <string name="dark">Dark</string>
     <string name="light">Light</string>
     <string name="system_default">System</string>
-    <string name="select_app">Select App</string>
+    <string name="select_app">Choose App</string>
     <string name="brightness">Brightness</string>
     <string name="customizations">Customizations</string>
 
@@ -127,22 +127,22 @@
     <string name="exit_edit_mode">Exit Edit Mode</string>
 
     <!-- Home settings -->
-    <string name="home_apps">Home Apps</string>
-    <string name="apps_on_home_screen">Number of Home Apps</string>
+    <string name="home_apps">Favorites</string>
+    <string name="apps_on_home_screen">Number of Favorites</string>
     <string name="pages_on_home_screen">Number of Pages</string>
-    <string name="enable_home_pager">Enable Page Indicator</string>
+    <string name="enable_home_pager">Enable Page Indicators</string>
     <string name="home_page_reset">Home Page Reset</string>
-    <string name="lock_home_apps">Lock Home Apps</string>
+    <string name="lock_home_apps">Lock Favorites</string>
     <string name="lock_settings">Lock Settings</string>
     <string name="longpress_app_info">Long Press for App Info</string>
     <string name="extend_home_apps_area">Extend Clickable Area</string>
     <string name="home_alignment">Home Alignment</string>
-    <string name="home_apps_alignment">Home Apps Alignment</string>
+    <string name="home_apps_alignment">Favorites Alignment</string>
     <string name="home_clock_alignment">Clock alignment</string>
     <string name="home_date_alignment">Date alignment</string>
-    <string name="home_quote_alignment">Widget alignment</string>
+    <string name="home_quote_alignment">Quote Alignment</string>
     <string name="app_size_gap">App Size/Gap</string>
-    <string name="nr_apps_pages">Nr of Apps/Pages</string>
+    <string name="nr_apps_pages">Number of Apps/Pages</string>
     <string name="margin_offset">Margin/Offset</string>
 
     <!-- Clock -->
@@ -203,7 +203,7 @@
     <string name="events_filter_1month">1 month</string>
 
     <!-- Notifications -->
-    <string name="show_notification_badge">Asterisk Notification</string>
+    <string name="show_notification_badge">Notification Badge</string>
     <string name="label_notifications">Label Notifications</string>
     <string name="badge_indicator">Badge Indicator</string>
     <string name="badge_character_limit">Character Limit</string>
@@ -217,7 +217,7 @@
     <string name="letters_allowlist">Letters Allowlist</string>
     <string name="push_notifications">Enable Notifications</string>
     <string name="chat_notifications_section">Chat Notifications</string>
-    <string name="home_notifications_allowlist">Home Noti. Allowlist</string>
+    <string name="home_notifications_allowlist">Home Notification Allowlist</string>
     <string name="notification_permission_enabled">Notification access on</string>
     <string name="notifications_per_page">Notifications Per Page</string>
     <string name="enable_bottom_navigation">Enable Bottom Navigation</string>
@@ -236,7 +236,7 @@
     <string name="filtering">Filtering</string>
     <string name="show_icons">Show Icons</string>
     <string name="sort_order">Sort Order</string>
-    <string name="hide_home_apps">Hide Home Apps</string>
+    <string name="hide_home_apps">Hide Favorites</string>
     <string name="search_hidden_apps">Search Hidden Apps</string>
 
     <!-- Search -->
@@ -259,10 +259,12 @@
     <string name="apps_font">Apps Font</string>
     <string name="clock_font">Clock Font</string>
     <string name="date_font">Date Font</string>
-    <string name="quote_font">Widget Font</string>
+    <string name="quote_font">Quote Font</string>
     <string name="letters_font">Letters Font</string>
     <string name="universal_custom_font">Universal Font</string>
-    <string name="app_notification_font">Badge Noti. Font</string>
+    <string name="universal_font_toggle">Use one font everywhere</string>
+    <string name="universal_font_choose">Font</string>
+    <string name="app_notification_font">Label Notifications Font</string>
     <string name="label_notifications_font">Label Notifications Font</string>
     <string name="label_notifications_size">Label Notifications Size</string>
     <string name="title_label">Title</string>
@@ -281,13 +283,13 @@
     <string name="app_text_size">App Size</string>
     <string name="clock_text_size">Clock Size</string>
     <string name="date_text_size">Date Size</string>
-    <string name="quote_text_size">Widget Size</string>
+    <string name="quote_text_size">Quote Size</string>
     <string name="settings_text_size">Settings Text Size</string>
     <string name="app_drawer_size">App Drawer Size</string>
     <string name="app_padding_size">Gap Between Apps</string>
     <string name="icon_size">Icon Size</string>
-    <string name="widget_size">Widget Size</string>
-    <string name="home_apps_y_offset">Home Apps Y-Offset</string>
+    <string name="widget_size">Android Widget Size</string>
+    <string name="home_apps_y_offset">Favorites Y-Offset</string>
     <string name="top_widget_margin">Top Widget Margin</string>
     <string name="bottom_widget_margin">Bottom Widget Margin</string>
 
@@ -298,9 +300,9 @@
     <string name="small_caps_apps">lowercase</string>
 
     <!-- Look &amp; Feel -->
-    <string name="themes">Presets</string>
+    <string name="themes">Theme Presets</string>
     <string name="custom_theme">Custom</string>
-    <string name="theme_mode">Theme mode</string>
+    <string name="theme_mode">Theme Mode</string>
     <string name="choose_wallpaper_picker">Choose Wallpaper Picker</string>
     <string name="background_color">Background</string>
     <string name="text_color">Text Color</string>
@@ -393,7 +395,7 @@
     <string name="shortcut_icon">Shortcut Icon</string>
 
     <!-- Favorites -->
-    <string name="favorite_apps">Favorite Apps</string>
+    <string name="favorite_apps">Favorites</string>
     <string name="reorder_apps">Re-order Apps</string>
     <string name="edit_favorites">Edit Favorites</string>
     <string name="max_favorites_reached">Maximum %d favorites reached</string>
@@ -414,10 +416,10 @@
     <string name="right_margin_fmt">Right margin: %1$d%%</string>
     <string name="top_margin_fmt">Top widget margin: %1$d</string>
     <string name="bottom_margin_fmt">Bottom widget margin: %1$d</string>
-    <string name="y_offset_fmt">Home apps Y-offset: %1$d</string>
+    <string name="y_offset_fmt">Favorites Y-Offset: %1$d</string>
     <string name="app_text_size_fmt">App text size: %1$d</string>
     <string name="app_gap_fmt">App gap: %1$d</string>
-    <string name="num_home_apps_fmt">Number of home apps: %1$d</string>
+    <string name="num_home_apps_fmt">Number of favorites: %1$d</string>
     <string name="num_pages_fmt">Number of pages: %1$d</string>
     <string name="drawer_size_fmt">App size: %1$d</string>
     <string name="drawer_gap_fmt">App gap: %1$d</string>
@@ -445,7 +447,7 @@
     <string name="option_date_format_3">Mar 5</string>
     <string name="option_date_format_4">5 Mar</string>
     <string name="option_date_format_5">Wednesday</string>
-    <string name="option_simple_tray">SimpleTray</string>
+    <string name="option_simple_tray">Simple Tray</string>
     <string name="option_letters">Letters</string>
     <string name="option_hub">Hub</string>
     <string name="option_pill">Pill</string>
@@ -516,16 +518,18 @@
     <string name="config_wallpaper">Wallpaper</string>
     <string name="theme_exported">Theme exported</string>
     <string name="theme_imported">Theme imported</string>
+    <string name="theme_applied">Theme applied</string>
 
     <!-- Backup / Restore -->
-    <string name="backup_restore_title">BACKUP / RESTORE</string>
+    <string name="backup_restore_title">BACKUP/RESTORE</string>
     <string name="restore_data">Restore Data</string>
     <string name="export_theme">Export Theme</string>
     <string name="import_theme">Import Theme</string>
+    <string name="theme_scope_hint">Appearance only — your favorites, app aliases, and notification settings are not affected</string>
     <string name="clear_all_data">Clear All Data</string>
-    <string name="theme_export_import">Theme</string>
+    <string name="theme_export_import">Theme File</string>
     <string name="desc_backup_restore">Backup, restore, or clear all data</string>
-    <string name="desc_theme_export_import">Export or import your theme settings</string>
+    <string name="desc_theme_export_import">Export or import appearance settings</string>
     <string name="clear_all_data_confirm_title">Clear All Data</string>
     <string name="clear_all_data_confirm_description">This will delete all preferences, custom fonts, wallpaper, and cached data. This cannot be undone.</string>
 
@@ -543,7 +547,7 @@
 
     <!-- Private Space -->
     <string name="alert_requires_android_v">This functionality requires Android 15 or later.</string>
-    <string name="toast_private_space_default_home_screen">Bink OS needs to be the default home screen to access private space.</string>
+    <string name="toast_private_space_default_home_screen">Bink OS needs to be the default launcher to access private space.</string>
     <string name="toast_private_space_locked">Private space locked</string>
     <string name="toast_private_space_unlocked">Private space unlocked</string>
     <string name="toast_private_space_not_available">Private space is not available</string>
@@ -563,7 +567,7 @@
     <string name="hub_other">Other</string>
     <string name="hub_action">Action</string>
     <string name="hub_open">Open</string>
-    <string name="hub_clear_all">Clear All</string>
+    <string name="hub_clear_all">Clear Notifications</string>
     <string name="hub_clear">Clear</string>
 
     <!-- Privacy Policy -->
@@ -586,11 +590,11 @@
     <string name="onboarding_default_launcher">DEFAULT HOME</string>
     <string name="onboarding_settings">SETTINGS</string>
     <string name="onboarding_theme">THEME</string>
-    <string name="onboarding_home_apps">HOME APPS</string>
+    <string name="onboarding_home_apps">FAVORITES</string>
     <string name="onboarding_app_version">APP VERSION</string>
     <string name="onboarding_read_policy">READ FULL POLICY</string>
     <string name="onboarding_agree_policy">I agree to the Privacy Policy</string>
-    <string name="onboarding_choose_preset">CHOOSE PRESET</string>
+    <string name="onboarding_choose_preset">CHOOSE THEME PRESET</string>
     <string name="onboarding_edit_favorites">EDIT FAVORITES</string>
     <string name="onboarding_permission_granted">PERMISSION GRANTED</string>
     <string name="onboarding_grant_permission">GRANT PERMISSION</string>
@@ -695,18 +699,18 @@
     <string name="desc_lock_home_apps">Prevent rearranging apps</string>
     <string name="desc_longpress_app_info">Long-press for app info</string>
     <string name="desc_lock_settings">Biometric lock for settings</string>
-    <string name="desc_app_padding">Gap between home apps</string>
+    <string name="desc_app_padding">Gap between favorites</string>
     <string name="desc_home_y_offset">Vertical position of apps</string>
     <string name="desc_top_widget_margin">Space above the clock/date</string>
     <string name="desc_bottom_widget_margin">Space below bottom widget</string>
-    <string name="desc_home_apps_num">Nr of app favorites in home</string>
+    <string name="desc_home_apps_num">Favorites shown on Home</string>
     <string name="desc_home_pages_num">Number of pages in home</string>
     <string name="page_indicator_margin">Page Indicators Margin</string>
     <string name="desc_page_indicator_margin">Gap between the page dots and the screen edge, on Home, tray and hub.</string>
     <string name="option_auto">Auto</string>
     <string name="desc_page_indicator">Show page indicator dots</string>
     <string name="desc_page_reset">Always returns to 1st page</string>
-    <string name="desc_home_alignment">Align home apps</string>
+    <string name="desc_home_alignment">Align favorites</string>
     <string name="desc_show_clock">Show clock on home</string>
     <string name="desc_clock_format">Choose 12h, 24h, or system</string>
     <string name="desc_clock_style">Visual style of the clock</string>
@@ -725,7 +729,7 @@
     <string name="desc_events_calendar">Calendar for events</string>
     <string name="desc_events_filter">Filter events by time range</string>
     <string name="desc_quote_text">Custom quote text</string>
-    <string name="desc_quote_alignment">Align bottom widget</string>
+    <string name="desc_quote_alignment">Align the quote widget</string>
     <string name="desc_choose_widget">Select an Android widget</string>
     <string name="desc_choose_app">Which app\'s widget to show</string>
     <string name="search_placeholder">Search</string>
@@ -733,7 +737,7 @@
     <string name="desc_widget_margin_start">Widget left margin</string>
     <string name="desc_widget_margin_end">Widget right margin</string>
     <string name="desc_remove_widget">Remove current widget</string>
-    <string name="desc_extend_area">Full width for home apps</string>
+    <string name="desc_extend_area">Full width for favorites</string>
     <string name="desc_all_apps">Browse all installed apps</string>
     <string name="desc_hidden_apps">Manage hidden apps</string>
     <string name="desc_app_shortcuts">Manage app shortcuts</string>
@@ -743,7 +747,7 @@
     <string name="desc_drawer_icons">Show icons in drawer</string>
     <string name="desc_az_filter">A-Z quick nav filter</string>
     <string name="desc_drawer_sort">App sort order in drawer</string>
-    <string name="desc_hide_home_apps">Hide home apps in drawer</string>
+    <string name="desc_hide_home_apps">Hide favorites in drawer</string>
     <string name="desc_show_search_bar">Show search bar</string>
     <string name="desc_auto_keyboard">Auto-open keyboard</string>
     <string name="desc_auto_open_result">Auto-open single result</string>
@@ -755,11 +759,11 @@
     <string name="desc_search_music">Include music results</string>
     <string name="desc_search_files">Search files in folders</string>
     <string name="desc_search_folders">Manage folders to search</string>
-    <string name="desc_theme_preset">Choose a preset theme</string>
+    <string name="desc_theme_preset">Choose a theme preset</string>
     <string name="desc_theme_mode">Light, dark, or system</string>
     <string name="desc_element_colors">Edit background &amp; text</string>
     <string name="desc_wallpaper">Choose wallpaper</string>
-    <string name="desc_wallpaper_opacity">Set wallpaper opacity</string>
+    <string name="desc_wallpaper_opacity">Set wallpaper visibility</string>
     <string name="desc_show_icons">Show icons next to names</string>
     <string name="desc_icon_pack">Choose icon pack</string>
     <string name="desc_icon_shape">Shape of icon masks</string>
@@ -792,10 +796,10 @@
     <string name="desc_clock_size">Text size for the clock</string>
     <string name="desc_date_font">Font for the date display</string>
     <string name="desc_date_size">Text size for the date</string>
-    <string name="desc_quote_font">Font for the quote widget</string>
+    <string name="desc_quote_font">Font for the quote</string>
     <string name="desc_quote_size">Text size for quotes</string>
-    <string name="desc_noti_label_font">Notification label font</string>
-    <string name="desc_noti_label_size">Notification label size</string>
+    <string name="desc_noti_label_font">Label notifications font</string>
+    <string name="desc_noti_label_size">Label notifications size</string>
     <string name="desc_letters_title">Letters window title</string>
     <string name="desc_letters_title_font">Letters title font</string>
     <string name="desc_letters_title_size">Letters title size</string>
@@ -806,17 +810,17 @@
     <string name="desc_noti_text_home">Notification text on home</string>
     <string name="desc_media_indicator">Media playing indicator</string>
     <string name="desc_media_track_name">Show playing track name</string>
-    <string name="desc_noti_app_filter">Notification app filter</string>
+    <string name="desc_noti_app_filter">Select which apps show notifications on Home</string>
     <string name="desc_sender_name">Display message sender name</string>
     <string name="desc_group_name">Display group chat name</string>
     <string name="desc_message_preview">Message preview text</string>
     <string name="desc_noti_char_limit">Notification char limit</string>
     <string name="desc_enable_letters">Enable letters window</string>
     <string name="desc_clear_on_open">Clear on app open</string>
-    <string name="desc_letters_filter">Letters app filter</string>
+    <string name="desc_letters_filter">Select which apps show notifications in Letters</string>
     <string name="desc_noti_per_page">Notifications per page</string>
     <string name="desc_bottom_nav">Bottom page navigation</string>
-    <string name="desc_simple_tray_filter">Simple tray app filter</string>
+    <string name="desc_simple_tray_filter">Select which apps show notifications in Simple Tray</string>
 
     <string name="accessibility_permission_title">Accessibility Permission Required</string>
     <string name="accessibility_permission_message">Bink OS needs accessibility service access to perform this gesture action (lock screen, recent apps, quick settings, or power dialog).\n\nThis service only performs the system action you assigned. It does not read screen content, collect personal data, or transmit any information. All processing stays on your device.\n\nYou will be taken to accessibility settings to enable the Bink OS Actions Service.</string>
@@ -837,11 +841,11 @@
     <string name="edit_menu_font">Font</string>
     <string name="edit_menu_quote_click_action">Click Quote Action</string>
     <string name="edit_menu_theme_mode">Theme Mode</string>
-    <string name="edit_menu_chosen_theme">Chosen Theme</string>
+    <string name="edit_menu_chosen_theme">Selected Preset</string>
     <string name="edit_menu_value_set">Set</string>
     <string name="edit_menu_apps_alignment">Apps Alignment</string>
-    <string name="edit_menu_page_indicator">Page Indicator</string>
-    <string name="edit_panel_widget">Widget</string>
+    <string name="edit_menu_page_indicator">Page Indicators</string>
+    <string name="edit_panel_widget">Bottom Widget</string>
     <string name="edit_panel_desc_widget_function">Which widget is shown and where</string>
     <string name="edit_panel_desc_widget_style">Text and appearance</string>
     <string name="edit_panel_desc_widget_gestures">Tap and gesture actions</string>
@@ -849,7 +853,7 @@
     <string name="edit_panel_clock">Clock</string>
     <string name="edit_panel_date">Date</string>
     <string name="edit_panel_apps">Apps</string>
-    <string name="edit_panel_background">Theme</string>
+    <string name="edit_panel_background">Background</string>
     <string name="edit_panel_desc_style">Font, size and layout</string>
     <string name="edit_panel_desc_function">Visibility, format and behaviour</string>
     <string name="edit_panel_desc_gestures">Tap and gesture actions</string>
@@ -860,14 +864,14 @@
     <string name="edit_panel_desc_apps_icons">Icon shape and source</string>
     <string name="edit_panel_desc_apps_function">Apps per page, paging and tap area</string>
     <string name="edit_panel_desc_apps_type">Badges and labels on app icons</string>
-    <string name="edit_panel_desc_theme">Theme, colours and wallpaper</string>
+    <string name="edit_panel_desc_theme">Theme, colors and wallpaper</string>
     <string name="edit_panel_desc_alignment">Where clock, apps and widget sit</string>
     <string name="edit_panel_desc_islands">Islands and corner style</string>
-    <string name="edit_menu_page_indicator_margin_fmt">Page indicators margin: %1$d</string>
+    <string name="edit_menu_page_indicator_margin_fmt">Page Indicators Margin: %1$d</string>
     <string name="edit_menu_top_widget_offset_fmt">Top widget offset: %1$d</string>
     <string name="edit_menu_bottom_widget_offset_fmt">Bottom widget offset: %1$d</string>
-    <string name="edit_menu_home_apps_x_offset_fmt">Home apps X-offset: %1$d</string>
-    <string name="edit_menu_home_apps_y_offset_fmt">Home apps Y-offset: %1$d</string>
+    <string name="edit_menu_home_apps_x_offset_fmt">Favorites X-Offset: %1$d</string>
+    <string name="edit_menu_home_apps_y_offset_fmt">Favorites Y-Offset: %1$d</string>
     <string name="edit_menu_corners">Corners</string>
     <string name="edit_menu_double_tap_action">Double Tap Action</string>
     <string name="edit_menu_enable_icons">Enable Icons</string>
@@ -901,18 +905,19 @@
     <string name="settings_desc_system_full_refresh">Use the vendor GC16 waveform for every refresh</string>
     <string name="settings_page_turn_animation">Page Turn Animation (Bigme)</string>
     <string name="settings_desc_page_turn_animation">Enable vendor page turn animations</string>
-    <string name="settings_desc_choose_launcher">Choose which launcher to use as your home screen</string>
+
+    <string name="settings_desc_choose_launcher">Choose which launcher to use</string>
     <string name="settings_desc_view_onboarding">View the setup wizard again</string>
     <string name="settings_desc_guide">Learn gestures and interactions</string>
     <string name="settings_desc_restart_launcher">Restart Bink OS without rebooting the device</string>
     <string name="settings_desc_exit_launcher">Switch to a different launcher</string>
     <string name="settings_choose_launcher">Choose your launcher</string>
-    <string name="settings_home_apps_x_offset">Home apps X offset</string>
-    <string name="settings_desc_home_apps_x_offset">Horizontal position of the home apps</string>
-    <string name="settings_home_apps_y_offset">Home apps Y offset</string>
-    <string name="settings_desc_home_apps_y_offset">Vertical position of the home apps</string>
-    <string name="settings_reset_home_apps_offset">Reset home apps offset</string>
-    <string name="settings_desc_reset_home_apps_offset">Restore the home apps offset to 0</string>
+    <string name="settings_home_apps_x_offset">Favorites X-Offset</string>
+    <string name="settings_desc_home_apps_x_offset">Horizontal position of favorites</string>
+    <string name="settings_home_apps_y_offset">Favorites Y-Offset</string>
+    <string name="settings_desc_home_apps_y_offset">Vertical position of favorites</string>
+    <string name="settings_reset_home_apps_offset">Reset favorites offset</string>
+    <string name="settings_desc_reset_home_apps_offset">Restore the favorites offset to 0</string>
     <string name="settings_top_widget_offset">Top Widget Offset</string>
     <string name="settings_bottom_widget_offset">Bottom Widget Offset</string>
     <string name="settings_desc_bottom_widget_margin">Space below the bottom widget</string>
@@ -984,7 +989,12 @@
     <!-- Short swipe zone editor -->
     <!-- Simple tray brightness bar -->
     <string name="enable_brightness_slider">Brightness slider</string>
-    <string name="clear_all">Clear All</string>
+    <string name="brightness_restored_fmt">Brightness restored to %1$d</string>
+    <string name="brightness_dimmed_fmt">Brightness dimmed (saved: %1$d)</string>
+    <string name="brightness_unavailable">Brightness control not available</string>
+    <string name="brightness_permission_required">Permission required for brightness control</string>
+    <string name="brightness_write_settings_required">Please enable \'Modify system settings\' for Bink OS to use the brightness gesture. This is a feature for Mudita Kompakt.</string>
+    <string name="clear_all">Clear Notifications</string>
     <string name="settings_label">Settings</string>
     <string name="desc_simple_tray_brightness">Show the brightness bar at the top of Simple Tray</string>
     <string name="onboarding_eink_title">EXTRAS</string>
@@ -1021,7 +1031,7 @@
     <string name="apps_header_count_fmt">%1$d/%2$d apps</string>
     <string name="apps_header_hidden_count_fmt">%1$d hidden</string>
     <string name="icons_section">Icons</string>
-    <string name="icons_homepage">Homepage</string>
+    <string name="icons_homepage">Home</string>
     <string name="icons_hub_tray">Hub / Simple Tray</string>
     <string name="icon_disabled">Disabled</string>
     <string name="desc_hub_icons">Show app icons in the Hub</string>
@@ -1050,5 +1060,5 @@
     <string name="badge_indicator_filled_circle">Filled circle</string>
     <string name="badge_indicator_filled_diamond">Filled diamond</string>
     <string name="no_matching_items">No matches</string>
-    <string name="desc_hub_filter">Hub app filter</string>
+    <string name="desc_hub_filter">Select which apps show notifications in Hub</string>
 </resources>

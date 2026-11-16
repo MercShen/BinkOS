@@ -6,6 +6,7 @@ import android.os.UserHandle
 import com.github.gezimos.inkos.R
 import android.util.Log
 import androidx.core.content.edit
+import com.github.gezimos.inkos.helper.FontPathRepair
 import com.github.gezimos.inkos.helper.getUserHandleFromString
 import com.github.gezimos.inkos.helper.isSystemInDarkMode
 import com.google.gson.Gson
@@ -432,7 +433,7 @@ class Prefs(val context: Context) {
     fun saveThemeToJson(): String {
         val root = mapOf(
             "type" to "inkos_theme",
-            "version" to 1,
+            "version" to THEME_FORMAT_VERSION,
             "prefs" to saveThemeToMap()
         )
         return com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(root)
@@ -440,6 +441,8 @@ class Prefs(val context: Context) {
 
     /** Import theme settings from a JSON string. Only applies visual/layout prefs, nothing private. */
     fun loadThemeFromJson(json: String) {
+        com.github.gezimos.inkos.helper.BackupJsonValidator.validateTheme(json, THEME_FORMAT_VERSION)
+            ?.let { throw IllegalArgumentException(it) }
         @Suppress("UNCHECKED_CAST")
         val root = gson.fromJson(json, Map::class.java) as? Map<String, Any?>
             ?: throw IllegalArgumentException("Invalid theme file")
@@ -2193,6 +2196,51 @@ var pageIndicatorMargin: Int
         }
     }
 
+    /**
+     * ZIP 恢复后字体路径可能失效（换包装/换目录/旧备份只写了 legacy `custom_font_path`）。
+     * 这里按"文件实际在哪"把三个字体路径来源重新对齐：
+     *  - 存在同名文件 → 指到 filesDir 里的那份（会随备份一起走）；
+     *  - 槽位字体是 Custom 但没有可用路径 → 依次回落到 universal / legacy / 唯一字体；
+     *  - 指向已不存在文件的条目丢弃（否则渲染会静默回落系统字体，只坏一个槽位）。
+     * 不做任何猜测性写入：没有可复用路径时保持原样。
+     */
+    fun repairFontPaths() {
+        try {
+            val slotKeys = linkedMapOf(
+                "universal" to "universal_font",
+                "settings" to LAUNCHER_FONT,
+                "apps" to APPS_FONT,
+                "clock" to CLOCK_FONT,
+                "status" to STATUS_FONT,
+                "notification" to NOTIFICATION_FONT,
+                "notifications" to "notifications_font",
+                "letters" to LETTERS_FONT,
+                "lettersTitle" to LETTERS_TITLE_FONT,
+                "date" to "date_font",
+                "quote" to QUOTE_FONT
+            )
+            val slotFonts = LinkedHashMap<String, String>()
+            slotKeys.forEach { (slot, key) ->
+                prefs.getString(key, null)?.let { slotFonts[slot] = it }
+            }
+            val result = FontPathRepair.repair(
+                FontPathRepair.Input(
+                    filesDir = context.filesDir,
+                    customFontPaths = customFontPaths.toSet(),
+                    pathMap = customFontPathMap,
+                    legacyPath = customFontPath,
+                    slotFonts = slotFonts
+                )
+            ) ?: return
+            prefs.edit {
+                putStringSet("custom_font_paths", result.customFontPaths)
+                putString(CUSTOM_FONT_PATH_MAP_KEY, gson.toJson(result.pathMap))
+            }
+        } catch (e: Exception) {
+            Log.w("Prefs", "repairFontPaths failed", e)
+        }
+    }
+
     companion object {
 
         /** 偏好事件缓冲溢出时的全量回读信号（专用 CONFLATED 通道投递，保证不丢）。 */
@@ -2200,6 +2248,9 @@ var pageIndicatorMargin: Int
 
         /** 备份文件格式版本；导入更高版本时提示，但继续尽量导入 */
         const val BACKUP_FORMAT_VERSION = 1
+
+        /** 主题文件格式版本；导入更高版本时直接拒绝，避免只写一半外观键 */
+        const val THEME_FORMAT_VERSION = 1
 
         private const val LETTERS_FONT = "letters_font"
         private const val LETTERS_TEXT_SIZE = "letters_text_size"

@@ -50,9 +50,9 @@
 |---|---|---|---|
 | App 抽屉搜索行 | 手势（默认「向左滑」= 应用抽屉）→ 抽屉第一行 | `AppsUI.SearchField`（上游原实现，不接 `InkSearchField`） | 极简行 |
 | 通知 → 主屏通知白名单（标注通知应用） | 设置 → 通知 | `showAppAllowlistDialog` → `MultiChoiceSheet` → `InkSearchField` | 药丸 |
-| 通知 → 信笺白名单 | 设置 → 通知 | 同上 | 药丸 |
-| 通知 → 简易托盘白名单 | 设置 → 通知 | 同上 | 药丸 |
-| 通知 → 中枢白名单 | 设置 → 通知 | 同上 | 药丸 |
+| 通知 → Letters 白名单 | 设置 → 通知 | 同上 | 药丸 |
+| 通知 → Simple Tray 白名单 | 设置 → 通知 | 同上 | 药丸 |
+| 通知 → Hub 白名单 | 设置 → 通知 | 同上 | 药丸 |
 | 选择联系人来源（联系人账户多选） | 应用抽屉设置 → 搜索 → 联系人 | `MultiChoiceSheet` | 药丸 |
 | 选择应用（底部/Android 小部件） | 设置 → 主屏 → 底部小部件 → 选择小部件 → 应用列表 | `WidgetPickerContent.WidgetAppListContent` → `InkSearchField` | 药丸 |
 

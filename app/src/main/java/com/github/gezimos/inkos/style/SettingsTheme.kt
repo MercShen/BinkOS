@@ -20,6 +20,7 @@ data class ReplacementTypography(
     val title: TextStyle,
     val body: TextStyle,
     val item: TextStyle,
+    val caption: TextStyle,
     val button: TextStyle,
     val buttonDisabled: TextStyle,
 )
@@ -39,6 +40,7 @@ val LocalReplacementTypography = staticCompositionLocalOf {
         title = TextStyle.Default,
         body = TextStyle.Default,
         item = TextStyle.Default,
+        caption = TextStyle.Default,
         button = TextStyle.Default,
         buttonDisabled = TextStyle.Default,
     )
@@ -81,6 +83,7 @@ fun SettingsTheme(
                     title = TextStyle(fontSize = itemSize, color = color, fontFamily = fontFam),
                     body = TextStyle(fontSize = itemSize, color = color, fontFamily = fontFam),
                     item = TextStyle(fontSize = itemSize, color = color, fontFamily = fontFam),
+                    caption = TextStyle(fontSize = (itemSize.value * 0.8f).sp, color = color, fontFamily = fontFam),
                     button = TextStyle(fontSize = itemSize, color = color, fontFamily = fontFam),
                     buttonDisabled = TextStyle(fontSize = itemSize, color = color.copy(alpha = 0.5f), fontFamily = fontFam),
                 )

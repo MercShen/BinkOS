@@ -648,13 +648,13 @@ class MainActivity : AppCompatActivity() {
         else -> null
     }
 
-    /** 当前界面的「打开方向」，关闭时取它的反向。 */
-    private var currentScreenOpenDirection: BigmeEink.Direction = BigmeEink.Direction.B2T
+    /** 当前界面的「打开方向」；未绑定长滑打开方向的界面为 null，不播放翻页动画。 */
+    private var currentScreenOpenDirection: BigmeEink.Direction? = null
 
     /**
      * 打开 / 关闭「由首页长滑绑定」的界面时播放对应方向的大我动画：
      * 打开用该功能绑定的手势方向，关闭用它的反向（也就是关闭手势的方向）。
-     * 其他界面（壁纸、引导等）不触发。
+     * 未绑定方向的界面（例如从图标进入的设置页）不播放动画。
      */
     private fun handleScreenAnimation(currentId: Int, previousId: Int) {
         if (!prefs.einkPageTurnAnimation) return
@@ -662,13 +662,18 @@ class MainActivity : AppCompatActivity() {
         val previousAction = gestureActionFor(previousId)
         when {
             currentAction != null -> {
-                currentScreenOpenDirection = GestureBindings.openDirection(currentAction, prefs)
-                if (previousAction == null) {
-                    BigmeEink.onScreenOpened(this, currentScreenOpenDirection)
+                currentScreenOpenDirection = GestureBindings.directionFor(currentAction, prefs)
+                val direction = currentScreenOpenDirection
+                if (previousAction == null && direction != null) {
+                    BigmeEink.onScreenOpened(this, direction)
                 }
             }
             previousAction != null -> {
-                BigmeEink.onScreenClosed(this, GestureBindings.opposite(currentScreenOpenDirection))
+                val direction = currentScreenOpenDirection
+                if (direction != null) {
+                    BigmeEink.onScreenClosed(this, GestureBindings.opposite(direction))
+                }
+                currentScreenOpenDirection = null
             }
         }
     }
@@ -702,6 +707,8 @@ class MainActivity : AppCompatActivity() {
         prefs = Prefs(this)
         // ZIP 恢复/换包后绝对路径可能失效，启动时按自定义壁纸条目自愈
         prefs.repairWallpaperPath()
+        // 同一原因：字体路径失效时按实际文件自愈，避免只有某个槽位（如日期）回落系统字体
+        prefs.repairFontPaths()
 
         // --- Bigme (大我) e-ink animation: resolve the vendor DisplayPolicyManager once ---
         try {

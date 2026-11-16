@@ -103,4 +103,36 @@ class BackupJsonValidatorTest {
         assertNotNull(BackupJsonValidator.validate("{\"prefs\":{$values}}"))
         assertNotNull(BackupJsonValidator.validate("{\"prefs\":{\"\":\"blank key\"}}"))
     }
+
+    @Test
+    fun themeEnvelopeIsAccepted() {
+        val valid = "{\"type\":\"inkos_theme\",\"version\":1,\"prefs\":{\"BACKGROUND_COLOR\":-1,\"LAUNCHER_FONT\":\"PublicSans\"}}"
+        assertNull(BackupJsonValidator.validateTheme(valid, 1))
+    }
+
+    @Test
+    fun themeRequiresTypeAndSupportedVersion() {
+        assertNotNull(BackupJsonValidator.validateTheme("{\"version\":1,\"prefs\":{\"BACKGROUND_COLOR\":-1}}", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_full\",\"version\":1,\"prefs\":{\"BACKGROUND_COLOR\":-1}}", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"prefs\":{\"BACKGROUND_COLOR\":-1}}", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":\"1\",\"prefs\":{\"BACKGROUND_COLOR\":-1}}", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":1.5,\"prefs\":{\"BACKGROUND_COLOR\":-1}}", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":0,\"prefs\":{\"BACKGROUND_COLOR\":-1}}", 1))
+        val future = BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":2,\"prefs\":{\"BACKGROUND_COLOR\":-1}}", 1)
+        assertNotNull(future)
+        assertTrue(future!!.contains("newer version"))
+    }
+
+    @Test
+    fun themeRejectsInvalidShapeAndValueTypes() {
+        assertNotNull(BackupJsonValidator.validateTheme("   ", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("[]", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":1,\"prefs\":[]}", 1))
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":1,\"prefs\":{}}", 1))
+        // Known numeric key must stay numeric.
+        assertNotNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":1,\"prefs\":{\"BACKGROUND_COLOR\":\"x\"}}", 1))
+        // Unknown keys are ignored on import, primitives are fine.
+        assertNull(BackupJsonValidator.validateTheme("{\"type\":\"inkos_theme\",\"version\":1,\"prefs\":{\"future_key\":\"x\"}}", 1))
+    }
 }

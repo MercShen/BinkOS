@@ -27,10 +27,33 @@ object GestureBindings {
 
     /** 这个功能被绑定在哪个方向；多个方向绑定时优先最近触发的那个。 */
     fun directionFor(action: Constants.Action, prefs: Prefs): BigmeEink.Direction? {
-        val recent = BigmeEink.recentSwipeOrNull()
-        if (recent != null && actionFor(recent, prefs) == action) return recent
-        return DIRECTIONS.firstOrNull { actionFor(it, prefs) == action }
+        val actions = DIRECTIONS.associateWith { actionFor(it, prefs) }
+        return boundDirection(action, actions, BigmeEink.recentSwipeOrNull())
     }
+
+    /**
+     * 纯逻辑版本：该功能被绑定在哪个方向。
+     * 只有 action 真的被某个方向映射到才返回非 null；不做任何默认方向回退。
+     */
+    internal fun boundDirection(
+        action: Constants.Action,
+        actions: Map<BigmeEink.Direction, Constants.Action>,
+        recent: BigmeEink.Direction?
+    ): BigmeEink.Direction? {
+        if (recent != null && actions[recent] == action) return recent
+        return DIRECTIONS.firstOrNull { actions[it] == action }
+    }
+
+    /**
+     * 纯逻辑版本：反向长滑关闭方向。
+     * 未绑定打开方向时返回 null，调用方不得启用反向长滑退出。
+     */
+    internal fun closeDirectionFor(
+        action: Constants.Action,
+        actions: Map<BigmeEink.Direction, Constants.Action>,
+        recent: BigmeEink.Direction?
+    ): BigmeEink.Direction? =
+        boundDirection(action, actions, recent)?.let(::opposite)
 
     fun opposite(direction: BigmeEink.Direction): BigmeEink.Direction = when (direction) {
         BigmeEink.Direction.L2R -> BigmeEink.Direction.R2L
@@ -40,24 +63,13 @@ object GestureBindings {
     }
 
     /**
-     * 功能未绑定任何方向时的默认「打开方向」。
+     * 反向长滑关闭方向；**只有该功能被用户显式绑定到某个滑动方向时才返回**。
      *
-     * 通知类界面（letters / simple tray / hub）历史上都是「向上滑关闭」，
-     * 所以默认打开方向取向下滑；抽屉与最近任务历史上是「向下长滑关闭」，取向上。
+     * 返回 null 表示这个界面没有“打开方向”，因此也不存在“反向”，
+     * 调用方（closeOnReverseLongSwipe）必须不启用长滑退出。
      */
-    fun defaultOpenDirection(action: Constants.Action): BigmeEink.Direction = when (action) {
-        Constants.Action.OpenLettersScreen,
-        Constants.Action.OpenSimpleTray,
-        Constants.Action.OpenHub,
-        -> BigmeEink.Direction.T2B
-        else -> BigmeEink.Direction.B2T
+    fun closeDirectionOrNull(action: Constants.Action, prefs: Prefs): BigmeEink.Direction? {
+        val actions = DIRECTIONS.associateWith { actionFor(it, prefs) }
+        return closeDirectionFor(action, actions, BigmeEink.recentSwipeOrNull())
     }
-
-    /** 打开该界面时的动画方向：绑定方向 → 最近手势 → 默认。 */
-    fun openDirection(action: Constants.Action, prefs: Prefs): BigmeEink.Direction =
-        directionFor(action, prefs) ?: BigmeEink.recentSwipeOrNull() ?: defaultOpenDirection(action)
-
-    /** 关闭该界面时的动画方向 = 打开方向的相反方向，也就是关闭手势的方向。 */
-    fun closeDirection(action: Constants.Action, prefs: Prefs): BigmeEink.Direction =
-        opposite(openDirection(action, prefs))
 }

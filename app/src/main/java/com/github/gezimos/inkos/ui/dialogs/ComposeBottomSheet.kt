@@ -117,6 +117,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -2368,12 +2369,21 @@ fun ThemeSheet(
     onImportTheme: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    SheetTitle(stringResource(R.string.theme_export_import))
+    SheetPanelTitle(stringResource(R.string.theme_export_import))
+    SheetPanelDescription(
+        text = stringResource(R.string.theme_scope_hint),
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
 
-    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         SettingsComposable.SettingsHomeItem(
             title = stringResource(R.string.export_theme),
             imageVector = Icons.Rounded.Edit,
+            fillWidth = false,
             horizontalPadding = 0.dp,
             verticalPadding = 8.dp,
             focusVerticalPadding = 16.dp,
@@ -2382,6 +2392,7 @@ fun ThemeSheet(
         SettingsComposable.SettingsHomeItem(
             title = stringResource(R.string.import_theme),
             imageVector = Icons.Rounded.FileOpen,
+            fillWidth = false,
             horizontalPadding = 0.dp,
             verticalPadding = 8.dp,
             focusVerticalPadding = 16.dp,
@@ -3004,18 +3015,45 @@ fun ShortcutIconPickerSheet(
 
 
 @Composable
-fun SheetTitle(text: String, fontScale: Float = 1f) {
+fun SheetTitle(
+    text: String,
+    fontScale: Float = 1f,
+    style: TextStyle = SettingsTheme.typography.header
+) {
     val screenScale = rememberScreenScale()
     Text(
         text = text.uppercase(),
-        style = SettingsTheme.typography.header,
-        fontSize = (SettingsTheme.typography.header.fontSize.value * fontScale).sp,
+        style = style,
+        fontSize = (style.fontSize.value * fontScale).sp,
         fontWeight = FontWeight.Bold,
         color = Theme.colors.text,
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 12.dp.scaled(screenScale)),
         textAlign = TextAlign.Start
+    )
+}
+
+/**
+ * Title/description pair used by the full-height "panel" sheets (home edit mode: clock/date/
+ * widget/background/apps) and the Look & Feel entry sheets.
+ *
+ * Sizes come from the shared [SettingsTheme] typography tokens instead of per-sheet
+ * `fontScale` literals, so every panel stays visually identical when the user changes
+ * settings size or UI scale.
+ */
+@Composable
+fun SheetPanelTitle(text: String) {
+    SheetTitle(text = text, style = SettingsTheme.typography.title)
+}
+
+@Composable
+fun SheetPanelDescription(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text = text,
+        style = SettingsTheme.typography.caption,
+        color = Theme.colors.text,
+        modifier = modifier
     )
 }
 

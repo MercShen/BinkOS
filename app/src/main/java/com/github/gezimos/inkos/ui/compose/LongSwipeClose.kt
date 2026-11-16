@@ -25,7 +25,9 @@ import kotlin.math.hypot
  * 所以不会再出现“内层滚动把长滑吃掉”的情况。
  *
  * 规则：
- * - 只有与打开方向相反的**长滑**（距离 ≥ 100dp × longSwipeRatio，且有足够速度）才触发；
+ * - 只有该界面**被显式绑定**了打开方向，且手势是与之相反的**长滑**
+ *   （距离 ≥ 100dp × longSwipeRatio，且有足够速度）才触发；
+ * - 没有绑定打开方向的界面（例如从图标/返回栈进入的设置页）不会反向长滑退出；
  * - 非反向、非长滑、点击、短滑：完全不消费事件，原有翻页/滚动行为不变；
  * - 判定成立后立即 consume 后续事件，避免同一次手势又被内层翻页响应。
  */
@@ -45,13 +47,14 @@ fun Modifier.closeOnReverseLongSwipe(
         prefs.swipeUpAction,
         prefs.swipeDownAction
     ) {
-        GestureBindings.closeDirection(action, prefs)
+        GestureBindings.closeDirectionOrNull(action, prefs)
     }
     val minDistance = with(density) { (100.dp * longRatio).toPx() }
     val currentOnClose = rememberUpdatedState(onClose)
 
     return this.pointerInput(closeDirection, enabled, minDistance) {
         if (!enabled) return@pointerInput
+        val targetDirection = closeDirection ?: return@pointerInput
         awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             val start = down.position
@@ -75,7 +78,7 @@ fun Modifier.closeOnReverseLongSwipe(
                         else ->
                             if (dy > 0) BigmeEink.Direction.T2B else BigmeEink.Direction.B2T
                     }
-                    if (direction == closeDirection && velocity >= 150f) {
+                    if (direction == targetDirection && velocity >= 150f) {
                         closing = true
                     }
                 }

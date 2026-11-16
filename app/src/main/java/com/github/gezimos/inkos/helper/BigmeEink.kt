@@ -48,8 +48,8 @@ object BigmeEink {
     /** 手势与导航之间的时间窗：超过这个间隔就不再认为动画由该手势触发。 */
     private const val SWIPE_WINDOW_MS = 600L
 
-    /** 连击节流，避免两个窗口互相覆盖。 */
-    private const val THROTTLE_MS = 120L
+    /** 连击节流：与动画时长一致，避免上一个动画窗口还没结束就被下一段覆盖。 */
+    private const val THROTTLE_MS = 500L
 
     /** 旋转 0/90/180/270 → 四个方向对应的面板模式（行 = 旋转档位，列 = Direction.base - 1）。 */
     private val PANEL_MODES = arrayOf(

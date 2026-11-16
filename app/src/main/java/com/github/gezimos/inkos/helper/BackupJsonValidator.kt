@@ -67,24 +67,75 @@ object BackupJsonValidator {
             if (key.length > MAX_KEY_LENGTH) return "Backup setting name is too long"
             if (value == null || value.isJsonNull) continue
             val expected = expectedTypes[key] ?: schema?.typeFor(key)
-            val error = when (expected) {
-                ValueType.BOOLEAN -> if (isBoolean(value)) null else "Backup setting '$key' must be true/false"
-                ValueType.INTEGER -> validateInteger(value, key)
-                ValueType.FLOAT -> validateFloat(value, key)
-                ValueType.LONG -> validateLong(value, key)
-                ValueType.NUMBER -> validateFiniteNumber(value, key)
-                ValueType.STRING -> if (isString(value)) null else "Backup setting '$key' must be a string"
-                ValueType.SET -> validateStringSet(value, key)
-                null -> when {
-                    isLegacyMultiValueKey(key) || value.isJsonArray -> validateStringSet(value, key)
-                    // Unknown/legacy key: primitives are accepted for old backups.
-                    isString(value) || isBoolean(value) || isNumber(value) -> null
-                    else -> "Backup setting '$key' has an unsupported value"
-                }
-            }
+            val error = checkValue(key, value, expected)
             if (error != null) return error
         }
         return null
+    }
+
+    /**
+     * Validates an appearance-only theme payload (`{"type":"inkos_theme","version":1,"prefs":{...}}`).
+     * Theme keys are a hand-maintained whitelist, so values are additionally checked against
+     * [BackupPreferenceSchema] to stop a malformed JSON from writing e.g. a string where an
+     * integer color/size lives. Unknown keys are accepted as primitives and ignored on import.
+     */
+    fun validateTheme(json: String, maxVersion: Int = 1): String? {
+        if (json.isBlank()) return "Theme file is empty"
+        val rootElement = try {
+            JsonParser().parse(json)
+        } catch (_: Exception) {
+            return "Theme file is not valid JSON"
+        }
+        if (!rootElement.isJsonObject) return "Theme file must contain a JSON object"
+        val root = rootElement.asJsonObject
+
+        val type = root.get("type")
+        if (type == null || !type.isJsonPrimitive || !type.asJsonPrimitive.isString ||
+            type.asJsonPrimitive.asString != "inkos_theme"
+        ) {
+            return "Theme file is not a Bink OS theme"
+        }
+        val version = root.get("version") ?: return "Theme version field is missing"
+        if (!version.isJsonPrimitive || !version.asJsonPrimitive.isNumber) {
+            return "Theme version field must be numeric"
+        }
+        val number = version.asJsonPrimitive.asDouble
+        if (number % 1.0 != 0.0 || number < 1 || number > maxVersion) {
+            return "Theme version is not supported; update Bink OS to a newer version"
+        }
+        val prefs = root.get("prefs")
+        if (prefs == null || !prefs.isJsonObject) return "Theme settings field is invalid"
+        val settings = prefs.asJsonObject
+        if (settings.size() == 0) return "Theme contains no settings"
+        if (settings.size() > MAX_KEYS) return "Theme contains too many settings"
+        for ((key, value) in settings.entrySet()) {
+            if (key.isBlank()) return "Theme contains an empty setting name"
+            if (key.length > MAX_KEY_LENGTH) return "Theme setting name is too long"
+            if (value == null || value.isJsonNull) continue
+            val error = checkValue(key, value, BackupPreferenceSchema.typeFor(key))
+            if (error != null) return error
+        }
+        return null
+    }
+
+    private fun checkValue(
+        key: String,
+        value: com.google.gson.JsonElement,
+        expected: ValueType?
+    ): String? = when (expected) {
+        ValueType.BOOLEAN -> if (isBoolean(value)) null else "Backup setting '$key' must be true/false"
+        ValueType.INTEGER -> validateInteger(value, key)
+        ValueType.FLOAT -> validateFloat(value, key)
+        ValueType.LONG -> validateLong(value, key)
+        ValueType.NUMBER -> validateFiniteNumber(value, key)
+        ValueType.STRING -> if (isString(value)) null else "Backup setting '$key' must be a string"
+        ValueType.SET -> validateStringSet(value, key)
+        null -> when {
+            isLegacyMultiValueKey(key) || value.isJsonArray -> validateStringSet(value, key)
+            // Unknown/legacy key: primitives are accepted for old backups.
+            isString(value) || isBoolean(value) || isNumber(value) -> null
+            else -> "Backup setting '$key' has an unsupported value"
+        }
     }
 
     private fun isBoolean(value: com.google.gson.JsonElement): Boolean =

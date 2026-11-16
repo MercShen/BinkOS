@@ -217,7 +217,7 @@ fun ThemePresetPicker(
                 prefs.inkosWallpaperResourceId = 0
             }
         }
-        android.widget.Toast.makeText(context, "Theme applied", android.widget.Toast.LENGTH_SHORT).show()
+        android.widget.Toast.makeText(context, context.getString(R.string.theme_applied), android.widget.Toast.LENGTH_SHORT).show()
         onConfirmSelect?.invoke()
     }
 

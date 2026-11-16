@@ -20,34 +20,34 @@
 | 通知展开详情 | `verticalScroll`，`NotificationsUI.kt` | — | Hub / 托盘里展开后的长内容 |
 | 设置各页容器 | `verticalScroll(enabled = false)`，`SettingsFragment.kt` | [settings-fonts.png](images/scroll-audit/settings-fonts.png) · [settings-gestures.png](images/scroll-audit/settings-gestures.png) · [settings-notifications.png](images/scroll-audit/settings-notifications.png) · [settings-drawer.png](images/scroll-audit/settings-drawer.png) | 只是布局，用户不能滚 |
 
-### 有意保留滚动：组件列表（选具体小组件，第二级）
+### 有意保留滚动：小部件列表（选具体小部件，第二级）
 
 | 界面 | 实现 | 截图 |
 |---|---|---|
-| 组件列表（第二级） | `LazyColumn`，`EditModeHelper.kt` `WidgetListContent` | [widget-list-scroll.png](images/scroll-audit/widget-list-scroll.png) |
+| 小部件列表（第二级） | `LazyColumn`，`EditModeHelper.kt` `WidgetListContent` | [widget-list-scroll.png](images/scroll-audit/widget-list-scroll.png) |
 
 **这是设计选择，不是待办**（2026-11-16 确认）。两级列表形态不同，故意不一致：
 
-- 第二级每行是「组件名 + 120dp 预览图 + `minWidth×minHeight`」，**行高很大且不等高**。按整页切会把一页压成
-  1–2 个组件，翻页跳变比滚动更碎；预览图正是用户挑组件的主要依据，一屏能同时看到多少个比“整页对齐”更重要。
-- 同一应用暴露的组件通常只有 1–4 个（实测 Chrome 4、Maps / YouTube 2），列表本身就短，
+- 第二级每行是「小部件名 + 120dp 预览图 + `minWidth×minHeight`」，**行高很大且不等高**。按整页切会把一页压成
+  1–2 个小部件，翻页跳变比滚动更碎；预览图正是用户挑小部件的主要依据，一屏能同时看到多少个比“整页对齐”更重要。
+- 同一应用暴露的小部件通常只有 1–4 个（实测 Chrome 4、Maps / YouTube 2），列表本身就短，
   滚动距离不足以在墨水屏上刷出明显残影。
 - 第一级（应用列表）是等高的小行、数量可达十几条，才适合整页分页。
 
 结论：**不要为了「两级一致」把第二级改成翻页**。这一级只要求「内部下滑由列表自己消费」，
-不能被父级 sheet 无条件吞掉（见 [testing-playbook.md](testing-playbook.md) 小组件一节）。
+不能被父级 sheet 无条件吞掉（见 [testing-playbook.md](testing-playbook.md) 小部件一节）。
 
 ## 二、已经是翻页 / 不可手滚
 
 | 界面 | 机制 |
 |---|---|
-| 主屏应用、App 抽屉、最近任务 | 分页状态 + 滑动切页（`userScrollEnabled = false` 的 `LazyColumn` 只负责每页布局） |
-| 来信 `LettersFragment` | `VerticalPager`，一屏一条 |
-| 简易托盘 | `SimplePagerState` 分页，每页条数按可用高度动态计算（原「每页数量」设置已移除） |
-| 通知中心 Hub | 分类 Tab + 每页条数按可用高度动态分页；侧边页码点跟随文字岛与主页对齐 |
+| 主屏常用应用、App 抽屉、最近任务 | 分页状态 + 滑动切页（`userScrollEnabled = false` 的 `LazyColumn` 只负责每页布局） |
+| Letters `LettersFragment` | `VerticalPager`，一屏一条 |
+| Simple Tray | `SimplePagerState` 分页，每页条数按可用高度动态计算（原「每页数量」设置已移除）；单条消息用行右侧小叉删除（系统 ongoing/不可清除通知不显示小叉）；`OpenSimpleTray` 绑定时上滑长滑关闭；媒体 transport 通知仍以媒体卡显示（受白名单控制），但**不计入主页全局通知数，也不计入 Tray 顶部数字** |
+| 通知中心 Hub | 分类 Tab + 每页条数按可用高度动态分页；整页任意位置左右短滑切换分类（48dp），单条消息用行右侧小叉删除（系统 ongoing/不可清除通知不显示小叉）；清除全部按钮固定在“满页消息框底边与屏幕底边”的中点，点击后清空并回主页；侧边页码点在屏幕边缘与消息框之间水平居中 |
 | 壁纸画廊 | 按页切换 |
 | Onboarding | 分页 |
-| 小组件选择·应用列表（第一级） | 按可用高度分页（`chunked(rowsPerPage)` + 左右滑），[paged-app-list.png](images/scroll-audit/paged-app-list.png) |
+| 小部件选择·应用列表（第一级） | 按可用高度分页（`chunked(rowsPerPage)` + 左右滑），[paged-app-list.png](images/scroll-audit/paged-app-list.png) |
 | 图标样式选择 sheet | `BoxWithConstraints` 计算每页卡片数 |
 | 多选列表（标注通知应用） | 按可用高度分页 + 搜索框（`MultiChoiceSheet`） |
 | 角标样式选择 | 按宽度分页 + 页码圆点（`BadgeIndicatorPickerSheet`） |
@@ -74,7 +74,7 @@
 
 ## 四、建议顺序
 
-1. ~~组件列表（第二级）改分页~~ —— **不做**：已定为设计选择，见上方「有意保留滚动」。
+1. ~~小部件列表（第二级）改分页~~ —— **不做**：已定为设计选择，见上方「有意保留滚动」。
 2. ~~两个 `LazyRow`（快捷方式图标、角标样式）改整页左右切换~~ —— 均已完成。
 3. 多选/分组列表 —— 条目多，可考虑「每页 N 项 + 页码」。
 4. 长文本 sheet（隐私政策、字体许可）、颜色编辑器、通知详情 —— 保留滚动更自然。
@@ -96,9 +96,9 @@ adb shell am start -n app.binkos.debug/com.github.gezimos.inkos.MainActivity --e
 adb shell am start -n app.binkos.debug/com.github.gezimos.inkos.MainActivity --es dest fontlicense
 adb shell am start -n app.binkos.debug/com.github.gezimos.inkos.MainActivity --es dest colors
 
-# 小组件选择（先确保设置里底部小部件为 Android 小部件）
+# 小部件选择（先确保设置里底部小部件为 Android 小部件）
 adb shell am start -n app.binkos.debug/com.github.gezimos.inkos.MainActivity --es dest settings
-# 再进「主屏 → 底部小部件 → 选择组件」
+# 再进「主屏 → 底部小部件 → 选择小部件」
 ```
 
 完整 dest 列表见 [automation-entry.md](automation-entry.md)。
