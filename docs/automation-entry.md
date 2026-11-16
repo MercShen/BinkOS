@@ -21,7 +21,7 @@ $SERIAL = 'B651D2W2GAPA006000108'                   # 按 adb devices 选择
 $PKG = 'app.binkos.debug'
 $MAIN = 'com.github.gezimos.inkos.MainActivity'
 & $ADB devices
-& $ADB -s $SERIAL install -r -t '.\app\build\outputs\apk\debug\app.binkos_v0.2.6-Debug.apk'
+& $ADB -s $SERIAL install -r -t '.\app\build\outputs\apk\debug\app.binkos_v0.2.7-Debug.apk'
 if ($LASTEXITCODE -ne 0) { throw 'install failed' }
 & $ADB -s $SERIAL shell am force-stop $PKG
 pwsh -NoProfile -File ./tools/home.ps1 debug -Serial $SERIAL -AdbPath $ADB

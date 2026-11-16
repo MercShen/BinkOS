@@ -19,7 +19,7 @@ $MAIN = 'com.github.gezimos.inkos.MainActivity'
 # 先记录安装前默认桌面，测试后要恢复时用
 & $ADB -s $SERIAL shell cmd package resolve-activity -a android.intent.action.MAIN -c android.intent.category.HOME
 & $ADB -s $SERIAL shell cmd role get-role-holders android.app.role.HOME
-& $ADB -s $SERIAL install -r -t '.\app\build\outputs\apk\debug\app.binkos_v0.2.6-Debug.apk'
+& $ADB -s $SERIAL install -r -t '.\app\build\outputs\apk\debug\app.binkos_v0.2.7-Debug.apk'
 if ($LASTEXITCODE -ne 0) { throw 'install failed' }
 & $ADB -s $SERIAL shell am force-stop $PKG
 pwsh -NoProfile -File ./tools/home.ps1 debug -Serial $SERIAL -AdbPath $ADB
@@ -208,4 +208,4 @@ pwsh -NoProfile -File ./tools/home.ps1 ensure debug -Serial $SERIAL -AdbPath $AD
 git status --short
 ```
 
-本项目当前交付规则：改动累计0.2.6，开发/测试完提交push，**不发版**；具体测试破坏性授权仍单独确认。
+本项目当前发布准备：版本 **0.2.7 / versionCode 10**；开发/测试完提交 push，Release/tag/资产发布仍需用户明确确认。

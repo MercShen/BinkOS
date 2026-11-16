@@ -2,6 +2,24 @@
 
 Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are available on [GitHub Releases](https://github.com/MercShen/BinkOS/releases).
 
+## v0.2.7 — 2026-11-17
+
+### E-ink and onboarding
+- Add the Ripple page-turn style alongside Directional; Ripple uses the vendor open/close circular animation.
+- Give refresh animation its own switch and conditional style row in onboarding and Settings → Extras. Animation is off by default and the style is Directional by default; changing the style applies immediately.
+- Show the refresh-animation demo only on the first enable, shared across onboarding and Settings; the Regal/HD256 notice now includes looping Directional and Ripple previews with localized labels.
+- Align the onboarding vendor page typography and left edges with the Settings pages; update first-run guide and gesture copy.
+- Default BinkOS edge-swipe back to off to avoid a second back action on top of Android gesture navigation.
+
+### Reliability and development
+- Harden settings and notification edge cases accumulated since 0.2.6.
+- Add debug-only replay of one-time guide overlays and direct onboarding page navigation, with contract tests and automation documentation.
+
+### Compatibility
+- Package: `app.binkos`; version name `0.2.7`, version code `10`.
+- Android 8.0+ (API 26); Bigme-specific integration requires supported vendor APIs.
+- Signed with the existing Bink OS release key; install over an earlier signed release without uninstalling.
+
 ## v0.2.6 — 2026-11-15
 
 ### E-ink UI and editing
