@@ -11,6 +11,13 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 - Align the onboarding vendor page typography and left edges with the Settings pages; update first-run guide and gesture copy.
 - Default BinkOS edge-swipe back to off to avoid a second back action on top of Android gesture navigation.
 
+### Notifications, Tray and Hub
+- Add per-row dismiss buttons in Tray and Hub for dismissible notifications; keep ongoing / no-clear notifications non-dismissible.
+- Exclude media/transport notifications from Home and Tray message counts while retaining the Tray media card.
+- Let Hub switch category tabs with a horizontal swipe on empty space, without interfering with per-row swipe-to-dismiss.
+- Pin the Hub “clear all” row to the midpoint between the full notification frame and screen bottom, so it no longer moves with the notification count.
+- Align Hub/Tray page dots between the message frame and screen edge, and close Tray/Hub on reverse long swipe only when the corresponding open gesture is bound.
+
 ### Reliability and development
 - Harden settings and notification edge cases accumulated since 0.2.6.
 - Add debug-only replay of one-time guide overlays and direct onboarding page navigation, with contract tests and automation documentation.
