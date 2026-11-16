@@ -908,9 +908,9 @@
     <string name="settings_desc_exit_launcher">切换到其他桌面</string>
     <string name="settings_choose_launcher">选择你的桌面</string>
     <string name="settings_home_apps_x_offset">主屏应用横向偏移</string>
-    <string name="settings_desc_home_apps_x_offset">横向偏移，与编辑模式拖拽同步</string>
+    <string name="settings_desc_home_apps_x_offset">主屏应用的横向位置</string>
     <string name="settings_home_apps_y_offset">主屏应用纵向偏移</string>
-    <string name="settings_desc_home_apps_y_offset">纵向偏移，与编辑模式拖拽同步</string>
+    <string name="settings_desc_home_apps_y_offset">主屏应用的纵向位置</string>
     <string name="settings_reset_home_apps_offset">重置主屏应用偏移</string>
     <string name="settings_desc_reset_home_apps_offset">将主屏应用偏移恢复为 0</string>
     <string name="settings_top_widget_offset">顶部小部件偏移</string>

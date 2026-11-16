@@ -908,9 +908,9 @@
     <string name="settings_desc_exit_launcher">Switch to a different launcher</string>
     <string name="settings_choose_launcher">Choose your launcher</string>
     <string name="settings_home_apps_x_offset">Home apps X offset</string>
-    <string name="settings_desc_home_apps_x_offset">Horizontal offset, synced with the edit-mode drag</string>
+    <string name="settings_desc_home_apps_x_offset">Horizontal position of the home apps</string>
     <string name="settings_home_apps_y_offset">Home apps Y offset</string>
-    <string name="settings_desc_home_apps_y_offset">Vertical offset, synced with the edit-mode drag</string>
+    <string name="settings_desc_home_apps_y_offset">Vertical position of the home apps</string>
     <string name="settings_reset_home_apps_offset">Reset home apps offset</string>
     <string name="settings_desc_reset_home_apps_offset">Restore the home apps offset to 0</string>
     <string name="settings_top_widget_offset">Top Widget Offset</string>
