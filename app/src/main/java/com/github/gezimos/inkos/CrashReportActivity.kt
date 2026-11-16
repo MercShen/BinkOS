@@ -3,9 +3,12 @@ package com.github.gezimos.inkos
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,11 +23,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.gezimos.common.CrashHandler
+import com.github.gezimos.inkos.helper.utils.CrashIssueLink
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
-import com.github.gezimos.inkos.ui.dialogs.SheetTitle
-import com.github.gezimos.inkos.helper.utils.SimpleEmailSender
 import com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost
+import com.github.gezimos.inkos.ui.dialogs.SheetTitle
 
 class CrashReportActivity : AppCompatActivity() {
     private var pkgName: String = ""
@@ -63,7 +66,7 @@ class CrashReportActivity : AppCompatActivity() {
                             Text(getString(R.string.acra_dont_send), color = Theme.colors.text)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        TextButton(onClick = { sendCrashReport(this@CrashReportActivity); crashSheet?.dismiss() }) {
+                        TextButton(onClick = { reportOnGitHub(this@CrashReportActivity); crashSheet?.dismiss() }) {
                             Text(getString(R.string.acra_send_report), color = Theme.colors.text)
                         }
                     }
@@ -77,16 +80,29 @@ class CrashReportActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    private fun sendCrashReport(context: Context) {
-        val crashFileUri: Uri? = CrashHandler.customReportSender(applicationContext)
-        val crashFileUris: List<Uri> = crashFileUri?.let { listOf(it) } ?: emptyList()
-
-        val emailSender = SimpleEmailSender()
-        val crashReportContent = getString(R.string.acra_mail_body)
-        val subject = String.format("Crash Report %s - %s", pkgName, pkgVersion)
-        val recipient = getString(R.string.acra_email)
-
-        emailSender.sendCrashReport(context, crashReportContent, crashFileUris, subject, recipient)
+    /**
+     * Opens a prefilled issue on this fork's tracker. Reports used to be mailed to the
+     * upstream author, which is neither the maintainer of BinkOS nor an accountable
+     * destination for user logs.
+     */
+    private fun reportOnGitHub(context: Context) {
+        val url = CrashIssueLink.build(
+            appName = pkgName,
+            versionName = pkgVersion,
+            versionCode = BuildConfig.VERSION_CODE.toLong(),
+            androidRelease = Build.VERSION.RELEASE,
+            sdkInt = Build.VERSION.SDK_INT,
+            manufacturer = Build.MANUFACTURER,
+            model = Build.MODEL,
+            crashLog = CrashHandler.crashLogText(applicationContext)
+        )
+        Log.i(TAG, "Opening crash issue: $url")
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: Exception) {
+            Log.e(TAG, "No activity could open the issue page", e)
+            Toast.makeText(context, R.string.acra_no_browser, Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun restartApp() {
@@ -100,5 +116,9 @@ class CrashReportActivity : AppCompatActivity() {
         }
         startActivity(intent)
         finish()
+    }
+
+    private companion object {
+        const val TAG = "CrashReport"
     }
 }

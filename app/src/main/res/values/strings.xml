@@ -617,9 +617,10 @@
 
     <!-- Crash reporting -->
     <string name="acra_crash">Crash</string>
-    <string name="acra_dialog_text">We\'re sorry, but %1$s has encountered an unexpected issue and needs to close. Please help us improve by sending a crash report.\n\n%1$s values your privacy and the data collected is solely used for improving app stability. No personal information is collected. Thank you for your support!</string>
-    <string name="acra_send_report">Send Report</string>
-    <string name="acra_dont_send">Don\'t Send</string>
+    <string name="acra_dialog_text">We\'re sorry, but %1$s has encountered an unexpected issue and needs to close. Reporting it opens a pre-filled issue on the Bink OS tracker with your device details and the stack trace.\n\nOnly what you see in the issue preview is sent — nothing is uploaded until you submit it yourself.</string>
+    <string name="acra_send_report">Report on GitHub</string>
+    <string name="acra_dont_send">Restart</string>
+    <string name="acra_no_browser">No browser available to open the issue page.</string>
 
     <!-- Errors -->
     <string name="error_invalid_file_title">Invalid file type</string>

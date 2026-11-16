@@ -4,16 +4,12 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.core.content.FileProvider
 import com.github.gezimos.inkos.CrashReportActivity
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileWriter
-import java.io.InputStreamReader
 import java.io.PrintWriter
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -38,50 +34,28 @@ class CrashHandler(private val context: Context) : Thread.UncaughtExceptionHandl
             if (userActions.size > 50) userActions.poll() // Remove oldest if over limit
         }
 
-        fun customReportSender(context: Context): Uri? {
-            val logFile: File = try {
-                val packageManager = context.packageManager
-                val packageInfo = packageManager.getPackageInfo(context.packageName, 0)
-
-                // Use internal storage for saving the crash log
-                val crashDir = File(context.filesDir, "crash_logs")  // Internal storage
-                if (!crashDir.exists()) crashDir.mkdirs()
-
-                val crashFile = File(crashDir, "${packageInfo.packageName}-crash-report.txt")
-
-                // Check if the file exists before attempting to read
-                if (crashFile.exists()) {
-                    // Read the content of the file
-                    val fileInputStream = FileInputStream(crashFile)
-                    val inputStreamReader = InputStreamReader(fileInputStream)
-                    val stringBuilder = StringBuilder()
-
-                    // Read the file line by line
-                    inputStreamReader.forEachLine { stringBuilder.append(it).append("\n") }
-
-                    // Log the content of the crash report file
-                    Log.d("CrashHandler", "Crash Report Content:\n${stringBuilder}")
-                } else {
-                    Log.e("CrashHandler", "Crash report file does not exist.")
-                }
-
-                File(crashDir, "${packageInfo.packageName}-crash-report.txt")
+        /** Location of the last saved crash log, or null when it cannot be determined. */
+        fun crashLogFile(context: Context): File? {
+            return try {
+                val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                File(File(context.filesDir, "crash_logs"), "${packageInfo.packageName}-crash-report.txt")
             } catch (e: Exception) {
                 Log.e("CrashHandler", "Error determining crash log file location: ${e.message}")
-                return null // Return null if something goes wrong
+                null
             }
+        }
 
-            // Ensure the file exists
-            if (!logFile.exists()) {
-                return null
+        /**
+         * Text of the last saved crash log, or null when it is missing.
+         * Used by the crash dialog to prefill the issue body.
+         */
+        fun crashLogText(context: Context): String? {
+            return try {
+                crashLogFile(context)?.takeIf { it.exists() }?.readText()
+            } catch (e: Exception) {
+                Log.e("CrashHandler", "Error reading crash log: ${e.message}")
+                null
             }
-
-            // Use FileProvider to get a content Uri for the file
-            return FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                logFile
-            )
         }
     }
 

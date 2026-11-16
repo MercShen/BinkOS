@@ -617,9 +617,10 @@
 
     <!-- Crash reporting -->
     <string name="acra_crash">崩溃</string>
-    <string name="acra_dialog_text">很抱歉，%1$s 遇到了意外问题，需要关闭。请通过发送崩溃报告帮助我们改进。\n\n%1$s 重视你的隐私，收集的数据仅用于提升应用稳定性，不会收集任何个人信息。感谢你的支持！</string>
-    <string name="acra_send_report">发送报告</string>
-    <string name="acra_dont_send">不发送</string>
+    <string name="acra_dialog_text">很抱歉，%1$s 遇到了意外问题，需要关闭。反馈时会打开 Bink OS 仓库的预填 issue，带上你的设备信息和调用栈。\n\n在你亲自提交之前不会有任何内容上传。</string>
+    <string name="acra_send_report">在 GitHub 反馈</string>
+    <string name="acra_dont_send">重新启动</string>
+    <string name="acra_no_browser">没有可用浏览器来打开 issue 页面。</string>
 
     <!-- Errors -->
     <string name="error_invalid_file_title">文件类型无效</string>
