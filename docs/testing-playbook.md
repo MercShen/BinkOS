@@ -96,7 +96,7 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 没有直达WIDGET或组件选择器dest，不杜撰。bottom_android只改类型，不绑定组件、不直接打开选择器。已有组件时设置入口优先显示该App组件；没有绑定时可能先显示App列表。需要授权/配置Activity的组件可能跳到系统UI，不能只验证列表点击。
 
-点击App列表与组件列表的下滑、横向翻页、搜索、空结果、末页、大字号，检查底部不露主页/截翻页条。编辑模式App列表内部下滑不应关闭；组件预览仍是可滚列表，不能无条件吞其下滑回滚。字体等已有单向滚问题另记。
+点击App列表与组件列表的下滑、横向翻页、搜索、空结果、末页、大字号，检查底部不露主页/截翻页条。编辑模式App列表内部下滑不应关闭；组件预览仍是可滚列表，不能无条件吞其下滑回滚（**第二级组件列表的滚动是设计选择，不是缺陷**，见 [ui-scroll-vs-paged.md](ui-scroll-vs-paged.md)「有意保留滚动」，不要把它当分页改造的 TODO 提）。字体等已有单向滚问题另记。
 
 **必测边界：应用列表只剩一页。** 在应用列表搜索框里过滤到只剩 1 个应用（如 `Maps`）、或设备上带组件的应用本来就少，列表 `pageCount == 1`，`PagedNavRow` 不发射节点；此处曾崩在 `WidgetPickerContent.kt` 的 `subcompose("footer").single()`。验收以“搜索到单页仍能选中应用”为准，不只验收多页翻页。BinkOS issue #2 即此场景。
 
