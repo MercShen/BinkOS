@@ -98,6 +98,8 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 点击App列表与组件列表的下滑、横向翻页、搜索、空结果、末页、大字号，检查底部不露主页/截翻页条。编辑模式App列表内部下滑不应关闭；组件预览仍是可滚列表，不能无条件吞其下滑回滚。字体等已有单向滚问题另记。
 
+**必测边界：应用列表只剩一页。** 在应用列表搜索框里过滤到只剩 1 个应用（如 `Maps`）、或设备上带组件的应用本来就少，列表 `pageCount == 1`，`PagedNavRow` 不发射节点；此处曾崩在 `WidgetPickerContent.kt` 的 `subcompose("footer").single()`。验收以“搜索到单页仍能选中应用”为准，不只验收多页翻页。BinkOS issue #2 即此场景。
+
 ### 卡片/页码
 
 - shortcuticon/badgeindicator的dest是**预览**：预选当前配置、空onSelect回调不保存；点击只改选择器局部选中态。

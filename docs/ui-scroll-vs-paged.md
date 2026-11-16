@@ -52,6 +52,11 @@
   翻到第二页时左侧突然多出 `‹` 而整体位移。
 - 已接入：多选白名单（`MultiChoiceSheet`）、选择应用（`WidgetAppListContent`）。
   其余分页 sheet 仍是旧样式，改动时沿用这个组件。
+- **单页不发射节点**：`PagedNavRow` 在 `pageCount <= 1` 时直接 `return`，一个布局节点都不画
+  （单页列表不该出现翻页条）。它被 `SubcomposeLayout` 的槽位包着时，`subcompose()` 因此返回
+  **空列表**——`subcompose(...).single()` 会抛 `NoSuchElementException: List is empty.`
+  （0.2.6 的「选择应用」在只有一页时必崩）。所有 `subcompose()` 结果必须
+  `firstOrNull()` 兜底并按高度 0 处理；不要把“内容一定有节点”当成前提。
 
 ## 四、建议顺序
 

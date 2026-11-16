@@ -9,10 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ChevronLeft
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -115,14 +111,15 @@ internal fun WidgetAppListContent(
                     fontFamily = textStyle.fontFamily
                 )
             }
-        }.single().measure(loose)
+        }.firstOrNull()?.measure(loose)
         // Measure a footer with the maximum possible number of dots, then compute final row count.
-        val footerHeight = with(density) { 40.dp.scaled(scale).roundToPx() }
-        val perPage = ((maxHeight - header.height - footerHeight).coerceAtLeast(rowHeightPx) / rowHeightPx).coerceIn(1, 14)
+        val footerReservedPx = with(density) { 40.dp.scaled(scale).roundToPx() }
+        val headerHeight = header?.height ?: 0
+        val perPage = ((maxHeight - headerHeight - footerReservedPx).coerceAtLeast(rowHeightPx) / rowHeightPx).coerceIn(1, 14)
         val pageCount = ((apps.size + perPage - 1) / perPage).coerceAtLeast(1)
         gesturePageCount.set(pageCount)
         val current = page.coerceIn(0, pageCount - 1)
-        val rowsHeight = minOf(perPage * rowHeightPx, (maxHeight - header.height - footerHeight).coerceAtLeast(0))
+        val rowsHeight = minOf(perPage * rowHeightPx, (maxHeight - headerHeight - footerReservedPx).coerceAtLeast(0))
         val body = subcompose("rows") {
             if (apps.isEmpty()) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(emptyLabel, style = textStyle, color = Theme.colors.text.copy(alpha = 0.6f))
@@ -131,7 +128,7 @@ internal fun WidgetAppListContent(
                     key(app.packageName) { WidgetAppRowAsync(context, app, rowHeightPx, textStyle) { latestSelection(app) } }
                 }
             }
-        }.single().measure(Constraints.fixed(width, rowsHeight))
+        }.firstOrNull()?.measure(Constraints.fixed(width, rowsHeight))
         val footer = subcompose("footer") {
             // 与多选白名单同一套：最多 8 个点 + 有页才出现的箭头（键盘弹出后页数会变多）。
             SettingsComposable.PagedNavRow(
@@ -144,9 +141,18 @@ internal fun WidgetAppListContent(
                 prevLabel = backLabel,
                 nextLabel = nextLabel
             )
-        }.single().measure(Constraints.fixed(width, minOf(footerHeight, (maxHeight - header.height - body.height).coerceAtLeast(0))))
-        layout(width, header.height + body.height + footer.height) {
-            header.placeRelative(0, 0); body.placeRelative(0, header.height); footer.placeRelative(0, header.height + body.height)
+        }.firstOrNull()?.measure(Constraints.fixed(width, minOf(footerReservedPx, (maxHeight - headerHeight - (body?.height ?: 0)).coerceAtLeast(0))))
+        // subcompose() 返回的是「该槽位这一轮真正发出来的可测量子节点」；内容一个节点都没发出来
+        // 就是空列表，不是抛异常。PagedNavRow 在只有一页时直接 return（不画翻页条是设计），
+        // 所以单页列表的 footer 槽位必然为空 —— 曾经对它调 .single() 直接
+        // NoSuchElementException: List is empty.，小组件「选择应用」只有一页就必崩。
+        // 三个槽位一律 firstOrNull() 兜底，谁哪天加个 if 提前 return 也不会再炸。
+        val bodyHeight = body?.height ?: 0
+        val footerHeight = footer?.height ?: 0
+        layout(width, headerHeight + bodyHeight + footerHeight) {
+            header?.placeRelative(0, 0)
+            body?.placeRelative(0, headerHeight)
+            footer?.placeRelative(0, headerHeight + bodyHeight)
         }
     }
 }
