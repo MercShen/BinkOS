@@ -58,11 +58,6 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 - **Reverse long swipe closes** — every surface (app drawer, recents, letters, hub, simple tray, settings) closes with the long swipe opposite to the one that opened it. Detected on the initial pointer pass, so inner scrolling pages can't swallow the gesture.
 - Bind 4 swipe directions, double tap, and clock/date/quote taps to 15+ actions.
 
-### Typography built for e-ink
-- Per-element fonts: clock, date, apps, quote, notifications and settings each get their own family and size.
-- Custom `.ttf` / `.otf` files, including pixel fonts that stay crisp at integer scale.
-- Text islands, all-caps / small-caps app labels, per-element alignment.
-
 ### Layout without digging through menus
 - **Edit mode** — tap any element on the home screen to configure it live.
 - Alignment, margins and offsets in one dialog, with drag handles and hold-to-repeat steppers whose ranges match what the layout can actually use.
