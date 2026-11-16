@@ -133,13 +133,17 @@ internal fun WidgetAppListContent(
             }
         }.single().measure(Constraints.fixed(width, rowsHeight))
         val footer = subcompose("footer") {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.ChevronLeft, backLabel, tint = Theme.colors.text.copy(alpha = if (current > 0) 1f else 0.3f),
-                    modifier = Modifier.size(28.dp).clickable { page = (current - 1).coerceAtLeast(0) })
-                SettingsComposable.PageIndicator(current, pageCount)
-                Icon(Icons.Rounded.ChevronRight, nextLabel, tint = Theme.colors.text.copy(alpha = if (current + 1 < pageCount) 1f else 0.3f),
-                    modifier = Modifier.size(28.dp).clickable { page = (current + 1).coerceAtMost(pageCount - 1) })
-            }
+            // 与多选白名单同一套：最多 8 个点 + 有页才出现的箭头（键盘弹出后页数会变多）。
+            SettingsComposable.PagedNavRow(
+                currentPage = current,
+                pageCount = pageCount,
+                onPrev = { page = (current - 1).coerceAtLeast(0) },
+                onNext = { page = (current + 1).coerceAtMost(pageCount - 1) },
+                modifier = Modifier.fillMaxWidth(),
+                maxDots = 8,
+                prevLabel = backLabel,
+                nextLabel = nextLabel
+            )
         }.single().measure(Constraints.fixed(width, minOf(footerHeight, (maxHeight - header.height - body.height).coerceAtLeast(0))))
         layout(width, header.height + body.height + footer.height) {
             header.placeRelative(0, 0); body.placeRelative(0, header.height); footer.placeRelative(0, header.height + body.height)

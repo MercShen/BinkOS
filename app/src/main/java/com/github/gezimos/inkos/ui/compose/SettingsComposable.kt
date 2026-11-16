@@ -25,6 +25,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -101,6 +105,93 @@ object SettingsComposable {
                     )
                 }
             }
+    }
+
+    /**
+     * 翻页导航条：页码点 + 左右箭头。
+     *
+     * 约定（弹窗里弹出键盘后可视高度变小、页数会暴涨，不能把每页都画成一个点）：
+     * - 页码点最多画 [maxDots] 个，当前页始终在窗口内，窗口随当前页滑动。
+     * - 箭头**只在真的有对应方向的页面时才出现**：第一页没有 ‹，最后一页没有 ›。
+     *   用"箭头在不在"表达边界；把箭头画成灰色会让墨水屏上看起来仍然可翻。
+     */
+    @Composable
+    fun PagedNavRow(
+        currentPage: Int,
+        pageCount: Int,
+        onPrev: () -> Unit,
+        onNext: () -> Unit,
+        modifier: Modifier = Modifier,
+        maxDots: Int = 8,
+        prevLabel: String? = null,
+        nextLabel: String? = null
+    ) {
+        if (pageCount <= 1) return
+        val tintColor = SettingsTheme.color.settings
+        val screenScale = rememberScreenScale()
+        val islandsShape = LocalPrefs.current?.textIslandsShape ?: 0
+        val dotCount = minOf(pageCount, maxDots.coerceAtLeast(1))
+        val windowStart = pagedDotWindowStart(currentPage, pageCount, dotCount)
+        val slot = 12.dp.scaled(screenScale)
+
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            // 左右箭头各占一个**固定槽位**（没箭头时留空）：
+            // 否则箭头出现/消失会让整行重新居中，页码点看起来"整体挪了一下"。
+            val arrowSlot = 28.dp.scaled(screenScale)
+            val arrowGap = 8.dp.scaled(screenScale)
+            Box(modifier = Modifier.size(arrowSlot), contentAlignment = Alignment.Center) {
+                if (currentPage > 0) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronLeft,
+                        contentDescription = prevLabel,
+                        tint = tintColor,
+                        modifier = Modifier
+                            .size(arrowSlot)
+                            .clickable { onPrev() }
+                    )
+                }
+            }
+            Spacer(Modifier.width(arrowGap))
+            for (i in 0 until dotCount) {
+                val page = windowStart + i
+                val selected = page == currentPage
+                val dotSize = if (selected) slot else slot * (10f / 12f)
+                val dotShape = ShapeHelper.getPageDotShape(islandsShape, dotSize)
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp.scaled(screenScale))
+                        .size(slot),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(dotSize)
+                            .background(if (selected) tintColor else Color.Transparent, dotShape)
+                            .then(
+                                if (selected) Modifier
+                                else Modifier.border(dotSize * (1f / 6f), tintColor, dotShape)
+                            )
+                    )
+                }
+            }
+            Spacer(Modifier.width(arrowGap))
+            Box(modifier = Modifier.size(arrowSlot), contentAlignment = Alignment.Center) {
+                if (currentPage < pageCount - 1) {
+                    Icon(
+                        imageVector = Icons.Rounded.ChevronRight,
+                        contentDescription = nextLabel,
+                        tint = tintColor,
+                        modifier = Modifier
+                            .size(arrowSlot)
+                            .clickable { onNext() }
+                    )
+                }
+            }
+        }
     }
 
     @Composable

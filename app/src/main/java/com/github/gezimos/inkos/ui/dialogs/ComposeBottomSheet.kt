@@ -1462,53 +1462,18 @@ fun MultiChoiceSheet(
                         Spacer(modifier = Modifier.height(rowHeight))
                     }
                     if (pageCount > 1) {
-                        val dotSize = 12.dp.scaled(screenScale)
-                        val dotSpacing = (12f * 0.8f).dp.scaled(screenScale)
-                        val dotBorder = (12f / 6f).dp.scaled(screenScale)
-                        val dotShape = if (Prefs(context).textIslandsShape == 0) CircleShape
-                            else ShapeHelper.getRoundedCornerShape(Prefs(context).textIslandsShape, roundedRadius = 4.dp.scaled(screenScale))
-                        Row(
+                        // 最多 8 个点 + 有页才显示的箭头：弹出键盘后可视行数变少、页数会暴涨，
+                        // 之前每页一个点会画出十几二十个点，把列表挤没了。
+                        SettingsComposable.PagedNavRow(
+                            currentPage = pageIndex,
+                            pageCount = pageCount,
+                            onPrev = { if (pageIndex > 0) pageIndex-- },
+                            onNext = { if (pageIndex < pageCount - 1) pageIndex++ },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronLeft,
-                                contentDescription = stringResource(R.string.btn_back),
-                                tint = if (pageIndex > 0) textColor else textColor.copy(alpha = 0.3f),
-                                modifier = Modifier
-                                    .size(28.dp.scaled(screenScale))
-                                    .clickable { if (pageIndex > 0) pageIndex-- }
-                            )
-                            Spacer(Modifier.width(12.dp.scaled(screenScale)))
-                            for (i in 0 until pageCount) {
-                                val selected = i == pageIndex
-                                val thisSize = if (selected) dotSize else dotSize * (10f / 12f)
-                                val thisShape = ShapeHelper.getPageDotShape(Prefs(context).textIslandsShape, thisSize)
-                                Box(
-                                    modifier = Modifier.padding(horizontal = dotSpacing / 2).size(dotSize),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(thisSize)
-                                            .background(if (selected) textColor else bgColor, thisShape)
-                                            .then(
-                                                if (!selected) Modifier.border(thisSize * (1f / 6f), textColor, thisShape) else Modifier
-                                            )
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(12.dp.scaled(screenScale)))
-                            Icon(
-                                imageVector = Icons.Rounded.ChevronRight,
-                                contentDescription = stringResource(R.string.home_tooltip_next),
-                                tint = if (pageIndex < pageCount - 1) textColor else textColor.copy(alpha = 0.3f),
-                                modifier = Modifier
-                                    .size(28.dp.scaled(screenScale))
-                                    .clickable { if (pageIndex < pageCount - 1) pageIndex++ }
-                            )
-                        }
+                            maxDots = 8,
+                            prevLabel = stringResource(R.string.btn_back),
+                            nextLabel = stringResource(R.string.home_tooltip_next)
+                        )
                     }
                 }
             }
