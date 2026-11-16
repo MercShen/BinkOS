@@ -702,7 +702,7 @@
     <string name="desc_home_apps_num">Nr of app favorites in home</string>
     <string name="desc_home_pages_num">Number of pages in home</string>
     <string name="page_indicator_margin">Page Indicators Margin</string>
-    <string name="desc_page_indicator_margin">Gap from screen edge for home, tray and hub, capped so dots never cover apps</string>
+    <string name="desc_page_indicator_margin">Gap between the page dots and the screen edge, on Home, tray and hub.</string>
     <string name="option_auto">Auto</string>
     <string name="desc_page_indicator">Show page indicator dots</string>
     <string name="desc_page_reset">Always returns to 1st page</string>

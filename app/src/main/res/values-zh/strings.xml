@@ -702,7 +702,7 @@
     <string name="desc_home_apps_num">主屏常用应用数量</string>
     <string name="desc_home_pages_num">主屏页面数量</string>
     <string name="page_indicator_margin">页码指示器边距</string>
-    <string name="desc_page_indicator_margin">主页 / 托盘 / Hub 指示器与屏幕边缘的留白，超出可用空间会自动夹住，避免压到应用</string>
+    <string name="desc_page_indicator_margin">主页、托盘和 Hub 上，页码点与屏幕边缘的间距</string>
     <string name="option_auto">自动</string>
     <string name="desc_page_indicator">显示页码圆点</string>
     <string name="desc_page_reset">总是返回第 1 页</string>
