@@ -40,7 +40,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.InvertColors
 import androidx.compose.material.icons.rounded.BugReport
 import androidx.compose.material.icons.rounded.Code
-import androidx.compose.material.icons.rounded.Coffee
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.FilterList
 import androidx.compose.material.icons.rounded.FormatSize
@@ -720,25 +719,6 @@ class SettingsFragment : Fragment() {
         val context = androidx.compose.ui.platform.LocalContext.current
 
         Column(modifier = Modifier.fillMaxSize()) {
-            SettingsTitle(text = stringResource(R.string.donate), fontSize = titleFontSize)
-            SettingsHomeItem(
-                title = stringResource(R.string.buy_me_a_coffee),
-                imageVector = Icons.Rounded.Coffee,
-                description = stringResource(R.string.desc_buy_coffee),
-                titleFontSize = titleFontSize,
-                onClick = {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://buymeacoffee.com/gezimos".toUri())) } catch (_: Exception) {}
-                }
-            )
-            SettingsHomeItem(
-                title = stringResource(R.string.github_sponsors),
-                imageVector = Icons.Rounded.Favorite,
-                description = stringResource(R.string.desc_github_sponsor),
-                titleFontSize = titleFontSize,
-                onClick = {
-                    try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/sponsors/gezimos".toUri())) } catch (_: Exception) {}
-                }
-            )
             SettingsTitle(text = stringResource(R.string.community), fontSize = titleFontSize)
             SettingsHomeItem(
                 title = stringResource(R.string.report_issues),

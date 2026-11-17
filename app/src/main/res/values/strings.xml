@@ -111,7 +111,6 @@
     <string name="layout_positioning">Layout &amp; Positioning</string>
     <string name="visibility_display">Visibility &amp; Display</string>
     <string name="element_colors">Colors</string>
-    <string name="donate">Donate</string>
     <string name="community">Community</string>
     <string name="about">About</string>
     <string name="desc_about">Credits &amp; support</string>
@@ -378,8 +377,6 @@
     <string name="ui_scale">UI Scale</string>
     <string name="onboarding">Onboarding</string>
     <string name="guide">Guide</string>
-    <string name="buy_me_a_coffee">Buy Me a Coffee</string>
-    <string name="github_sponsors">GitHub Sponsors</string>
     <string name="report_issues">Report Issues</string>
     <string name="reddit_inkos">Reddit — r/inkos</string>
     <string name="font_license_ofl">Font License (OFL)</string>
@@ -684,8 +681,6 @@
     <string name="desc_work_profile">Toggle work apps</string>
     <string name="desc_advanced_settings">Launcher &amp; utilities</string>
     <string name="desc_extras_settings">Extras &amp; tools</string>
-    <string name="desc_buy_coffee">Support with a coffee</string>
-    <string name="desc_github_sponsor">Become a GitHub sponsor</string>
     <string name="desc_report_bugs">Report bugs or features</string>
     <string name="desc_reddit_community">Join the Reddit community</string>
     <string name="desc_app_version">Tap to view app info</string>

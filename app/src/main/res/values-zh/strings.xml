@@ -111,7 +111,6 @@
  <string name="layout_positioning">布局与位置</string>
  <string name="visibility_display">可见性与显示</string>
  <string name="element_colors">颜色</string>
- <string name="donate">赞助</string>
  <string name="community">社区</string>
  <string name="about">关于</string>
  <string name="desc_about">鸣谢与支持</string>
@@ -378,8 +377,6 @@
  <string name="ui_scale">界面缩放</string>
  <string name="onboarding">引导</string>
  <string name="guide">指南</string>
- <string name="buy_me_a_coffee">请我喝杯咖啡</string>
- <string name="github_sponsors">GitHub 赞助</string>
  <string name="report_issues">反馈问题</string>
  <string name="reddit_inkos">Reddit — r/inkos</string>
  <string name="font_license_ofl">字体许可（OFL）</string>
@@ -684,8 +681,6 @@
  <string name="desc_work_profile">切换工作应用</string>
  <string name="desc_advanced_settings">桌面与实用工具</string>
  <string name="desc_extras_settings">更多功能与工具</string>
- <string name="desc_buy_coffee">用一杯咖啡支持开发</string>
- <string name="desc_github_sponsor">成为 GitHub 赞助者</string>
  <string name="desc_report_bugs">反馈问题或功能建议</string>
  <string name="desc_reddit_community">加入 Reddit 社区</string>
  <string name="desc_app_version">点按查看应用信息</string>
