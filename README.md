@@ -44,44 +44,40 @@
   </table>
 </div>
 
-Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub against e-ink hardware: gestures, refresh, typography and layout. It is not a general-purpose launcher — it is a launcher for reading, notes and light apps on an e-ink phone.
+Bink OS keeps inkOS's text-first home screen and adds features and quality-of-life improvements for e-ink use. It is a launcher for reading, notes and light apps on an e-ink phone.
 
-## Unique features
+## Bink OS Unique features
 
 ### Bigme HiBreak integration
-- **Vendor GC16 full refresh** — force the vendor full refresh for every refresh, including gesture-triggered ones.
-- **Vendor page-turn animation** — play the Bigme e-ink page-turn effect when opening/closing surfaces that are bound to a long-swipe gesture.
-- **E-ink refresh control** — auto refresh, home-only refresh, configurable refresh delay.
+- **Vendor GC16 full refresh** — use the vendor's GC16 full refresh instead of the app's own full-screen flash, which cuts ghosting.
+- **Refresh animation** — use the Bigme e-ink page-turn effect while navigating Bink OS; Directional and Circular Ripple styles (Ripple since v0.2.7).
 
 ### Gestures that don't fight the system
-- **Short swipe zone** — restrict page-turn swipes to a configurable vertical band, so the system's edge gestures (home / back) still work. Edit mode dims everything outside the band and gives you a drag handle on each boundary; the zone counts from 30 dp so it never hides under the status bar.
-- **Reverse long swipe closes** — a surface that is bound to a long-swipe gesture (app drawer, recents, letters, hub, simple tray, settings) closes with the long swipe opposite to the one that opened it. Detected on the initial pointer pass, so inner scrolling pages can't swallow the gesture. Surfaces with no bound opening gesture (for example Settings opened from its icon) do not exit on a long swipe.
-- Bind 4 swipe directions, double tap, and clock/date/quote taps to 15+ actions.
+- **Short swipe area** — restrict page-turn short swipes to a configurable band, so system edge gestures still work; fewer conflicts on devices using gesture navigation.
+- **Reverse long swipe closes** — a surface bound to a long-swipe gesture (app drawer, recents, Letters, Hub, Simple Tray, settings) closes with the long swipe opposite to the one that opened it. Surfaces with no bound opening gesture (for example Settings opened from its icon) do not exit on a long swipe.
 
-### Layout without digging through menus
-- **Edit mode** — tap any element on the home screen to configure it live.
-- Alignment, margins and offsets in one dialog, with drag handles and hold-to-repeat steppers whose ranges match what the layout can actually use.
+### Home app placement
+- Drag and drop home apps freely, or use the margin and offset editor in edit mode: margins on each edge plus a vertical offset, so the layout can fit custom wallpapers easily.
 
 ### Localization ready
 - **Simplified Chinese is fully supported** — the whole UI is translated (zh-CN), the app has its own language picker, and Bink OS internal shortcuts (drawer, Letters, Simple Tray, Hub, recents, settings) follow the in-app language instead of the system one.
+- **CJK and pixel-font fixes** — glyph clipping and pixel snapping for pixel fonts.
 - Translating or changing UI copy? Read the [terminology & localization guide](docs/terminology.md) first; `python tools/check-locales.py` keeps EN/ZH keys and placeholders in sync.
 
-### Backup & restore
-- ZIP backup containing layout, aliases, preferences and wallpaper, restorable from the settings screen.
-
-## Optimizations
-
-- Gesture detection runs on the initial pointer pass, so long swipes are never eaten by scrollable content.
-- Short-swipe zone guards page turns against OEM edge-gesture collisions.
-- Full-refresh path reduces e-ink ghosting while keeping partial refresh fast.
-- CJK glyph clipping and pixel-snapping fixes for pixel fonts.
-- Pinyin search in the app drawer, A-Z index, hidden apps and private space support.
+## Quality-of-life improvements
+- **Backup & restore** — ZIP backup now also carries imported fonts and custom wallpapers, restorable from Settings.
+- **Searchable allowlists** — the app picker for Letters, Simple Tray, Hub and badge notification allowlists has a search box.
+- **Paged navigation** — consistent paging in more menus for a better e-ink experience.
+- **Pinyin search** in the app drawer.
+- **Widget picking** — preview and swap different widgets of one app from a single picker.
+- **Icon customization** — streamlined menus with a live preview.
+- **Edit mode** — each panel now states what you are editing.
 
 ## Install
 
 Download the signed APK from [Releases](https://github.com/MercShen/BinkOS/releases) and install it over an existing Bink OS build — the signing key is stable, so upgrades keep your data.
 
-Requires Android 8.0+ (API 26). Best on the Bigme HiBreak; other e-ink phones work but the vendor-specific switches are HiBreak-only.
+Requires Android 8.0+ (API 26). Best on the Bigme HiBreak; other e-ink phones work but the vendor-specific switches are HiBreak-only for now.
 
 ## Build
 
