@@ -42,7 +42,7 @@ android {
     // 主分支没有该文件。这样两个分支的调试包在设备上不会互相覆盖，也一眼能认出装的是哪版。
     // 用文件存在判断而不是调 git，是为了不破坏 Gradle 的 configuration cache。
     val isShizukuBranch = rootProject.file(".shizuku-build").exists()
-    val debugAppName = if (isShizukuBranch) "BinkOS Shizuku Debug" else "Bink OS Debug"
+    val debugAppName = if (isShizukuBranch) "Bink OS Shizuku Debug" else "Bink OS Debug"
     val debugFileSuffix = if (isShizukuBranch) "Shizuku-Debug" else "Debug"
 
     buildTypes {

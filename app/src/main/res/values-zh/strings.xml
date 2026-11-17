@@ -784,7 +784,7 @@
  <string name="desc_swipe_down">向下滑操作</string>
  <string name="desc_short_swipe">短滑灵敏度</string>
  <string name="desc_long_swipe">长滑灵敏度</string>
- <string name="desc_edge_swipe">使用 BinkOS 边缘滑动返回</string>
+ <string name="desc_edge_swipe">使用 Bink OS 边缘滑动返回</string>
  <string name="desc_universal_font">所有文字统一字体</string>
  <string name="desc_universal_font_select">选择通用字体</string>
  <string name="desc_settings_font">设置字体</string>
@@ -1030,7 +1030,7 @@
  <string name="tooltip_edit_cue_line">拖动调节条可调整主屏元素的位置。</string>
  <string name="perm_usage_stats_title">使用情况访问权限</string>
  <string name="perm_usage_stats_message">这个应用需要「使用情况访问权限」才能显示最近使用的应用。接下来会跳到 Android 设置去授权。</string>
- <string name="perm_notification_message">inkOS 需要通知使用权才能在这里显示通知。接下来会跳到 Android 设置去授权。</string>
+ <string name="perm_notification_message">Bink OS 需要通知使用权才能在这里显示通知。接下来会跳到 Android 设置去授权。</string>
  <string name="perm_write_settings_message">这个应用需要「修改系统设置」权限才能控制屏幕亮度。接下来会跳到 Android 设置去授权。</string>
  <string name="apps_header_select">选择应用</string>
  <string name="apps_header_hidden">已隐藏应用</string>

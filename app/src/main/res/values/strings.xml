@@ -1031,7 +1031,7 @@
     <string name="tooltip_edit_cue_line">Drag the cue bars to adjust the position of the home elements</string>
     <string name="perm_usage_stats_title">Usage Stats Permission</string>
     <string name="perm_usage_stats_message">This app needs usage stats permission to show your recently used apps. You will be taken to Android settings to grant this permission.</string>
-    <string name="perm_notification_message">inkOS needs notification access to show your notifications here. You will be taken to Android settings to grant this permission.</string>
+    <string name="perm_notification_message">Bink OS needs notification access to show your notifications here. You will be taken to Android settings to grant this permission.</string>
     <string name="perm_write_settings_message">This app needs permission to modify system settings to control screen brightness. You will be taken to Android settings to grant this permission.</string>
     <string name="apps_header_select">SELECT APP</string>
     <string name="apps_header_hidden">HIDDEN APPS</string>
