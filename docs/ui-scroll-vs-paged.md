@@ -44,7 +44,7 @@
 | 主屏常用应用、App 抽屉、最近任务 | 分页状态 + 滑动切页（`userScrollEnabled = false` 的 `LazyColumn` 只负责每页布局） |
 | Letters `LettersFragment` | `VerticalPager`，一屏一条 |
 | Simple Tray | `SimplePagerState` 分页，每页条数按可用高度动态计算（原「每页数量」设置已移除）；单条消息用行右侧小叉删除（系统 ongoing/不可清除通知不显示小叉）；`OpenSimpleTray` 绑定时上滑长滑关闭；媒体 transport 通知仍以媒体卡显示（受白名单控制），但**不计入主页全局通知数，也不计入 Tray 顶部数字** |
-| 通知中心 Hub | 分类 Tab + 每页条数按可用高度动态分页；整页任意位置左右短滑切换分类（48dp），单条消息用行右侧小叉删除（系统 ongoing/不可清除通知不显示小叉）；清除全部按钮固定在“满页消息框底边与屏幕底边”的中点，点击后清空并回主页；侧边页码点在屏幕边缘与消息框之间水平居中 |
+| 通知中心 Hub | 分类 Tab + 每页条数按可用高度动态分页；整页任意位置左右短滑切换分类（48dp，或 ≥32dp 的快滑；与竖向翻页共用一套「总位移主导轴」判定，见 `ui/compose/AxisSwipeGestures.kt`），单条消息用行右侧小叉删除（系统 ongoing/不可清除通知不显示小叉）；清除全部按钮固定在“满页消息框底边与屏幕底边”的中点（锚点行高只测一次并持久化，翻页/增删通知/重启都不移动），点击后清空并回主页；侧边页码点在屏幕边缘与消息框之间水平居中 |
 | 壁纸画廊 | 按页切换 |
 | Onboarding | 分页 |
 | 小部件选择·应用列表（第一级） | 按可用高度分页（`chunked(rowsPerPage)` + 左右滑），[paged-app-list.png](images/scroll-audit/paged-app-list.png) |

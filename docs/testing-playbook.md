@@ -144,10 +144,10 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - 先数探针自己的消息ID 1001..1005，再打开tray/hub检验分类/过滤/分页。Android可能额外生成ranker_group汇总，计数应排除summary。用户同时新增通知会影响全局总数，不断言“系统总通知恰好12”。
 - 脚本不得用Clear All清所有用户通知。清场只清探针自己的通知，且获得必要授权。
 - 托盘和Hub白名单独立；媒体、summary通知过滤不同，数据源可能不同，按产品契约比较而非硬要求屏幕计数相等。
-- Hub 分类 tab 支持整页任意位置左右短滑切换（阈值 48dp）；单条消息删除用行右侧小叉，行上横滑也切 tab，不再触发消除。旧 commit `cdd943c` 曾随反向长滑一起删除，2026-11-16 恢复。
+- Hub 分类 tab 支持整页任意位置左右短滑切换（48dp；「≥32dp 且够快」的 flick 也切），与竖向翻页共用一套「总位移主导轴」判定（`ui/compose/AxisSwipeGestures.kt`）。回归点：斜向 30–40° 的左右短滑必须切 tab、不能变成翻页（横竖两套探测器抢 slop 时就是这个症状，末页上表现为“划了没反应”）；竖向快短滑（<48dp）不翻页。单条消息删除用行右侧小叉，行上横滑也切 tab，不再触发消除。旧 commit `cdd943c` 曾随反向长滑一起删除，2026-11-16 恢复。
 - Hub 的反向长滑关闭同样依赖 `OpenHub` 已绑定打开方向；当前绑定下滑打开，所以上滑关闭。未绑定时不关闭，也不播动画。
 - Hub 侧边页码点验收：点在屏幕边缘与消息框边框之间的水平中点；左右两种 `homePagerAlign` 都要量一下两段间距是否一致。
-- Hub 清除全部按钮固定在“满页消息框底边与屏幕底边”的中点，不随每页消息数量上下移动；点击后清空并自动回主页。
+- Hub 清除全部按钮固定在“满页消息框底边与屏幕底边”的中点，不随每页消息数量上下移动；点击后清空并自动回主页。锚点行高只测一次并持久化（`HUB_CLEAR_ANCHOR_ROW_HEIGHT`，换字号/缩放/图标/密度才重测）：通知行高受字体度量影响（同列表 CJK 行 140px、纯拉丁/系统行 136px），用“当前页首行”实测值会让末页按钮上移 14px。回归验收：翻到最后一页、把通知清到只剩 1 页、`force-stop` 后重开，三次截图里按钮文字的 y 必须一致；改通知行内部布局时把 HubScreen 锚点 key 的 `v1` 前缀加一。
 - Hub 行右侧小叉只对可清除通知显示；`FLAG_NO_CLEAR` / `FLAG_ONGOING_EVENT` / `isOngoing` 的系统通知不显示小叉（USB 调试通知是最方便的回归样本）。
 - Simple Tray 行右侧同样有小叉（仅可清除通知）；点击删除单条，长按仍保留媒体停止/删除行为。
 - Extra → Page Turn Animation Style 只在翻页动画开关启用时出现：`Directional` 走 `setEinkAnimationTimeout`；`Ripple` 用 `appEinkAnimation`，打开下发 10、关闭下发 9，800ms 后回 0，避免时钟等刷新持续播 Ripple。Ripple 不再只认“从主页进入”：App Drawer/其它页进入子页播 10，返回 App Drawer/主页播 9。

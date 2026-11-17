@@ -146,6 +146,7 @@ import com.github.gezimos.inkos.ui.compose.EditModeOverlay
 import com.github.gezimos.inkos.ui.compose.HubFocusZone
 import com.github.gezimos.inkos.ui.compose.NavHelper
 import com.github.gezimos.inkos.ui.compose.SimpleTrayFocusZone
+import com.github.gezimos.inkos.ui.compose.axisSwipeGestures
 import com.github.gezimos.inkos.ui.compose.closeOnReverseLongSwipe
 import com.github.gezimos.inkos.ui.compose.gestureHelper
 import com.github.gezimos.inkos.ui.compose.inkOsSafeDrawingPadding
@@ -581,7 +582,21 @@ fun HubScreen(
     var hubListBounds by remember { mutableStateOf(Rect.Zero) }
     var hubRootSize by remember { mutableStateOf(IntSize.Zero) }
     var hubFrameTop by remember { mutableStateOf(0f) }
-    var hubRowHeightPx by remember { mutableIntStateOf(0) }
+    // 清除按钮锚点用的“基准行高”：只在首次（或换字号/缩放/图标/密度之后）测一次并持久化，
+    // 翻页、增删通知都不再改变它，按钮的垂直位置因此恒定。
+    val anchorRowHeightKey = remember(
+        prefs.notificationsTextSize, prefs.hubShowIcons, prefs.notificationsFont, screenScale, density
+    ) {
+        // v1 是布局版本：通知行内部布局改了要加一，让旧缓存失效。
+        "v1|${prefs.notificationsTextSize}|${prefs.hubShowIcons}|${prefs.notificationsFont}" +
+            "|${prefs.getCustomFontPathForContext("notifications")}|${screenScale}|${density.density}"
+    }
+    val anchorRowHeightPx = remember(anchorRowHeightKey) {
+        val stored = if (prefs.hubClearAnchorRowHeightKey == anchorRowHeightKey) {
+            prefs.hubClearAnchorRowHeight
+        } else 0
+        mutableIntStateOf(stored)
+    }
     var hubClearButtonHeightPx by remember { mutableIntStateOf(0) }
     val itemHeightPx = remember(density) { with(density) { 96.dp.toPx() }.toInt() }
     val hubOverheadPx = remember(density) { with(density) { 8.dp.toPx() }.toInt() }
@@ -627,7 +642,6 @@ fun HubScreen(
     }
     val notifFontFamilyGlobal = remember(notifTypefaceGlobal) { notifTypefaceGlobal?.let { FontFamily(it) } ?: FontFamily.Default }
 
-    val pageDragThreshold = with(density) { 48.dp.toPx() }
     val keyPressTracker = remember { com.github.gezimos.inkos.ui.compose.KeyPressTracker() }
 
     DisposableEffect(pagerState, coroutineScope, filteredNotifications, composeView) {
@@ -712,24 +726,37 @@ fun HubScreen(
                     try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
                     onNavigateBack()
                 }
-                .pointerInput(categoryTabs.size, selectedCategoryIndex.intValue) {
-                    // 整页任意位置横向短滑切分类；通知行自己的横向 drag 在 Main pass 先消费，
-                    // 所以行上横滑仍是“消除通知”，其余区域切 tab。
-                    var dragSum = 0f
-                    detectHorizontalDragGestures(
-                        onHorizontalDrag = { _, dragAmount -> dragSum += dragAmount },
-                        onDragEnd = {
-                            val threshold = with(density) { 48.dp.toPx() }
-                            val idx = selectedCategoryIndex.intValue
-                            if (dragSum < -threshold && idx < categoryTabs.size - 1) {
-                                selectedCategoryIndex.intValue = idx + 1
-                            } else if (dragSum > threshold && idx > 0) {
-                                selectedCategoryIndex.intValue = idx - 1
-                            }
-                            dragSum = 0f
+                // 横向切分类 / 竖向翻页共用一套判定：按总位移决定主导轴，不再让内层竖向探测器
+                // 靠“先过 slop 先消费”把斜向的左右短滑抢成翻页（见 AxisSwipeGestures.kt）。
+                .axisSwipeGestures(
+                    onDragStarted = { isDpadModeState.value = false },
+                    onSwipeLeft = {
+                        val idx = selectedCategoryIndex.intValue
+                        if (idx < categoryTabs.size - 1) {
+                            try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
+                            selectedCategoryIndex.intValue = idx + 1
                         }
-                    )
-                }
+                    },
+                    onSwipeRight = {
+                        val idx = selectedCategoryIndex.intValue
+                        if (idx > 0) {
+                            try { VibrationHelper.trigger(VibrationHelper.Effect.CLICK) } catch (_: Exception) {}
+                            selectedCategoryIndex.intValue = idx - 1
+                        }
+                    },
+                    onSwipeUp = {
+                        if (pagerState.currentPage < pagerState.pageCount - 1) {
+                            pagerState.scrollToPage(pagerState.currentPage + 1)
+                            vibratePaging(ctx)
+                        }
+                    },
+                    onSwipeDown = {
+                        if (pagerState.currentPage > 0) {
+                            pagerState.scrollToPage(pagerState.currentPage - 1)
+                            vibratePaging(ctx)
+                        }
+                    }
+                )
             .background(Theme.colors.background)
             .inkOsSafeDrawingPadding()
     ) {
@@ -741,29 +768,6 @@ fun HubScreen(
                     top = 24.dp.scaled(screenScale),
                     bottom = 16.dp
                 )
-                .pointerInput(pagerState.currentPage, isDpadMode) {
-                    var dragSum = 0f
-                    detectVerticalDragGestures(
-                        onVerticalDrag = { _, dragAmount ->
-                            isDpadModeState.value = false
-                            dragSum += dragAmount
-                        },
-                        onDragEnd = {
-                            if (dragSum < -pageDragThreshold) {
-                                if (pagerState.currentPage < pagerState.pageCount - 1) {
-                                    pagerState.scrollToPage(pagerState.currentPage + 1)
-                                    vibratePaging(ctx)
-                                }
-                            } else if (dragSum > pageDragThreshold) {
-                                if (pagerState.currentPage > 0) {
-                                    pagerState.scrollToPage(pagerState.currentPage - 1)
-                                    vibratePaging(ctx)
-                                }
-                            }
-                            dragSum = 0f
-                        }
-                    )
-                }
         ) {
             Text(
                 text = "${(categoryTabs.getOrNull(selectedCategoryIndex.intValue)?.label ?: "All").uppercase()} (${filteredNotifications.size})",
@@ -853,7 +857,13 @@ fun HubScreen(
                             NotificationManager.getInstance(ctx).removeConversationNotification(hn.packageName, hn.notif.conversationId)
                             expandedNotificationKey = null
                         },
-                        onRowHeightMeasured = { hubRowHeightPx = it },
+                        onRowHeightMeasured = { height ->
+                            if (anchorRowHeightPx.intValue <= 0 && height > 0) {
+                                anchorRowHeightPx.intValue = height
+                                prefs.hubClearAnchorRowHeight = height
+                                prefs.hubClearAnchorRowHeightKey = anchorRowHeightKey
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .onGloballyPositioned { coords ->
@@ -874,11 +884,17 @@ fun HubScreen(
 
         if (filteredNotifications.isNotEmpty()) {
             // 以“满页时消息框的最低位置”和屏幕底部的中点为固定锚点：
-            // 用分页时的行高上限计算满页底边，消息少时也不会跟着内容上移。
+            // 用**基准行高**（只测一次并持久化，见 Prefs.hubClearAnchorRowHeight）推满页底边；
+            // 不能用当前页首行的实测值——那样最后几页只剩拉丁/系统通知时行高差几 px，
+            // 乘上 itemsPerPage 就会让按钮上下跳（实测 140px→136px，按钮上移 14px）。
             val frameTop = if (hubFrameTop > 0f) hubFrameTop else hubListBounds.top
             val topPaddingPx = with(density) { 12.dp.toPx() }
             val bottomPaddingPx = with(density) { 16.dp.toPx() }
-            val rowHeightPx = if (hubRowHeightPx > 0) hubRowHeightPx.toFloat() else itemHeightPx.toFloat()
+            val rowHeightPx = if (anchorRowHeightPx.intValue > 0) {
+                anchorRowHeightPx.intValue.toFloat()
+            } else {
+                itemHeightPx.toFloat()
+            }
             val fullFrameBottom = frameTop + topPaddingPx +
                 itemsPerPage * rowHeightPx + bottomPaddingPx
             val targetCenterY = (fullFrameBottom + hubRootSize.height) / 2f

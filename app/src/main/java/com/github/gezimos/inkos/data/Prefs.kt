@@ -109,6 +109,9 @@ private const val SECOND_CLOCK_OFFSET_HOURS = "SECOND_CLOCK_OFFSET_HOURS"
 // App Drawer specific preferences
 private const val APP_DRAWER_APPS_PER_PAGE_CACHE = "APP_DRAWER_APPS_PER_PAGE_CACHE"
 private const val APP_DRAWER_CONTAINER_HEIGHT_CACHE = "APP_DRAWER_CONTAINER_HEIGHT_CACHE"
+// Hub 清除全部按钮的锚点行高缓存（px + 生成它时的配置 key）
+private const val HUB_CLEAR_ANCHOR_ROW_HEIGHT = "HUB_CLEAR_ANCHOR_ROW_HEIGHT"
+private const val HUB_CLEAR_ANCHOR_ROW_HEIGHT_KEY = "HUB_CLEAR_ANCHOR_ROW_HEIGHT_KEY"
 private const val APP_DRAWER_SEARCH_CONTACTS = "APP_DRAWER_SEARCH_CONTACTS"
 private const val APP_DRAWER_SEARCH_CONTACT_ACCOUNTS = "APP_DRAWER_SEARCH_CONTACT_ACCOUNTS"
 private const val APP_DRAWER_SEARCH_WEB = "APP_DRAWER_SEARCH_WEB"
@@ -377,6 +380,8 @@ class Prefs(val context: Context) {
         "use_vibration_for_paging",
         APP_DRAWER_APPS_PER_PAGE_CACHE,
         APP_DRAWER_CONTAINER_HEIGHT_CACHE,
+        HUB_CLEAR_ANCHOR_ROW_HEIGHT,
+        HUB_CLEAR_ANCHOR_ROW_HEIGHT_KEY,
         "APP_DRAWER_CACHED_GAP",
         "APP_DRAWER_CACHED_SIZE",
         Constants.PrefKeys.EVENTS_CALENDAR_ID,
@@ -714,6 +719,23 @@ class Prefs(val context: Context) {
     var notificationsPerPage: Int
         get() = prefs.getInt(NOTIFICATIONS_PER_PAGE, 3).coerceIn(1, 5)
         set(value) = prefs.edit { putInt(NOTIFICATIONS_PER_PAGE, value.coerceIn(1, 5)) }
+
+    /**
+     * Hub「清除全部」按钮的基准行高（px）及其生成时的配置 key。
+     *
+     * 按钮锚在“满页消息框底边”，满页底边 = 顶边 + itemsPerPage × 行高。行高看起来固定，其实来自
+     * 字体度量：同一列表里 CJK 行 140px、纯拉丁/系统行 136px。若用“当前页首行”的实测值，
+     * 最后几页首行变矮 4px，×itemsPerPage 后按钮就上下跳（实测 14px）。
+     * 所以只测一次并持久化，换字号/缩放/图标/密度时 key 不同才重测。
+     * 注意：改通知行内部布局（padding、行数）时要把 HubScreen 里 key 的 "v1" 前缀加一，让缓存失效。
+     */
+    var hubClearAnchorRowHeight: Int
+        get() = prefs.getInt(HUB_CLEAR_ANCHOR_ROW_HEIGHT, 0)
+        set(value) = prefs.edit { putInt(HUB_CLEAR_ANCHOR_ROW_HEIGHT, value) }
+
+    var hubClearAnchorRowHeightKey: String?
+        get() = prefs.getString(HUB_CLEAR_ANCHOR_ROW_HEIGHT_KEY, null)
+        set(value) = prefs.edit { putString(HUB_CLEAR_ANCHOR_ROW_HEIGHT_KEY, value) }
 
     var edgeSwipeBackEnabled: Boolean
         get() = prefs.getBoolean(EDGE_SWIPE_BACK_ENABLED, false)
