@@ -14,13 +14,14 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 ### Notifications, Tray and Hub
 - Add per-row dismiss buttons in Tray and Hub for dismissible notifications; keep ongoing / no-clear notifications non-dismissible.
 - Exclude media/transport notifications from Home and Tray message counts while retaining the Tray media card.
-- Let Hub switch category tabs with a horizontal swipe on empty space; per-notification deletion uses the row X button, not a row swipe.
-- Pin the Hub “clear all” row to the midpoint between the full notification frame and screen bottom, so it no longer moves with the notification count.
+- Let Hub switch category tabs with a horizontal swipe anywhere on the page (48dp, or a fast short flick); horizontal and vertical swipes now share one dominant-axis judgment (`ui/compose/AxisSwipeGestures.kt`), so diagonal short swipes no longer turn pages. Per-notification deletion uses the row X button, not a row swipe.
+- Pin the Hub “clear all” row to the midpoint between the full notification frame and screen bottom. The reference row height is measured once and persisted, so paging, notification changes and process restarts no longer move it.
 - Align Hub/Tray page dots between the message frame and screen edge, and close Tray/Hub on reverse long swipe only when the corresponding open gesture is bound.
 
 ### Reliability and development
 - Harden settings and notification edge cases accumulated since 0.2.6.
 - Add debug-only replay of one-time guide overlays and direct onboarding page navigation, with contract tests and automation documentation.
+- Normalize product naming to “Bink OS” in in-app copy (notification access, edge-swipe back) and documentation, and rename the Gradle project accordingly; no behavior change.
 
 ### Compatibility
 - Package: `app.binkos`; version name `0.2.7`, version code `10`.
