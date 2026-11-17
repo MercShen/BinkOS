@@ -22,6 +22,7 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 - Harden settings and notification edge cases accumulated since 0.2.6.
 - Add debug-only replay of one-time guide overlays and direct onboarding page navigation, with contract tests and automation documentation.
 - Normalize product naming to “Bink OS” in in-app copy (notification access, edge-swipe back) and documentation, and rename the Gradle project accordingly; no behavior change.
+- Remove the upstream author’s donation entries from the About page; credits, license and community links stay.
 
 ### Compatibility
 - Package: `app.binkos`; version name `0.2.7`, version code `10`.
