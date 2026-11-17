@@ -1,4 +1,4 @@
-# BinkOS 自动化入口 — AI agent 接口契约
+# Bink OS 自动化入口 — AI agent 接口契约
 
 本文对应当前源码的 **debug 自动化接口**；正式包拒绝这些请求。主界面/产品入口、预览选择器、持久化设置命令和调试探针必须分开使用。源码、结构化日志和设备验证共同作为证据；`am start` 成功不是功能验收。
 
@@ -276,7 +276,7 @@ BackupCompatTestActivity 用 DebugProbeContract 校验：一次只能选一个op
 - 小部件枚举是后台单飞快照，标题/搜索区实测后计算分页，预览图片后台加载；首次字体文件加载/文件元数据读取等仍需关注，未给出全机型性能保证。
 - WIDGET编辑面板里的Choose App/Choose Widget同sheet切状态，小部件列表箭头回WIDGET；设置→Home/Widgets的Choose Widget箭头回应用列表。需按入口区分。
 - 想截图分页，不用主页横滑代替home_next/prev；通知区/卡片自身仍按其实现支持翻页。字节大小/哈希仅证明变化，不证明正确。
-- 功能依赖：通知访问权、POST_NOTIFICATIONS、系统相机/日历/蓝牙权限、已装组件、锁屏认证会改变结果。脚本不自动授予BinkOS权限或关闭设置锁。
+- 功能依赖：通知访问权、POST_NOTIFICATIONS、系统相机/日历/蓝牙权限、已装组件、锁屏认证会改变结果。脚本不自动授予Bink OS权限或关闭设置锁。
 
 自动检查：
 

@@ -1,6 +1,6 @@
 # notifprobe — 通知测试探针
 
-三个极小的 APK，用来在真机/模拟器上生成「来自不同 App」的通知，验证 BinkOS 的
+三个极小的 APK，用来在真机/模拟器上生成「来自不同 App」的通知，验证 Bink OS 的
 Simple Tray / Hub 分页、白名单过滤与页码指示器。
 
 | flavor | applicationId | 每次启动发送 |

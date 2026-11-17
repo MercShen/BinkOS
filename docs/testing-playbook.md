@@ -1,4 +1,4 @@
-# BinkOS AI agent 测试 Playbook
+# Bink OS AI agent 测试 Playbook
 
 接口、全部 dest、参数闸门及四种结果见 [automation-entry.md](<automation-entry.md>)。本文只讲执行和验收，不再复制接口表。所有例子从仓库根运行，以 debug 包为被测对象。
 
@@ -126,7 +126,7 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 点击 App 列表与小部件列表的下滑、横向翻页、搜索、空结果、末页、大字号，检查底部不露主页/截翻页条。编辑模式App列表内部下滑不应关闭；小部件预览仍是可滚列表，不能无条件吞其下滑回滚（**第二级小部件列表的滚动是设计选择，不是缺陷**，见 [ui-scroll-vs-paged.md](ui-scroll-vs-paged.md)「有意保留滚动」，不要把它当分页改造的 TODO 提）。字体等已有单向滚问题另记。
 
-**必测边界：应用列表只剩一页。** 在应用列表搜索框里过滤到只剩 1 个应用（如 `Maps`）、或设备上带小部件的应用本来就少，列表 `pageCount == 1`，`PagedNavRow` 不发射节点；此处曾崩在 `WidgetPickerContent.kt` 的 `subcompose("footer").single()`。验收以“搜索到单页仍能选中应用”为准，不只验收多页翻页。BinkOS issue #2 即此场景。
+**必测边界：应用列表只剩一页。** 在应用列表搜索框里过滤到只剩 1 个应用（如 `Maps`）、或设备上带小部件的应用本来就少，列表 `pageCount == 1`，`PagedNavRow` 不发射节点；此处曾崩在 `WidgetPickerContent.kt` 的 `subcompose("footer").single()`。验收以“搜索到单页仍能选中应用”为准，不只验收多页翻页。Bink OS issue #2 即此场景。
 
 ### 卡片/页码
 
@@ -138,7 +138,7 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 ## 5. 通知探针
 
-完整构建/安装/权限命令见 [探针说明](<../tools/notifprobe/README.md>)，路径是仓库内tools/notifprobe。Android13+探针需要POST_NOTIFICATIONS；BinkOS需要通知访问权，脚本不静默帮用户授予。
+完整构建/安装/权限命令见 [探针说明](<../tools/notifprobe/README.md>)，路径是仓库内tools/notifprobe。Android13+探针需要POST_NOTIFICATIONS；Bink OS需要通知访问权，脚本不静默帮用户授予。
 
 - alpha/beta/gamma每次发5/4/3条；发前cancelAll自己的旧通知，再用1000+i固定ID发送。重复启动应保持每包条数，不残留旧ID。
 - 先数探针自己的消息ID 1001..1005，再打开tray/hub检验分类/过滤/分页。Android可能额外生成ranker_group汇总，计数应排除summary。用户同时新增通知会影响全局总数，不断言“系统总通知恰好12”。

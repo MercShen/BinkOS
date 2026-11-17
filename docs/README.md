@@ -1,4 +1,4 @@
-# BinkOS documentation
+# Bink OS documentation
 
 Index for contributors and maintainers. Product-facing copy rules live in
 [terminology.md](terminology.md) — **read it first if you are translating the app or changing

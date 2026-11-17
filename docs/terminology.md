@@ -1,6 +1,6 @@
-# BinkOS — Terminology & Localization Guide
+# Bink OS — Terminology & Localization Guide
 
-Audience: **locale translators** and **AI agents** editing BinkOS UI strings.
+Audience: **locale translators** and **AI agents** editing Bink OS UI strings.
 
 This file is the single source of truth for how the same concept is named in English and
 Simplified Chinese. If a string and this table disagree, fix the string (or update this table

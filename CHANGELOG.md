@@ -9,7 +9,7 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 - Give refresh animation its own switch and conditional style row in onboarding and Settings → Extras. Animation is off by default and the style is Directional by default; changing the style applies immediately.
 - Show the refresh-animation demo only on the first enable, shared across onboarding and Settings; the Regal/HD256 notice now includes looping Directional and Ripple previews with localized labels.
 - Align the onboarding vendor page typography and left edges with the Settings pages; update first-run guide and gesture copy.
-- Default BinkOS edge-swipe back to off to avoid a second back action on top of Android gesture navigation.
+- Default Bink OS edge-swipe back to off to avoid a second back action on top of Android gesture navigation.
 
 ### Notifications, Tray and Hub
 - Add per-row dismiss buttons in Tray and Hub for dismissible notifications; keep ongoing / no-clear notifications non-dismissible.

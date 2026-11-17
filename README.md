@@ -63,7 +63,7 @@ Bink OS keeps inkOS's text-first home screen and rebuilds the parts that rub aga
 - Alignment, margins and offsets in one dialog, with drag handles and hold-to-repeat steppers whose ranges match what the layout can actually use.
 
 ### Localization ready
-- **Simplified Chinese is fully supported** — the whole UI is translated (zh-CN), the app has its own language picker, and inkOS internal shortcuts (drawer, Letters, Simple Tray, Hub, recents, settings) follow the in-app language instead of the system one.
+- **Simplified Chinese is fully supported** — the whole UI is translated (zh-CN), the app has its own language picker, and Bink OS internal shortcuts (drawer, Letters, Simple Tray, Hub, recents, settings) follow the in-app language instead of the system one.
 - Translating or changing UI copy? Read the [terminology & localization guide](docs/terminology.md) first; `python tools/check-locales.py` keeps EN/ZH keys and placeholders in sync.
 
 ### Backup & restore
