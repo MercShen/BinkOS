@@ -1269,8 +1269,7 @@ class SettingsFragment : Fragment() {
                     val psm = ProfileManager(requireContext())
                     Action.entries.filter {
                         (psm.isPrivateSpaceSetUp() || it != Action.TogglePrivateSpace) &&
-                        (psm.hasWorkProfile() || it != Action.ToggleWorkProfile) &&
-                        when (it) { Action.OpenLettersScreen -> prefs.notificationsEnabled; else -> true }
+                        (psm.hasWorkProfile() || it != Action.ToggleWorkProfile)
                     }.toMutableList().apply {
                         if (!contains(Action.Brightness)) add(Action.Brightness)
                         if (!contains(Action.OpenAppDrawer)) add(Action.OpenAppDrawer)
@@ -2148,17 +2147,11 @@ class SettingsFragment : Fragment() {
             (psm.hasWorkProfile() || it != Action.ToggleWorkProfile)
         }
         val doubleTapGestureActions = filteredActions.filter { action ->
-            action != Action.OpenApp && when (action) { Action.OpenLettersScreen -> uiState.notificationsEnabled; else -> true }
+            action != Action.OpenApp
         }.toMutableList().apply { if (!contains(Action.Brightness)) add(Action.Brightness) }
-        val clickClockGestureActions = filteredActions.filter { action ->
-            when (action) { Action.OpenLettersScreen -> uiState.notificationsEnabled; else -> true }
-        }.toMutableList().apply { if (!contains(Action.Brightness)) add(Action.Brightness) }
-        val clickDateGestureActions = filteredActions.filter { action ->
-            when (action) { Action.OpenLettersScreen -> uiState.notificationsEnabled; else -> true }
-        }.toMutableList().apply { if (!contains(Action.Brightness)) add(Action.Brightness) }
-        val gestureActions = filteredActions.filter { action ->
-            when (action) { Action.OpenLettersScreen -> uiState.notificationsEnabled; else -> true }
-        }.toMutableList()
+        val clickClockGestureActions = filteredActions.toMutableList().apply { if (!contains(Action.Brightness)) add(Action.Brightness) }
+        val clickDateGestureActions = filteredActions.toMutableList().apply { if (!contains(Action.Brightness)) add(Action.Brightness) }
+        val gestureActions = filteredActions.toMutableList()
         if (!gestureActions.contains(Action.OpenAppDrawer)) gestureActions.add(Action.OpenAppDrawer)
         if (!clickClockGestureActions.contains(Action.OpenAppDrawer)) clickClockGestureActions.add(Action.OpenAppDrawer)
         if (!doubleTapGestureActions.contains(Action.OpenAppDrawer)) doubleTapGestureActions.add(Action.OpenAppDrawer)
@@ -2177,9 +2170,7 @@ class SettingsFragment : Fragment() {
         if (!doubleTapGestureActions.contains(Action.ShowRecents)) doubleTapGestureActions.add(Action.ShowRecents)
         if (!doubleTapGestureActions.contains(Action.OpenQuickSettings)) doubleTapGestureActions.add(Action.OpenQuickSettings)
         if (!doubleTapGestureActions.contains(Action.OpenPowerDialog)) doubleTapGestureActions.add(Action.OpenPowerDialog)
-        val quoteGestureActions = filteredActions.filter { action ->
-            when (action) { Action.OpenLettersScreen -> prefs.notificationsEnabled; else -> true }
-        }.toMutableList().apply { if (!contains(Action.Brightness)) add(Action.Brightness) }
+        val quoteGestureActions = filteredActions.toMutableList().apply { if (!contains(Action.Brightness)) add(Action.Brightness) }
         if (!quoteGestureActions.contains(Action.OpenAppDrawer)) quoteGestureActions.add(Action.OpenAppDrawer)
         if (!quoteGestureActions.contains(Action.ExitLauncher)) quoteGestureActions.add(Action.ExitLauncher)
         if (!quoteGestureActions.contains(Action.LockScreen)) quoteGestureActions.add(Action.LockScreen)
@@ -2712,9 +2703,6 @@ class SettingsFragment : Fragment() {
             SettingsTitle(text = stringResource(R.string.letters_window), fontSize = titleFontSize)
 
             var showAllowlistDialog by remember { mutableStateOf(false) }
-            SettingsSwitch(text = stringResource(R.string.letters_window), fontSize = titleFontSize,
-                description = stringResource(R.string.desc_enable_letters),
-                defaultState = uiState.notificationsEnabled, onCheckedChange = { viewModel.setNotificationsEnabled(it) }, enabled = pushNotificationsEnabled)
             SettingsSwitch(text = stringResource(R.string.clear_conversation_on_app_open), fontSize = titleFontSize,
                 description = stringResource(R.string.desc_clear_on_open),
                 defaultState = uiState.clearConversationOnAppOpen, enabled = pushNotificationsEnabled, onCheckedChange = { viewModel.setClearConversationOnAppOpen(it) })
@@ -2743,11 +2731,6 @@ class SettingsFragment : Fragment() {
                 }
             }
             SettingsTitle(text = stringResource(R.string.option_hub), fontSize = titleFontSize)
-            SettingsSwitch(text = stringResource(R.string.hub_hide_undeletable), fontSize = titleFontSize,
-                description = stringResource(R.string.desc_hub_hide_undeletable),
-                defaultState = uiState.hideUndeletableSystemNotifications,
-                onCheckedChange = { viewModel.setHideUndeletableSystemNotifications(it) },
-                enabled = pushNotificationsEnabled)
             var showHubAllowlistDialog by remember { mutableStateOf(false) }
             SettingsSelect(title = stringResource(R.string.hub_allowlist), option = uiState.allowedHubApps.size.toString(),
                 fontSize = titleFontSize, description = stringResource(R.string.desc_hub_filter), onClick = { showHubAllowlistDialog = true }, enabled = pushNotificationsEnabled)
@@ -2757,6 +2740,12 @@ class SettingsFragment : Fragment() {
                     showAppAllowlistDialog(getString(R.string.hub_apps), uiState.allowedHubApps) { viewModel.setAllowedHubApps(it) }
                 }
             }
+            SettingsTitle(text = stringResource(R.string.advanced_section), fontSize = titleFontSize)
+            SettingsSwitch(text = stringResource(R.string.hide_system_notification), fontSize = titleFontSize,
+                description = stringResource(R.string.desc_hide_system_notification),
+                defaultState = uiState.hideUndeletableSystemNotifications,
+                onCheckedChange = { viewModel.setHideUndeletableSystemNotifications(it) },
+                enabled = pushNotificationsEnabled)
         }
     }
 

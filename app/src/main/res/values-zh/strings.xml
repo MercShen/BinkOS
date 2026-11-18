@@ -212,7 +212,7 @@
  <string name="show_conversation_group_name">群组名称</string>
  <string name="show_message">消息内容</string>
  <string name="clear_conversation_on_app_open">应用打开时清除</string>
- <string name="letters_window">Letters 窗口</string>
+ <string name="letters_window">Letters</string>
  <string name="letters_allowlist">Letters 白名单</string>
  <string name="push_notifications">启用通知</string>
  <string name="chat_notifications_section">聊天通知</string>
@@ -227,7 +227,8 @@
  <string name="simple_tray_apps">Simple Tray 应用</string>
  <string name="hub_allowlist">Hub 白名单</string>
  <string name="hub_apps">Hub 应用</string>
- <string name="hub_hide_undeletable">隐藏不可清除的系统通知</string>
+ <string name="advanced_section">高级</string>
+ <string name="hide_system_notification">隐藏系统通知</string>
 
  <!-- App drawer -->
  <string name="app_drawer">应用抽屉</string>
@@ -796,7 +797,7 @@
  <string name="desc_quote_size">引言字号</string>
  <string name="desc_noti_label_font">标注通知字体</string>
  <string name="desc_noti_label_size">标注通知大小</string>
- <string name="desc_letters_title">Letters 窗口标题</string>
+ <string name="desc_letters_title">Letters 标题</string>
  <string name="desc_letters_title_font">Letters 标题字体</string>
  <string name="desc_letters_title_size">Letters 标题大小</string>
  <string name="desc_noti_body_font">通知正文字体</string>
@@ -811,7 +812,6 @@
  <string name="desc_group_name">显示群聊名称</string>
  <string name="desc_message_preview">消息预览文字</string>
  <string name="desc_noti_char_limit">通知字符上限</string>
- <string name="desc_enable_letters">启用 Letters 窗口</string>
  <string name="desc_clear_on_open">应用打开时清除</string>
  <string name="desc_letters_filter">选择哪些应用在 Letters 显示通知</string>
  <string name="desc_noti_per_page">每页通知数</string>
@@ -1063,5 +1063,5 @@
  <string name="badge_indicator_filled_diamond">实心菱形</string>
  <string name="no_matching_items">没有匹配项</string>
  <string name="desc_hub_filter">选择哪些应用在 Hub 显示通知</string>
- <string name="desc_hub_hide_undeletable">NFC、USB 调试这类关不掉的系统通知仍留在系统通知栏，但不进 Hub / Tray，也不计入未读数；来电与通话永不隐藏。</string>
+ <string name="desc_hide_system_notification">开启后 Bink OS 内将不再显示安卓系统通知</string>
 </resources>

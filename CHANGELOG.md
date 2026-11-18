@@ -5,7 +5,9 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 ## Unreleased
 
 ### Notifications, Tray and Hub
-- Add "Hide non-dismissible system notifications" (Settings → Notifications → Hub, off by default): ongoing / no-clear notifications posted by system apps (NFC, USB debugging, serial console and the like) no longer appear in Hub, Tray or the unread count. Calls are never hidden, and third-party ongoing notifications are kept. The system notification shade is untouched.
+- Add an Advanced section at the bottom of Settings → Notifications with a single "Hide System Notification" switch (off by default): ongoing / no-clear notifications posted by system apps (NFC, USB debugging and the like) no longer appear in Hub, Tray or the unread count. Calls are never hidden, and third-party ongoing notifications are kept. The system notification shade is untouched.
+- Remove the separate "enable Letters" master switch; the Letters action and shortcut are always available, so binding a gesture is enough.
+- Drop 窗口/"Window" from the Letters strings so the product name stays as-is.
 
 ## v0.2.7 — 2026-11-17
 

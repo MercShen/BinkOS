@@ -12,8 +12,9 @@ parity. Keep it that way.
 ## Product names — never translate
 
 Use these verbatim in **every** locale: **Bink OS, Hub, Letters, Simple Tray, Android, GitHub,
-ZIP, e-ink**. Chinese may add a Chinese suffix after a space (`Letters 窗口`, `Hub 白名单`), but
-the product name itself stays English. Do not use 信笺 / 中枢 / 简易托盘 in UI strings.
+ZIP, e-ink**. Chinese may add a Chinese suffix after a space (`Hub 白名单`, `Simple Tray 白名单`), but
+the product name itself stays English. Do not use 信笺 / 中枢 / 简易托盘 in UI strings, and do not
+append 窗口 to Letters.
 
 ---
 
@@ -35,7 +36,7 @@ the product name itself stays English. Do not use 信笺 / 中枢 / 简易托盘
 | Wallpaper visibility | Wallpaper visibility | 壁纸可见性 | Not “opacity” in visible copy. |
 | Notification badge | Notification badge | 通知角标 | Avoid “Asterisk Notification”/“星号通知” for the toggle. |
 | Label notifications | Label notifications | 标注通知 | Font picker title must match: `Label Notifications Font` / 标注通知字体. |
-| Letters window | Letters | Letters | Product name; never 字母 or 信笺. |
+| Letters screen | Letters | Letters | Product name; never 窗口 / 字母 / 信笺. |
 | Hub | Hub | Hub | Product name; never 中枢. |
 | Simple Tray | Simple Tray | Simple Tray | Product name; always with a space. |
 | Page dots setting | Page indicators | 页码指示器 | Plural in English. |

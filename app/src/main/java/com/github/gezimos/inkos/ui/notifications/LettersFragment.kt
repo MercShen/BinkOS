@@ -356,12 +356,6 @@ class LettersFragment : Fragment() {
 
         remember { prefs.appTheme == com.github.gezimos.inkos.data.Constants.Theme.Dark }
 
-        // Check if notifications are enabled
-        if (!prefs.notificationsEnabled) {
-            findNavController().popBackStack()
-            return
-        }
-
         val validNotifications = remember(notificationsMap) {
             notificationsMap.flatMap { (packageName, conversations) ->
                 conversations.map { notif -> packageName to notif }

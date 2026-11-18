@@ -125,7 +125,6 @@ data class HomeUiState(
     val showNotificationSenderName: Boolean = false,
     val showNotificationGroupName: Boolean = false,
     val showNotificationMessage: Boolean = false,
-    val notificationsEnabled: Boolean = false,
     val homeAppCharLimit: Int = 0,
     val clearConversationOnAppOpen: Boolean = false,
     val allowedBadgeNotificationApps: Set<String> = emptySet(),
@@ -571,7 +570,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         showNotificationSenderName = prefs.showNotificationSenderName,
         showNotificationGroupName = prefs.showNotificationGroupName,
         showNotificationMessage = prefs.showNotificationMessage,
-        notificationsEnabled = prefs.notificationsEnabled,
         homeAppCharLimit = prefs.homeAppCharLimit,
         clearConversationOnAppOpen = prefs.clearConversationOnAppOpen,
         allowedBadgeNotificationApps = prefs.allowedBadgeNotificationApps,
@@ -2204,12 +2202,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setShowNotificationMessage(enabled: Boolean) {
         prefs.showNotificationMessage = enabled
         _homeUiState.value = _homeUiState.value.copy(showNotificationMessage = enabled)
-    }
-
-    fun setNotificationsEnabled(enabled: Boolean) {
-        prefs.notificationsEnabled = enabled
-        _homeUiState.value = _homeUiState.value.copy(notificationsEnabled = enabled)
-        appsRepository.refreshAppList(includeHiddenApps = false, flag = null)
     }
 
 

@@ -698,10 +698,6 @@ class Prefs(val context: Context) {
 
     // ------------------
     // ------------------
-    var notificationsEnabled: Boolean
-        get() = prefs.getBoolean(NOTIFICATIONS_ENABLED, true)
-        set(value) = prefs.edit { putBoolean(NOTIFICATIONS_ENABLED, value) }
-
     var notificationsFont: Constants.FontFamily
         get() = try {
             Constants.FontFamily.valueOf(
@@ -2291,7 +2287,6 @@ var pageIndicatorMargin: Int
         private const val LETTERS_TITLE = "letters_title"
         private const val LETTERS_TITLE_FONT = "letters_title_font"
         private const val LETTERS_TITLE_SIZE = "letters_title_size"
-        private const val NOTIFICATIONS_ENABLED = "notifications_enabled"
         private const val NOTIFICATIONS_FONT = "notifications_font"
         private const val NOTIFICATIONS_TEXT_SIZE = "notifications_text_size"
         private const val NOTIFICATIONS_PER_PAGE = "notifications_per_page"

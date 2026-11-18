@@ -212,7 +212,7 @@
     <string name="show_conversation_group_name">Group Name</string>
     <string name="show_message">Message</string>
     <string name="clear_conversation_on_app_open">Clear When App Opens</string>
-    <string name="letters_window">Letters Window</string>
+    <string name="letters_window">Letters</string>
     <string name="letters_allowlist">Letters Allowlist</string>
     <string name="push_notifications">Enable Notifications</string>
     <string name="chat_notifications_section">Chat Notifications</string>
@@ -227,7 +227,8 @@
     <string name="simple_tray_apps">Simple Tray Apps</string>
     <string name="hub_allowlist">Hub Allowlist</string>
     <string name="hub_apps">Hub Apps</string>
-    <string name="hub_hide_undeletable">Hide non-dismissible system notifications</string>
+    <string name="advanced_section">Advanced</string>
+    <string name="hide_system_notification">Hide System Notification</string>
 
     <!-- App drawer -->
     <string name="app_drawer">App Drawer</string>
@@ -796,7 +797,7 @@
     <string name="desc_quote_size">Text size for quotes</string>
     <string name="desc_noti_label_font">Label notifications font</string>
     <string name="desc_noti_label_size">Label notifications size</string>
-    <string name="desc_letters_title">Letters window title</string>
+    <string name="desc_letters_title">Letters title</string>
     <string name="desc_letters_title_font">Letters title font</string>
     <string name="desc_letters_title_size">Letters title size</string>
     <string name="desc_noti_body_font">Notification body font</string>
@@ -811,7 +812,6 @@
     <string name="desc_group_name">Display group chat name</string>
     <string name="desc_message_preview">Message preview text</string>
     <string name="desc_noti_char_limit">Notification char limit</string>
-    <string name="desc_enable_letters">Enable letters window</string>
     <string name="desc_clear_on_open">Clear on app open</string>
     <string name="desc_letters_filter">Select which apps show notifications in Letters</string>
     <string name="desc_noti_per_page">Notifications per page</string>
@@ -1064,5 +1064,5 @@
     <string name="badge_indicator_filled_diamond">Filled diamond</string>
     <string name="no_matching_items">No matches</string>
     <string name="desc_hub_filter">Select which apps show notifications in Hub</string>
-    <string name="desc_hub_hide_undeletable">NFC, USB debugging and other non-dismissible system notifications stay in the system shade but are hidden from Hub, Tray and the unread count. Calls are never hidden.</string>
+    <string name="desc_hide_system_notification">Bink OS won\'t show system notifications when on</string>
 </resources>

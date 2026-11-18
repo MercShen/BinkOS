@@ -386,13 +386,6 @@ class AppsRepository(application: Application) {
                     }.toMutableList()
                 }
                 
-                if (!prefs.notificationsEnabled) {
-                    filteredApps.removeIf { app ->
-                        app.activityPackage == BuildConfig.APPLICATION_ID &&
-                        app.shortcutId == Constants.INKOS_SHORTCUT_NOTIFICATIONS
-                    }
-                }
-
                 // Filter blacklisted packages
                 if (blacklist.isNotEmpty()) {
                     filteredApps.removeIf { app -> blacklist.contains(app.activityPackage) }

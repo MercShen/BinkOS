@@ -152,7 +152,6 @@ object EditModeHelper {
     }
     private fun buildGestureActions(
         context: Context,
-        notificationsEnabled: Boolean,
         includeOpenApp: Boolean
     ): List<Constants.Action> {
         val psm = ProfileManager(context)
@@ -161,11 +160,7 @@ object EditModeHelper {
             (psm.hasWorkProfile() || it != Constants.Action.ToggleWorkProfile)
         }
         val result = actions.filter { action ->
-            if (!includeOpenApp && action == Constants.Action.OpenApp) return@filter false
-            when (action) {
-                Constants.Action.OpenLettersScreen -> notificationsEnabled
-                else -> true
-            }
+            includeOpenApp || action != Constants.Action.OpenApp
         }.toMutableList()
         if (!result.contains(Constants.Action.Brightness)) result.add(Constants.Action.Brightness)
         if (!result.contains(Constants.Action.OpenAppDrawer)) result.add(Constants.Action.OpenAppDrawer)
@@ -421,7 +416,7 @@ fun showClockSettings(context: Context, fragment: Fragment, prefs: Prefs, initia
                     }
                     2 -> {
                         // Gestures tab
-                        val clickClockActions = buildGestureActions(context, uiState.notificationsEnabled, includeOpenApp = true)
+                        val clickClockActions = buildGestureActions(context, includeOpenApp = true)
                         val appLabelClickClock = prefs.appClickClock.activityLabel
                         val clickClockDisplay = when (uiState.clickClockAction) {
                             Constants.Action.OpenApp -> if (appLabelClickClock.isEmpty()) context.getString(R.string.open_app) else appLabelClickClock
@@ -573,7 +568,7 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                     }
                     2 -> {
                         // Gestures tab
-                        val clickDateActions = buildGestureActions(context, uiState.notificationsEnabled, includeOpenApp = true)
+                        val clickDateActions = buildGestureActions(context, includeOpenApp = true)
                         val appLabelClickDate = prefs.appClickDate.activityLabel
                         val clickDateDisplay = when (uiState.clickDateAction) {
                             Constants.Action.OpenApp -> if (appLabelClickDate.isEmpty()) context.getString(R.string.open_app) else appLabelClickDate
@@ -860,7 +855,7 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                                 }
                             }
                             Constants.BottomWidgetType.Shortcuts.value -> {
-                                val shortcutActions = buildGestureActions(context, uiState.notificationsEnabled, includeOpenApp = true)
+                                val shortcutActions = buildGestureActions(context, includeOpenApp = true)
 
                                 SettingRow(label = stringResource(R.string.shortcut_left_icon), value = uiState.shortcutLeftIcon.name) {
                                     currentSheet?.dismiss()
@@ -1058,7 +1053,7 @@ fun showDateSettings(context: Context, fragment: Fragment, prefs: Prefs, initial
                     2 -> {
                         when (uiState.bottomWidgetType) {
                             Constants.BottomWidgetType.Quote.value -> {
-                                val quoteActions = buildGestureActions(context, uiState.notificationsEnabled, includeOpenApp = true)
+                                val quoteActions = buildGestureActions(context, includeOpenApp = true)
                                 val appLabelQuote = prefs.appQuoteWidget.activityLabel
                                 val quoteDisplay = when (uiState.quoteAction) {
                                     Constants.Action.OpenApp -> if (appLabelQuote.isEmpty()) context.getString(R.string.open_app) else appLabelQuote
@@ -1420,7 +1415,7 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
                     }
                     3 -> {
                         // Gestures tab (Double tap action)
-                        val doubleTapActions = buildGestureActions(context, uiState.notificationsEnabled, includeOpenApp = false)
+                        val doubleTapActions = buildGestureActions(context, includeOpenApp = false)
                         val appLabelDoubleTap = prefs.appDoubleTap.activityLabel
                         val doubleTapDisplay = when (uiState.doubleTapAction) {
                             Constants.Action.OpenAppDrawer -> context.getString(R.string.app_drawer)
@@ -2212,13 +2207,6 @@ fun showBackgroundSettings(context: Context, fragment: Fragment, prefs: Prefs, i
                     }
                     1 -> {
                         // Function tab: toggles + links to full settings
-                        ToggleRow(
-                            context.getString(R.string.letters_window),
-                            uiState.notificationsEnabled
-                        ) { checked ->
-                            vm.setNotificationsEnabled(checked)
-                            onUpdate()
-                        }
                         ToggleRow(
                             stringResource(R.string.edit_menu_clear_conversation),
                             uiState.clearConversationOnAppOpen
