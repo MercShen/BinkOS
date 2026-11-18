@@ -44,9 +44,9 @@ object BigmeEink {
     private const val APP_ANIMATION_METHOD = "setEinkAnimationForPackage"
     private const val REGAL_MODE = 180
     private const val HD_256_MODE = 0x800000B1.toInt()
-    /** 刷新波形：Regal（翻页动画可见所必需）。 */
+    /** 刷新波形：Regal（翻页动画可见所必需）。大我 Refresh mode 菜单里的 "Regal" = 180。 */
     const val MODE_REGAL = 180
-    /** 刷新波形：极速（交互跟手，但翻页动画不可见）。 */
+    /** 刷新波形：大我菜单里的 "Extreme"（=179，交互跟手，但翻页动画不可见）。 */
     const val MODE_SUPER = 179
     private const val PAGE_TURN_STYLE_RIPPLE = 1
     /** OEM appEinkAnimation codes: 10 = circle→middle (open), 9 = middle→circle (close). */

@@ -925,7 +925,7 @@
     <string name="option_page_turn_ripple">Ripple</string>
     <string name="settings_interaction_fast_mode">Smart Refresh Mode</string>
     <string name="settings_desc_interaction_fast_mode">Switch Bink OS\'s refresh mode based on interaction</string>
-    <string name="smart_refresh_guide_line">Bink OS uses Regal by default and switches to the fastest mode while you drag</string>
+    <string name="smart_refresh_guide_line">Bink OS uses Regal by default and switches to Extreme mode while you drag</string>
     <string name="settings_desc_choose_launcher">Choose which launcher to use</string>
     <string name="settings_desc_view_onboarding">View the setup wizard again</string>
     <string name="settings_desc_guide">Learn gestures and interactions</string>
