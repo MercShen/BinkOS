@@ -125,7 +125,7 @@ GUID 生成依赖 uuidgen 或 Python。Windows 不使用 Bash 的 `\` 续行；�
 | `back` | 先关最上层可见/待展示面板；没有面板则返回上一级（`mainFragment` 时不动作）；applied，message 的 currentDestination 是结果 |
 | `external` | 需要 `--es pkg com.example.app`；按启动意图拉起该 App 并离开 BinkOS（没有可启动 Activity 则 rejected）；回到 BinkOS 用 `dest=home` |
 
-无“打开任意页面”的保证：WIDGET、小部件二级选择、语言/字体等子 sheet 暂无独立 dest，按真实产品入口操作。重复导航会改变返回栈；用 home 清理测试路径，不无限叠加同一页。
+无“打开任意页面”的保证：WIDGET、小部件二级选择、字体等子 sheet 暂无独立 dest，按真实产品入口操作；应用内语言改用状态命令 `dest=language`（见第 6 节）。重复导航会改变返回栈；用 home 清理测试路径，不无限叠加同一页。
 
 ## 4. 编辑模式与面板
 
@@ -173,6 +173,7 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 | `eink_anim_on/off` | 无 | 保存翻页动画开关（`EINK_PAGE_TURN_ANIMATION`） |
 | `eink_style_directional` / `eink_style_ripple` | 无 | 保存动画样式，**不会自动打开动画开关**；要出效果需先 `eink_anim_on` |
 | `eink_fast_on/off` | 无 | 保存「智能刷新模式」开关（`EINK_INTERACTION_FAST_MODE`） |
+| `language` | --es language **必填**：`system` / `en` / `zh-CN`（另有 english、chinese、zh_cn、default 等别名） | 写应用内语言偏好并重建界面，与设置页「语言」选择器同一路径；applied message 是 `{"language":"en"}`（`system` 表示跟随系统）。 |
 | `backup` | 无 | 生成完整备份 ZIP，写到 `filesDir/backups/backup-<yyyyMMdd-HHmmss>.zip`；结果 JSON 回 `file/bytes/sha256` |
 | `restore` | path **必填** | 先清空当前数据再导入该 ZIP；path 相对 `filesDir`（如 `backups/x.zip`）或位于 `filesDir`/`cacheDir` 的绝对路径；**额外要求 `--ez confirm_clear true`**，恢复后需重启应用生效 |
 
@@ -189,6 +190,9 @@ e-ink 四个命令用来替代「点设置页 / 用 run-as 灌 prefs」，典型
 # 交互极速开关
 & $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
   --es dest eink_fast_on --ez confirm_write true
+# 应用内语言（写偏好 + 重建界面；system = 跟随系统）
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest language --es language en --ez confirm_write true
 ```
 
 附加extra：
@@ -230,7 +234,7 @@ e-ink 四个命令用来替代「点设置页 / 用 run-as 灌 prefs」，典型
 
 首次开启 refresh animations 的 Regal/HD256 弹窗没有独立 extra，需在 onboarding 或 Settings 打开动画开关；完整验收步骤见 [testing-playbook.md](<testing-playbook.md#regalhd256-刷新动画引导>)。
 - refresh先尝试系统全刷（仅einkSystemFullRefresh开启且厂商调用可用），否则100ms覆盖层闪屏；不保证物理GC16或任何波形实际效果。
-- 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget；onboarding_page只允许onboarding且为0..7；guide只允许firsttime且必须是表中名称。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
+- 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget；language只允许dest=language且取值限system/en/zh-CN；onboarding_page只允许onboarding且为0..7；guide只允许firsttime且必须是表中名称。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
 - dest值不区分大小写，extra名称区分；request_id用短可打印串(≤128字符)，推荐UUID。脚本对dest/type还做安全字符校验。
 
 ## 6.5 备份与恢复（dest backup / restore）
@@ -282,6 +286,7 @@ message是需二次解析的JSON字符串：
 | pagerVisible / homeReset | Boolean |
 | pagerMargin | 0..12整数 |
 | currentDestination | 导航resource entry name，如mainFragment/settingsFragment；**不包含设置内子路由或当前sheet** |
+| language | 应用内语言：`system` 或 tag（`en` / `zh-CN`）；读的是应用自管偏好，不是系统 LocaleManager |
 
 `type=android/shortcuts/usage/pagedots/off` 分别存为android_widget/search/total_usage/page_dots/disabled。status可随时读，不取消等待动作；不允许附带skip_onboarding或refresh_eink=true。状态命令仍会启动/前置Activity，因此“只读”指不改偏好，不是无任何UI副作用。
 

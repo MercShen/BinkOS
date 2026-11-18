@@ -118,6 +118,23 @@ class AutomationContractTest {
         assertEquals("com.android.settings", external.pkg)
         assertFalse(external.writesPreferences)
     }
+    @Test fun languageNeedsValueConfirmationAndIsLanguageOnly() {
+        rejected("dest" to "language")
+        rejected("dest" to "language", "confirm_write" to true)
+        rejected("dest" to "language", "language" to "fr", "confirm_write" to true)
+        rejected("dest" to "language", "language" to 1, "confirm_write" to true)
+        rejected("dest" to "settings", "language" to "en")
+
+        val system = accepted("dest" to "lang", "language" to " Follow_System ", "confirm_write" to true)
+        assertEquals("language", system.dest)
+        assertEquals("", system.language)
+        assertTrue(system.writesPreferences)
+        assertFalse(system.needsHome)
+        assertEquals("en", accepted("dest" to "locale", "language" to "English",
+            "confirm_write" to true).language)
+        assertEquals("zh-CN", accepted("dest" to "language", "language" to "zh_cn",
+            "confirm_write" to true).language)
+    }
     @Test fun backupNeedsConfirmationAndRestoreNeedsTwoGatesPlusPath() {
         rejected("dest" to "backup")
         val backup = accepted("dest" to "backup", "confirm_write" to true)

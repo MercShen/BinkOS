@@ -5,11 +5,12 @@
   契约（与 MainActivity 的 automation_result 日志配合）：
     - 目标 App 默认 debug（app.binkos.debug），-App release 切到 app.binkos
     - -Dest 必填，本地只接受 ^[a-z_]+$（长度 <= 48），避免远程 sh 拆分/注入
-    - -Tab / -Value / -Type / -Pkg 仅在显式传入时下发；显式 -Type '' 本地拒绝，避免 adb shell 参数歧义
-    - -Pkg 只允许与 -Dest external 搭配；-Path 只允许与 -Dest restore 搭配（不含 ..）
+    - -Tab / -Value / -Type / -Language / -Pkg 仅在显式传入时下发；显式 -Type '' 本地拒绝，避免 adb shell 参数歧义
+    - -Pkg 只允许与 -Dest external 搭配；-Path 只允许与 -Dest restore 搭配（不含 ..）；
+      -Language 只允许与 -Dest language 搭配（system|en|zh-CN）
     - restore 额外要求 -AllowClear（附加 --ez confirm_clear true）；backup/restore 属状态写操作，需 -AllowStateChanges
     - 每次生成 request_id(UUID)，随 --es request_id 下发
-    - 状态写操作（pager_* / home_reset_* / bottom* / allowlist* / eink_*）默认本地拒绝；
+    - 状态写操作（pager_* / home_reset_* / bottom* / allowlist* / eink_* / language）默认本地拒绝；
       必须显式 -AllowStateChanges，才会附加 --ez confirm_write true
     - 结果以 MainActivity 的 automation_result: JSON 为准：
         applied    -> 成功（若给了 -ExpectedText，还会校验 UI 上确有该文字）
@@ -39,6 +40,7 @@
     .\automate.ps1 -Dest back
     .\automate.ps1 -Dest external -Pkg com.android.settings
     .\automate.ps1 -Dest bottomwidget -Type quote -AllowStateChanges
+    .\automate.ps1 -Dest language -Language en -AllowStateChanges
     .\automate.ps1 -Dest backup -AllowStateChanges
     .\automate.ps1 -Dest restore -Path backups/x.zip -AllowStateChanges -AllowClear
 
@@ -53,6 +55,7 @@ param(
     [int]$Tab,
     [int]$Value,
     [string]$Type,
+    [string]$Language,
     [string]$Pkg,
     [string]$Path,
 
@@ -89,7 +92,7 @@ $packages = @{
     release = 'app.binkos'
 }
 $launcherComponent = 'com.github.gezimos.inkos.MainActivity'
-$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist', '^eink_', '^backup$', '^restore$')
+$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist', '^eink_', '^language$', '^backup$', '^restore$')
 $destPattern = '^[A-Za-z_]+$'
 $typePattern = '^[A-Za-z0-9_.\-]*$'
 $component = "$($packages[$App])/$launcherComponent"
@@ -352,6 +355,21 @@ if ($PSBoundParameters.ContainsKey('Type')) {
     $typeValue = ''
 }
 
+if ($PSBoundParameters.ContainsKey('Language')) {
+    $languageValue = [string]$Language
+    if ($destValue -ne 'language') {
+        Write-Host 'error: -Language is only supported with -Dest language' -ForegroundColor Red
+        exit $exitUsage
+    }
+    $languageValues = @('system', 'follow_system', 'default', 'en', 'english', 'zh', 'zh-cn', 'zh_cn', 'chinese')
+    if ($languageValue.ToLowerInvariant() -notin $languageValues) {
+        Write-Host "error: -Language must be system, en or zh-CN (got '$languageValue')" -ForegroundColor Red
+        exit $exitUsage
+    }
+} else {
+    $languageValue = ''
+}
+
 $isStateDest = $false
 foreach ($pattern in $stateDestPatterns) {
     if ($destValue -match $pattern) { $isStateDest = $true; break }
@@ -409,6 +427,7 @@ $startArgs = @('shell', 'am', 'start', '-n', $component, '--es', 'dest', $destVa
 if ($PSBoundParameters.ContainsKey('Tab')) { $startArgs += @('--ei', 'tab', [string]$Tab) }
 if ($PSBoundParameters.ContainsKey('Value')) { $startArgs += @('--ei', 'value', [string]$Value) }
 if ($PSBoundParameters.ContainsKey('Type')) { $startArgs += @('--es', 'type', $typeValue) }
+if ($PSBoundParameters.ContainsKey('Language')) { $startArgs += @('--es', 'language', $languageValue) }
 if ($PSBoundParameters.ContainsKey('Pkg')) { $startArgs += @('--es', 'pkg', ([string]$Pkg)) }
 if ($PSBoundParameters.ContainsKey('Path')) { $startArgs += @('--es', 'path', ([string]$Path)) }
 if ($AllowStateChanges) { $startArgs += @('--ez', 'confirm_write', 'true') }

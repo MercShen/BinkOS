@@ -130,7 +130,7 @@ Write-Host 'contract checks' -ForegroundColor Cyan
 $autoParams = (Get-Command -Name $automate).Parameters
 Assert-True -Name 'automate has mandatory -Dest' -Ok ($autoParams.ContainsKey('Dest') -and @($autoParams['Dest'].Attributes | Where-Object { $_.Mandatory }).Count -gt 0)
 Assert-True -Name 'automate has -AllowStateChanges switch' -Ok ($autoParams.ContainsKey('AllowStateChanges') -and $autoParams['AllowStateChanges'].SwitchParameter)
-foreach ($name in @('Tab', 'Value', 'Type', 'Serial', 'AdbPath', 'ExpectedText', 'TimeoutSeconds', 'App')) {
+foreach ($name in @('Tab', 'Value', 'Type', 'Language', 'Serial', 'AdbPath', 'ExpectedText', 'TimeoutSeconds', 'App')) {
     Assert-True -Name ("automate has -{0}" -f $name) -Ok $autoParams.ContainsKey($name)
 }
 $homeParams = (Get-Command -Name $homeScript).Parameters
@@ -171,6 +171,26 @@ $requestId = (Read-StateFile $case 'request_id.txt').Trim()
 Assert-True -Name 'request_id is uuid' -Ok ($requestId -match $uuidPattern) -Detail $requestId
 Assert-True -Name 'request_id forwarded in am start' -Ok ($startLog -match [regex]::Escape($requestId))
 Assert-True -Name 'serial forwarded to adb' -Ok ((Read-StateFile $case 'last_serial.txt').Trim() -eq 'S1')
+
+$case = Join-Path $stateRoot 'language-denied'
+$r = Invoke-Child -ScriptPath $automate -ScriptArgs @('-Dest', 'language', '-Language', 'en', '-Serial', 'S1', '-AdbPath', $fakeAdb) -Env $baseEnv -StateDir $case
+Assert-True -Name 'language refused without -AllowStateChanges' -Ok ($r.Code -eq 2 -and (($r.Err + $r.Out) -match 'refused')) -Detail ("code={0}" -f $r.Code)
+Assert-True -Name 'language refusal sends no am start' -Ok ((Read-StateFile $case 'am_start.txt').Trim() -eq '')
+
+$case = Join-Path $stateRoot 'language-allowed'
+$r = Invoke-Child -ScriptPath $automate -ScriptArgs @('-Dest', 'language', '-Language', 'en', '-AllowStateChanges', '-Serial', 'S1', '-AdbPath', $fakeAdb) -Env (New-Env @{ FAKE_STATUS = 'applied'; FAKE_DEST = 'language'; FAKE_MESSAGE = '{"language":"en"}' }) -StateDir $case
+$startLog = Read-StateFile $case 'am_start.txt'
+Assert-True -Name 'language applied exits 0' -Ok ($r.Code -eq 0) -Detail $r.Err
+Assert-True -Name 'language forwards --es language en' -Ok ($startLog -match '--es language en')
+Assert-True -Name 'language sends confirm_write true' -Ok ($startLog -match '--ez confirm_write true')
+
+$case = Join-Path $stateRoot 'language-value-invalid'
+$r = Invoke-Child -ScriptPath $automate -ScriptArgs @('-Dest', 'language', '-Language', 'fr', '-AllowStateChanges', '-Serial', 'S1', '-AdbPath', $fakeAdb) -Env $baseEnv -StateDir $case
+Assert-True -Name 'invalid -Language refused locally' -Ok ($r.Code -eq 2) -Detail ("code={0}" -f $r.Code)
+
+$case = Join-Path $stateRoot 'language-wrong-dest'
+$r = Invoke-Child -ScriptPath $automate -ScriptArgs @('-Dest', 'settings', '-Language', 'en', '-Serial', 'S1', '-AdbPath', $fakeAdb) -Env $baseEnv -StateDir $case
+Assert-True -Name '-Language rejected on non-language dest' -Ok ($r.Code -eq 2) -Detail ("code={0}" -f $r.Code)
 
 foreach ($statusCase in @(@('rejected', 3), @('cancelled', 4))) {
     $status = $statusCase[0]; $wantCode = [int]$statusCase[1]

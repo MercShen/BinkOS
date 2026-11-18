@@ -197,12 +197,13 @@ class MainActivity : AppCompatActivity() {
      *
      * 支持的 dest：
      *   home / drawer / recents / tray / hub / letters / settings /
-     *   lookfeel / about / wallpaper / colors / themes / guide / onboarding
+     *   lookfeel / about / wallpaper / colors / themes / guide / onboarding / language
      *
      * 额外开关：
      *    --ez skip_onboarding true   清掉首启标记（不再卡在引导）
      *    --ez refresh_eink true      打开界面后强制一次 GC16 全刷
      *    --ei onboarding_page N     仅 dest=onboarding，直接打开第 N 页（0..7，需 confirm_write）
+     *    --es language system|en|zh-CN   仅 dest=language，写语言偏好并重建界面（需 confirm_write）
      *
      * @return true 表示这条 intent 已被自动化入口处理，调用方不必再走普通分支。
      */
@@ -223,6 +224,8 @@ class MainActivity : AppCompatActivity() {
     private var pendingAutomationCancelled: (() -> Unit)? = null
     /** 某些命令（备份/恢复）要把文件信息回给调用方，而不是通用状态 JSON。 */
     private var automationExtraMessage: String? = null
+    /** dest=language 要在 automation_result 写进日志之后再重建界面，否则结果容易丢。 */
+    private var automationRecreateAfterResult = false
 
     private fun automationResult(requestId: String, dest: String, status: String, message: String) {
         val result = org.json.JSONObject()
@@ -247,13 +250,14 @@ class MainActivity : AppCompatActivity() {
             .put("homeReset", prefs.homeReset).put("currentDestination", navController.currentDestination?.id?.let {
                 resources.getResourceEntryName(it)
             })
+            .put("language", AppLocale.currentTag(this).ifEmpty { "system" })
             .toString()
     }
 
     private fun handleAutomationIntent(intent: Intent?): Boolean {
         intent ?: return false
         val keys = listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
-            "onboarding_page", "guide", "tab", "value", "type", "pkg", "path", "confirm_write", "confirm_clear", "request_id")
+            "onboarding_page", "guide", "tab", "value", "type", "language", "pkg", "path", "confirm_write", "confirm_clear", "request_id")
         // Ordinary launcher intents are not automation requests. Never consume their product extras.
         if (!listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
                 "request_id").any { intent.hasExtra(it) }) return false
@@ -325,6 +329,7 @@ class MainActivity : AppCompatActivity() {
                 pendingAutomationCancelled = null
                 try {
                     automationExtraMessage = null
+                    automationRecreateAfterResult = false
                     dispatchAutomation(request)
                     if (request.skipOnboarding) prefs.firstOpen = false
                     val applied = request.isStateCommand ||
@@ -333,6 +338,11 @@ class MainActivity : AppCompatActivity() {
                         if (applied) "applied" else "dispatched",
                         automationExtraMessage ?: if (applied) automationState()
                         else "Dispatched; verify the target UI (authentication/loading may still be pending)")
+                    if (automationRecreateAfterResult) {
+                        automationRecreateAfterResult = false
+                        // 语言变更要重建 Activity 才生效；延后一拍保证 automation_result 先落日志。
+                        automationHandler.postDelayed({ if (!isFinishing && !isDestroyed) recreate() }, 250L)
+                    }
                 } catch (e: Exception) {
                     automationResult(requestId, request.dest, "rejected", "Dispatch failed: ${e.javaClass.simpleName}")
                 }
@@ -476,6 +486,15 @@ class MainActivity : AppCompatActivity() {
             "eink_style_ripple" -> viewModel.setEinkPageTurnAnimationStyle(1)
             "eink_fast_on" -> viewModel.setEinkInteractionFastMode(true)
             "eink_fast_off" -> viewModel.setEinkInteractionFastMode(false)
+            // --- 应用内语言：写自管偏好并重建界面，等价于设置页的语言选择器 ---
+            "language" -> {
+                val tag = requireNotNull(request.language) { "language requires a value" }
+                AppLocale.setTag(this, tag)
+                automationExtraMessage = org.json.JSONObject()
+                    .put("language", tag.ifEmpty { "system" })
+                    .toString()
+                automationRecreateAfterResult = true
+            }
             "back" -> {
                 // 先关掉最上层可见的面板；没有面板才当作「返回上一级」。
                 val closedSheet = try {
