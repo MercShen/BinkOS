@@ -1354,12 +1354,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     // PAGE MANAGEMENT (for home screen pagination)
     // ================================================================================
 
-    fun setCurrentPage(page: Int) {
+    /**
+     * @param animate 是否播放大我翻页动画。用户手动翻页传 true；回到主屏时「主屏页重置 /
+     *   HOME 键回第一页」这类自动归位传 false —— 它不是用户翻页，播动画会变成一次
+     *   方向式翻页，和 Ripple 样式下「返回主屏」的预期冲突。
+     */
+    fun setCurrentPage(page: Int, animate: Boolean = true) {
         val totalPages = _homeUiState.value.homePagesNum
         val previousPage = _homeUiState.value.currentPage
         val clampedPage = page.coerceIn(0, maxOf(totalPages - 1, 0))
         if (clampedPage == previousPage) return
         _homeUiState.value = _homeUiState.value.copy(currentPage = clampedPage)
+        if (!animate) return
         // 大我墨水屏翻页动画：方向只看翻到了哪一页（下一页/上一页），不看手指方向
         if (prefs.einkPageTurnAnimation) {
             try {

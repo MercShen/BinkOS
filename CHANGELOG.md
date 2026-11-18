@@ -4,6 +4,11 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## Unreleased
 
+### E-ink
+- Ripple refresh animation now covers every transition except home paging: entering a screen sends 10, going back or returning home sends 9, decided from the navigation stack rather than from long-swipe bindings, so screens without a gesture entry (wallpaper, guide, …) animate too. Falling back to a Directional wipe when the vendor call fails is gone.
+- Returning to Home no longer plays a Directional page turn when the home page auto-resets: the auto-reset is not a user page turn, so it no longer animates (a Ripple close plays instead when coming back from another app).
+- Home paging clears any lingering Ripple style first, so paging stays Directional in Ripple mode.
+
 ### Notifications, Tray and Hub
 - Add an Advanced section at the bottom of Settings → Notifications with a single "Hide System Notification" switch (off by default): ongoing / no-clear notifications posted by system apps (NFC, USB debugging and the like) no longer appear in Hub, Tray or the unread count. Calls are never hidden, and third-party ongoing notifications are kept. The system notification shade is untouched.
 - Remove the separate "enable Letters" master switch; the Letters action and shortcut are always available, so binding a gesture is enough.

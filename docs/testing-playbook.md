@@ -156,7 +156,8 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - Letters 没有独立「启用」总开关：`OpenLettersScreen` 动作与 Letters 快捷方式始终可用，没绑手势自然没有入口；`Letters` 文案里不再带「窗口」。
 - Hub 分类 tab 的映射：**消息** = `CATEGORY_MESSAGE`/`CATEGORY_SOCIAL` 或包名在硬编码 `messagingPackages` 名单里（兜住不发 category 的 IM）；**电话** = `CATEGORY_CALL`/`CATEGORY_MISSED_CALL`，或发件包是默认拨号器（`TelecomManager.defaultDialerPackage` + 常见包名集合；部分 ROM 的通话/未接来电通知不打 category）；**邮件/日程** = `CATEGORY_EMAIL`/`CATEGORY_EVENT`；**其他** = 不属于消息、也不属于电话且 category 不在已知集合的补集。回归：去电时电话 tab 计数为 0（通话中不进 Hub）、未接来电进电话 tab。
 - Simple Tray 行右侧同样有小叉（仅可清除通知）；点击删除单条，长按仍保留媒体停止/删除行为。
-- Extra → Page Turn Animation Style 只在翻页动画开关启用时出现：`Directional` 走 `setEinkAnimationTimeout`；`Ripple` 用 `appEinkAnimation`，打开下发 10、关闭下发 9，800ms 后回 0，避免时钟等刷新持续播 Ripple。Ripple 不再只认“从主页进入”：App Drawer/其它页进入子页播 10，返回 App Drawer/主页播 9。
+- Extra → Page Turn Animation Style 只在翻页动画开关启用时出现：`Directional` 走 `setEinkAnimationTimeout`；`Ripple` 用 `appEinkAnimation`，打开下发 10、关闭下发 9，800ms 后回 0，避免时钟等刷新持续播 Ripple。**Ripple 的规则是「只有主页翻页留 Directional，其它一律 Ripple」**：靠 `navController.previousBackStackEntry` 判断前进/返回（进入下一级 10、返回上一级/回主页 9），与长滑绑定无关，所以壁纸/指南这类没绑手势的页面也会播；Ripple 下发失败只记日志，**不再回退 Directional**（回退会表现为「返回突然变成方向式擦除」）。从其它 App 按 Home 回主屏没有导航变化，由 `backToHomeScreen()` 补一次 9。
+- 主屏「主屏页重置 / HOME 键回第一页」是自动归位，`setCurrentPage(0, animate = false)` 不播翻页动画：否则 Ripple 样式下返回主屏会看到一次方向式翻页（B651 实测：开了页重置 + 停在非首页时必现）。只有用户手动翻页才播 Directional。
 - 设置页允许从图标/齿轮直接点入：`OpenSettings` 未绑定长滑时也会用默认 R2L 打开、L2R 关闭；但反向长滑仍然不关闭（仍需显式绑定）。
 - Simple Tray 的反向长滑关闭与 Hub 同规则：`OpenSimpleTray` 绑定时（当前下滑开→上滑关）才关闭；未绑定不关闭，也不播动画。
 - 媒体通知（Spotify/网易云/Audible 等 `CATEGORY_TRANSPORT`）不计入主页全局通知数量，也不计入 Tray 顶部数字；Tray 是否显示媒体卡由 Simple Tray 白名单决定；Letters 永不显示 transport/媒体持续通知。

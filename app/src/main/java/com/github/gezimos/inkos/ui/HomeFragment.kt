@@ -618,11 +618,12 @@ class HomeFragmentCompose : Fragment() {
         
         viewModel.refreshClock()
         
+        // 自动归位不是用户翻页：不播方向式翻页动画（Ripple 样式下回到主屏只该有 Ripple）。
         if (goToFirstPageSignal) {
-            viewModel.setCurrentPage(0)
+            viewModel.setCurrentPage(0, animate = false)
             goToFirstPageSignal = false
         } else if (prefs.homeReset) {
-            viewModel.setCurrentPage(0)
+            viewModel.setCurrentPage(0, animate = false)
         }
 
         if (prefs.bottomWidgetType == Constants.BottomWidgetType.Events.value) {

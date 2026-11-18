@@ -681,7 +681,17 @@ class MainActivity : AppCompatActivity() {
         try {
             com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.dismissAllSheets()
         } catch (_: Exception) {}
+        val alreadyAtHome = navController.currentDestination?.id == R.id.mainFragment
+        val returningFromBackground = wasInBackground
         navController.popBackStack(R.id.mainFragment, false)
+        // 已经在主屏时 pop 不会产生导航变化（例如从其它 App 按 Home 回来）：
+        // 这里补一次 Ripple 关闭。内部界面的返回由导航监听负责，不会重复播放。
+        if (alreadyAtHome && returningFromBackground &&
+            prefs.einkPageTurnAnimation && prefs.einkPageTurnAnimationStyle == 1
+        ) {
+            Log.i(TAG, "ripple close: returning to home from another app")
+            try { BigmeEink.onScreenClosed(this) } catch (_: Exception) {}
+        }
         try {
             com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEink(
                 this,
@@ -713,45 +723,50 @@ class MainActivity : AppCompatActivity() {
      * 设置页允许从图标/齿轮直接点入：没有绑定 OpenSettings 长滑时，用默认 R2L 打开、
      * 关闭 L2R，避免“直接点进去没有动画”；其它界面仍要求绑定方向。
      *
-     * Ripple 模式按界面切换而不是只看“是否从主页进入”：
-     * App Drawer → 设置/其它页播打开（10）；从子页返回 App Drawer/主页播关闭（9）。
+     * Ripple 样式只有一种规则：**除主页翻页外，进入下一级 = 10、返回上一级/回主页 = 9**，
+     * 与长滑绑定无关，也绝不回退 Directional。前进/返回由 `previousBackStackEntry`
+     * 判断，所以壁纸/指南这类没有长滑入口的界面也能正确播放。
      */
     private fun handleScreenAnimation(currentId: Int, previousId: Int) {
         if (!prefs.einkPageTurnAnimation) return
         val currentAction = gestureActionFor(currentId)
         val previousAction = gestureActionFor(previousId)
-        val ripple = prefs.einkPageTurnAnimationStyle == 1
-        val previousDirection = currentScreenOpenDirection
+        val bound = currentAction?.let { GestureBindings.directionFor(it, prefs) }
+        val openDirection = bound ?: if (currentAction == Constants.Action.OpenSettings) {
+            BigmeEink.Direction.R2L
+        } else null
+
+        if (prefs.einkPageTurnAnimationStyle == 1) {
+            if (previousId == -1) return
+            // 「前进」= 当前界面的上一层就是刚才那个界面；否则是返回（pop）。
+            // 用 previousBackStackEntry 而不是数栈深度，避免连图(nested graph)与
+            // 回调时序造成的误判。
+            val previousEntryId = try {
+                navController.previousBackStackEntry?.destination?.id ?: -1
+            } catch (_: Exception) {
+                -1
+            }
+            val opened = when {
+                previousEntryId == previousId -> true
+                previousEntryId == -1 -> currentId != R.id.mainFragment
+                else -> false
+            }
+            Log.i(TAG, "ripple ${if (opened) "open" else "close"} $previousId->$currentId prevEntry=$previousEntryId")
+            if (opened) {
+                currentScreenOpenDirection = openDirection
+                BigmeEink.onScreenOpened(this, openDirection)
+            } else {
+                BigmeEink.onScreenClosed(this, currentScreenOpenDirection?.let { GestureBindings.opposite(it) })
+                currentScreenOpenDirection = null
+            }
+            return
+        }
 
         when {
             currentAction != null -> {
-                val bound = GestureBindings.directionFor(currentAction, prefs)
-                val direction = bound ?: if (currentAction == Constants.Action.OpenSettings) {
-                    BigmeEink.Direction.R2L
-                } else null
-
-                if (previousAction == null) {
-                    currentScreenOpenDirection = direction
-                    if (direction != null) {
-                        BigmeEink.onScreenOpened(this, direction)
-                    }
-                } else if (ripple && currentAction != previousAction) {
-                    if (currentAction == Constants.Action.OpenAppDrawer) {
-                        // 从设置/其它子页返回 App Drawer：这是关闭，不是再打开抽屉
-                        val closeBase = previousDirection ?: direction
-                        if (closeBase != null) {
-                            BigmeEink.onScreenClosed(this, GestureBindings.opposite(closeBase))
-                        }
-                        currentScreenOpenDirection = null
-                    } else {
-                        // 从 App Drawer/其它页进入子页：播放入场 Ripple
-                        currentScreenOpenDirection = direction
-                        if (direction != null) {
-                            BigmeEink.onScreenOpened(this, direction)
-                        }
-                    }
-                } else {
-                    currentScreenOpenDirection = direction
+                currentScreenOpenDirection = openDirection
+                if (previousAction == null && openDirection != null) {
+                    BigmeEink.onScreenOpened(this, openDirection)
                 }
             }
             previousAction != null -> {

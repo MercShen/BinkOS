@@ -175,27 +175,41 @@ object BigmeEink {
     /** 最近一次手势方向（仍在时间窗内），没有则返回 null。 */
     fun recentSwipeOrNull(): Direction? = recentSwipe()
 
-    /** 打开一个由手势绑定的界面：按 [direction] 播放。 */
-    fun onScreenOpened(context: Context, direction: Direction) {
+    /**
+     * 打开一个界面。
+     *
+     * Ripple 样式：下发固定样式 10（与方向无关），**绝不回退 Directional** ——
+     * 回退会让「打开/返回」在 Ripple 样式下突然变成方向式擦除。
+     * Directional 样式才需要 [direction]。
+     */
+    fun onScreenOpened(context: Context, direction: Direction? = null) {
         val ctx = context.applicationContext
-        if (isRippleStyle(ctx) && applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_OPEN)) {
-            scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_OPEN)
+        if (isRippleStyle(ctx)) {
+            if (applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_OPEN)) {
+                scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_OPEN)
+            } else {
+                Log.w(TAG, "ripple open skipped: app animation unavailable (never fall back to directional)")
+            }
             return
         }
         // Directional 模式不能残留上一次的 Ripple 固定样式。
         applyAppAnimation(ctx, 0)
-        trigger(context, direction, "open")
+        if (direction != null) trigger(ctx, direction, "open")
     }
 
-    /** 关闭同一个界面：按关闭方向 [direction] 播放。 */
-    fun onScreenClosed(context: Context, direction: Direction) {
+    /** 关闭同一个界面。Ripple 样式下发 9；Directional 样式按关闭方向播放。 */
+    fun onScreenClosed(context: Context, direction: Direction? = null) {
         val ctx = context.applicationContext
-        if (isRippleStyle(ctx) && applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_CLOSE)) {
-            scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_CLOSE)
+        if (isRippleStyle(ctx)) {
+            if (applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_CLOSE)) {
+                scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_CLOSE)
+            } else {
+                Log.w(TAG, "ripple close skipped: app animation unavailable (never fall back to directional)")
+            }
             return
         }
         applyAppAnimation(ctx, 0)
-        trigger(context, direction, "close")
+        if (direction != null) trigger(ctx, direction, "close")
     }
 
     /** 固定样式只服务于这一次界面切换；动画结束后回到 none，避免时钟等刷新一直播 Ripple。 */
@@ -219,6 +233,9 @@ object BigmeEink {
     /**
      * 设置 OEM 的固定按应用动画（appEinkAnimation）。
      * 10 = 中间→圆周（打开），9 = 圆周→中间（关闭），0 = none。
+     *
+     * 厂商实现里 `applyDisplayPolicy` 在 `insertDisplayPolicy` 之前执行，所以返回 false
+     * （入库失败）并不代表动画没下发 —— 这里只记录结果，不据此回退。
      */
     private fun applyAppAnimation(context: Context, code: Int): Boolean {
         if (!available || policy == null) return false
@@ -226,9 +243,8 @@ object BigmeEink {
         if (lastAppAnimationCode == code) return true
         return try {
             val result = method.invoke(policy, context.packageName, code)
-            if (result is Boolean && !result) return false
             lastAppAnimationCode = code
-            Log.d(TAG, "appEinkAnimation=$code pkg=${context.packageName}")
+            Log.i(TAG, "appEinkAnimation=$code pkg=${context.packageName} result=$result")
             true
         } catch (t: Throwable) {
             Log.w(TAG, "setEinkAnimationForPackage($code) failed: ${t.javaClass.simpleName}: ${t.message}")
@@ -248,10 +264,15 @@ object BigmeEink {
     /**
      * 主页收藏应用列表翻页。方向由「翻到哪一页」决定，与手指方向无关：
      * 下一页 = 新内容自下而上进入（4），上一页 = 自上而下（3）。
+     *
+     * 主页翻页是唯一保留 Directional 的场景；Ripple 样式下先清掉可能残留的固定样式，
+     * 否则这次翻页会被厂商当成 Ripple 播放（临时动画只覆盖 500ms，持久样式可覆盖更久）。
      */
     fun onHomePageTurn(context: Context, forward: Boolean) {
+        val ctx = context.applicationContext
+        if (isRippleStyle(ctx)) resetAppEinkAnimation(ctx)
         trigger(
-            context,
+            ctx,
             if (forward) Direction.B2T else Direction.T2B,
             if (forward) "home page next" else "home page prev",
         )
