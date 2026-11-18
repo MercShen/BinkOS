@@ -100,6 +100,7 @@ import com.github.gezimos.inkos.data.Constants.AppDrawerFlag
 import com.github.gezimos.inkos.data.Constants.Theme.Dark
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.CalendarEventsHelper
+import com.github.gezimos.inkos.helper.EinkCapabilities
 import com.github.gezimos.inkos.helper.IconPackUtility
 import com.github.gezimos.inkos.helper.IconUtility
 import com.github.gezimos.inkos.helper.ShapeHelper
@@ -787,6 +788,10 @@ class SettingsFragment : Fragment() {
         var showRefreshAnimationDemo by remember { mutableStateOf(false) }
         var showSmartRefreshGuide by remember { mutableStateOf(false) }
         val isMuditaDevice = remember { EinkHelper.isMuditaKompakt() }
+        // 厂商增强开关按能力位显示：换品牌 / 机型时只改 EinkCapabilities，界面代码不动。
+        val supportsFullRefresh = remember { EinkCapabilities.supportsSystemFullRefresh }
+        val supportsPageTurnAnimation = remember { EinkCapabilities.supportsPageTurnAnimation }
+        val supportsSmartRefreshMode = remember { EinkCapabilities.supportsSmartRefreshMode }
         Column(modifier = Modifier.fillMaxSize()) {
             if (isMuditaDevice) {
                 SettingsTitle(text = stringResource(R.string.eink_auto_mode), fontSize = titleFontSize)
@@ -818,7 +823,7 @@ class SettingsFragment : Fragment() {
                 )
             }
             // 延迟只用于闪烁回退方案；启用系统全刷后该选项无意义，直接隐藏
-            if (!uiState.einkSystemFullRefresh) {
+            if (!(supportsFullRefresh && uiState.einkSystemFullRefresh)) {
                 SettingsSelect(
                     title = stringResource(R.string.eink_refresh_delay), option = "${uiState.einkRefreshDelay} ms", fontSize = titleFontSize,
                     description = stringResource(R.string.desc_eink_interval),
@@ -838,79 +843,85 @@ class SettingsFragment : Fragment() {
                 defaultState = uiState.useVolumeKeysForPages,
                 onCheckedChange = { viewModel.setUseVolumeKeysForPages(it) }
             )
-            // 与自动刷新开关独立：手势触发全刷（refreshEinkForced）同样走这里
-            SettingsSwitch(
-                text = stringResource(R.string.settings_system_full_refresh),
-                fontSize = titleFontSize,
-                description = stringResource(R.string.settings_desc_system_full_refresh),
-                defaultState = uiState.einkSystemFullRefresh,
-                onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
-            )
-            SettingsSwitch(
-                text = stringResource(R.string.settings_page_turn_animation),
-                fontSize = titleFontSize,
-                description = stringResource(R.string.settings_desc_page_turn_animation),
-                defaultState = uiState.einkPageTurnAnimation,
-                onCheckedChange = { enabled ->
-                    viewModel.setEinkPageTurnAnimation(enabled)
-                    if (enabled && RefreshAnimationDemo.shouldShow(prefs)) {
-                        RefreshAnimationDemo.markShown(prefs)
-                        showRefreshAnimationDemo = true
-                    }
-                    if (!enabled) showRefreshAnimationDemo = false
-                }
-            )
-            if (uiState.einkPageTurnAnimation) {
-                SettingsSelect(
-                    title = stringResource(R.string.settings_page_turn_animation_style),
-                    option = stringResource(
-                        if (uiState.einkPageTurnAnimationStyle == 1) {
-                            R.string.option_page_turn_ripple
-                        } else {
-                            R.string.option_page_turn_directional
-                        }
-                    ),
+            if (supportsFullRefresh) {
+                // 与自动刷新开关独立：手势触发全刷（refreshEinkForced）同样走这里
+                SettingsSwitch(
+                    text = stringResource(R.string.settings_system_full_refresh),
                     fontSize = titleFontSize,
-                    description = stringResource(R.string.settings_desc_page_turn_animation_style),
-                    onClick = {
-                        viewModel.setEinkPageTurnAnimationStyle(
-                            if (uiState.einkPageTurnAnimationStyle == 1) 0 else 1
-                        )
-                    }
+                    description = stringResource(R.string.settings_desc_system_full_refresh),
+                    defaultState = uiState.einkSystemFullRefresh,
+                    onCheckedChange = { viewModel.setEinkSystemFullRefresh(it) }
                 )
             }
-            SettingsSwitch(
-                text = stringResource(R.string.settings_interaction_fast_mode),
-                fontSize = titleFontSize,
-                description = stringResource(R.string.settings_desc_interaction_fast_mode),
-                defaultState = uiState.einkInteractionFastMode,
-                onCheckedChange = { enabled ->
-                    viewModel.setEinkInteractionFastMode(enabled)
-                    if (enabled && SmartRefreshGuide.shouldShow(prefs)) {
-                        SmartRefreshGuide.markShown(prefs)
-                        showSmartRefreshGuide = true
+            if (supportsPageTurnAnimation) {
+                SettingsSwitch(
+                    text = stringResource(R.string.settings_page_turn_animation),
+                    fontSize = titleFontSize,
+                    description = stringResource(R.string.settings_desc_page_turn_animation),
+                    defaultState = uiState.einkPageTurnAnimation,
+                    onCheckedChange = { enabled ->
+                        viewModel.setEinkPageTurnAnimation(enabled)
+                        if (enabled && RefreshAnimationDemo.shouldShow(prefs)) {
+                            RefreshAnimationDemo.markShown(prefs)
+                            showRefreshAnimationDemo = true
+                        }
+                        if (!enabled) showRefreshAnimationDemo = false
                     }
-                    if (!enabled) showSmartRefreshGuide = false
+                )
+                if (uiState.einkPageTurnAnimation) {
+                    SettingsSelect(
+                        title = stringResource(R.string.settings_page_turn_animation_style),
+                        option = stringResource(
+                            if (uiState.einkPageTurnAnimationStyle == 1) {
+                                R.string.option_page_turn_ripple
+                            } else {
+                                R.string.option_page_turn_directional
+                            }
+                        ),
+                        fontSize = titleFontSize,
+                        description = stringResource(R.string.settings_desc_page_turn_animation_style),
+                        onClick = {
+                            viewModel.setEinkPageTurnAnimationStyle(
+                                if (uiState.einkPageTurnAnimationStyle == 1) 0 else 1
+                            )
+                        }
+                    )
                 }
-            )
-            if (showSmartRefreshGuide) {
-                TooltipBubble(
-                    title = stringResource(R.string.settings_interaction_fast_mode),
-                    lines = listOf(stringResource(R.string.smart_refresh_guide_line)),
-                    nextLabel = stringResource(R.string.done),
-                    onNext = { showSmartRefreshGuide = false },
-                    onDismiss = { showSmartRefreshGuide = false }
-                )
+                if (showRefreshAnimationDemo) {
+                    TooltipBubble(
+                        title = stringResource(R.string.settings_page_turn_animation),
+                        lines = listOf(stringResource(R.string.onboarding_eink_animation_scope)),
+                        nextLabel = stringResource(R.string.done),
+                        extraContent = { RefreshAnimationGuideContent() },
+                        onNext = { showRefreshAnimationDemo = false },
+                        onDismiss = { showRefreshAnimationDemo = false }
+                    )
+                }
             }
-            if (showRefreshAnimationDemo) {
-                TooltipBubble(
-                    title = stringResource(R.string.settings_page_turn_animation),
-                    lines = listOf(stringResource(R.string.onboarding_eink_animation_scope)),
-                    nextLabel = stringResource(R.string.done),
-                    extraContent = { RefreshAnimationGuideContent() },
-                    onNext = { showRefreshAnimationDemo = false },
-                    onDismiss = { showRefreshAnimationDemo = false }
+            if (supportsSmartRefreshMode) {
+                SettingsSwitch(
+                    text = stringResource(R.string.settings_interaction_fast_mode),
+                    fontSize = titleFontSize,
+                    description = stringResource(R.string.settings_desc_interaction_fast_mode),
+                    defaultState = uiState.einkInteractionFastMode,
+                    onCheckedChange = { enabled ->
+                        viewModel.setEinkInteractionFastMode(enabled)
+                        if (enabled && SmartRefreshGuide.shouldShow(prefs)) {
+                            SmartRefreshGuide.markShown(prefs)
+                            showSmartRefreshGuide = true
+                        }
+                        if (!enabled) showSmartRefreshGuide = false
+                    }
                 )
+                if (showSmartRefreshGuide) {
+                    TooltipBubble(
+                        title = stringResource(R.string.settings_interaction_fast_mode),
+                        lines = listOf(stringResource(R.string.smart_refresh_guide_line)),
+                        nextLabel = stringResource(R.string.done),
+                        onNext = { showSmartRefreshGuide = false },
+                        onDismiss = { showSmartRefreshGuide = false }
+                    )
+                }
             }
         }
     }

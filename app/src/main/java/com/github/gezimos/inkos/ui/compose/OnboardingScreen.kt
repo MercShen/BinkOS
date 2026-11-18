@@ -62,6 +62,7 @@ import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.ShapeHelper
 import com.github.gezimos.inkos.helper.DebugFirstTimeGuide
 import com.github.gezimos.inkos.helper.RefreshAnimationDemo
+import com.github.gezimos.inkos.helper.EinkCapabilities
 import com.github.gezimos.inkos.helper.SmartRefreshGuide
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
@@ -141,15 +142,15 @@ object OnboardingScreen {
             Constants.Theme.Light -> false
             Constants.Theme.System -> systemDark
         }
-        var page by remember { mutableStateOf(prefs.onboardingPage.coerceIn(0, 7)) }
+        // 大我专属能力检测：只有真正支持厂商 e-ink 接口的机型才插入额外引导页
+        val supportsVendorTweaks = remember { com.github.gezimos.inkos.helper.EinkCapabilities.anySupported }
+        val totalPages = if (supportsVendorTweaks) 8 else 7
+        var page by remember { mutableStateOf(prefs.onboardingPage.coerceIn(0, totalPages - 1)) }
         var showThemePicker by remember { mutableStateOf(false) }
         var privacyAgreed by remember { mutableStateOf(false) }
         var privacyToastShown by remember { mutableStateOf(false) }
         var settingsConfirmed by remember { mutableStateOf(false) }
         var settingsToastShown by remember { mutableStateOf(false) }
-        // 大我专属能力检测：只有真正支持厂商 e-ink 接口的机型才插入额外引导页
-        val supportsBigmeTweaks = remember { com.github.gezimos.inkos.helper.BigmeEink.isAvailable }
-        val totalPages = if (supportsBigmeTweaks) 8 else 7
 
         // Persist page so onboarding resumes
         LaunchedEffect(page) {
@@ -178,10 +179,10 @@ object OnboardingScreen {
 
 
         // 大我专属开关：打开即刻生效（全刷立即触发 GC16）
-        var bigmeFullRefresh by remember { mutableStateOf(prefs.einkSystemFullRefresh) }
-        var bigmePageTurnAnim by remember { mutableStateOf(prefs.einkPageTurnAnimation) }
-        var bigmePageTurnStyle by remember { mutableIntStateOf(prefs.einkPageTurnAnimationStyle) }
-        var bigmeSmartRefresh by remember { mutableStateOf(prefs.einkInteractionFastMode) }
+        var vendorFullRefresh by remember { mutableStateOf(prefs.einkSystemFullRefresh) }
+        var vendorPageTurnAnim by remember { mutableStateOf(prefs.einkPageTurnAnimation) }
+        var vendorPageTurnStyle by remember { mutableIntStateOf(prefs.einkPageTurnAnimationStyle) }
+        var vendorSmartRefresh by remember { mutableStateOf(prefs.einkInteractionFastMode) }
         var showRefreshScopeDialog by remember { mutableStateOf(false) }
         var showSmartRefreshGuide by remember { mutableStateOf(false) }
 
@@ -210,7 +211,7 @@ object OnboardingScreen {
         }
 
         // 插入额外页后，页码显示需要重排：0,1,2,3,[大我页],4,5,6
-        fun onboardingPosition(p: Int): Int = if (!supportsBigmeTweaks) p + 1 else when {
+        fun onboardingPosition(p: Int): Int = if (!supportsVendorTweaks) p + 1 else when {
             p == 7 -> 5
             p <= 3 -> p + 1
             else -> p + 2
@@ -219,7 +220,7 @@ object OnboardingScreen {
         // onboarding 内的翻页动画：上一步从左到右，下一步从右到左
         fun playOnboardingTurn(forward: Boolean) {
             if (!prefs.einkPageTurnAnimation) return
-            if (!com.github.gezimos.inkos.helper.BigmeEink.isAvailable) return
+            if (!com.github.gezimos.inkos.helper.EinkCapabilities.supportsPageTurnAnimation) return
             try {
                 val direction =
                     if (forward) com.github.gezimos.inkos.helper.BigmeEink.Direction.R2L
@@ -235,7 +236,7 @@ object OnboardingScreen {
 
         fun onboardingNext() {
             when {
-                page == 3 && supportsBigmeTweaks -> { playOnboardingTurn(true); page = 7 }
+                page == 3 && supportsVendorTweaks -> { playOnboardingTurn(true); page = 7 }
                 page == 7 -> { playOnboardingTurn(true); page = 4 }
                 page == 6 -> onFinish()
                 else -> { playOnboardingTurn(true); page++ }
@@ -246,7 +247,7 @@ object OnboardingScreen {
             when {
                 page == 5 && showThemePicker -> showThemePicker = false
                 page == 7 -> { playOnboardingTurn(false); page = 3 }
-                page == 4 && supportsBigmeTweaks -> { playOnboardingTurn(false); page = 7 }
+                page == 4 && supportsVendorTweaks -> { playOnboardingTurn(false); page = 7 }
                 page > 0 -> { playOnboardingTurn(false); page-- }
             }
         }
@@ -436,107 +437,114 @@ object OnboardingScreen {
                             color = textColor
                         )
 
-                        // Bigme vendor switches (page 7): toggling applies immediately
-                        if (page == 7) {
+                        // 厂商增强开关（第 7 页）：按能力位分别显示，开关即时生效
+                        if (page == 7 && supportsVendorTweaks) {
                             Spacer(modifier = Modifier.height(24.dp.scaled(screenScale)))
-                            SettingsComposable.SettingsSwitch(
-                                text = stringResource(R.string.onboarding_eink_full_refresh_title),
-                                fontSize = extraTitleFontSize,
-                                description = stringResource(R.string.onboarding_eink_full_refresh_desc),
-                                defaultState = bigmeFullRefresh,
-                                horizontalPadding = 0.dp,
-                                onCheckedChange = { enabled ->
-                                    bigmeFullRefresh = enabled
-                                    if (viewModel != null) viewModel.setEinkSystemFullRefresh(enabled) else prefs.einkSystemFullRefresh = enabled
-                                    if (enabled) {
-                                        try {
-                                            com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEinkForced(
-                                                context, prefs, null, 100, useActivityRoot = true
-                                            )
-                                        } catch (_: Throwable) {}
-                                    }
-                                }
-                            )
-                            Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
-                            SettingsComposable.SettingsSwitch(
-                                text = stringResource(R.string.onboarding_eink_page_turn_title),
-                                fontSize = extraTitleFontSize,
-                                description = stringResource(R.string.settings_desc_page_turn_animation),
-                                defaultState = bigmePageTurnAnim,
-                                horizontalPadding = 0.dp,
-                                onCheckedChange = { enabled ->
-                                    bigmePageTurnAnim = enabled
-                                    if (viewModel != null) viewModel.setEinkPageTurnAnimation(enabled)
-                                    else prefs.einkPageTurnAnimation = enabled
-                                    if (enabled && RefreshAnimationDemo.shouldShow(prefs)) {
-                                        RefreshAnimationDemo.markShown(prefs)
-                                        showRefreshScopeDialog = true
-                                    }
-                                    if (!enabled) showRefreshScopeDialog = false
-                                }
-                            )
-                            SettingsComposable.SettingsSwitch(
-                                text = stringResource(R.string.settings_interaction_fast_mode),
-                                fontSize = extraTitleFontSize,
-                                description = stringResource(R.string.settings_desc_interaction_fast_mode),
-                                defaultState = bigmeSmartRefresh,
-                                horizontalPadding = 0.dp,
-                                onCheckedChange = { enabled ->
-                                    bigmeSmartRefresh = enabled
-                                    if (viewModel != null) viewModel.setEinkInteractionFastMode(enabled)
-                                    else prefs.einkInteractionFastMode = enabled
-                                    if (enabled && SmartRefreshGuide.shouldShow(prefs)) {
-                                        SmartRefreshGuide.markShown(prefs)
-                                        showSmartRefreshGuide = true
-                                    }
-                                    if (!enabled) showSmartRefreshGuide = false
-                                }
-                            )
-                            if (showSmartRefreshGuide) {
-                                TooltipBubble(
-                                    title = stringResource(R.string.settings_interaction_fast_mode),
-                                    lines = listOf(stringResource(R.string.smart_refresh_guide_line)),
-                                    alignment = Alignment.Center,
-                                    nextLabel = stringResource(R.string.done),
-                                    onNext = { showSmartRefreshGuide = false },
-                                    onDismiss = { showSmartRefreshGuide = false }
-                                )
-                            }
-                            if (bigmePageTurnAnim) {
-                                Spacer(modifier = Modifier.height(4.dp.scaled(screenScale)))
-                                SettingsComposable.SettingsSelect(
-                                    title = stringResource(R.string.settings_page_turn_animation_style),
-                                    option = stringResource(
-                                        if (bigmePageTurnStyle == 1) R.string.option_page_turn_ripple
-                                        else R.string.option_page_turn_directional
-                                    ),
+                            if (EinkCapabilities.supportsSystemFullRefresh) {
+                                SettingsComposable.SettingsSwitch(
+                                    text = stringResource(R.string.onboarding_eink_full_refresh_title),
                                     fontSize = extraTitleFontSize,
-                                    description = stringResource(R.string.settings_desc_page_turn_animation_style),
+                                    description = stringResource(R.string.onboarding_eink_full_refresh_desc),
+                                    defaultState = vendorFullRefresh,
                                     horizontalPadding = 0.dp,
-                                    onClick = {
-                                        val next = if (bigmePageTurnStyle == 1) 0 else 1
-                                        bigmePageTurnStyle = next
-                                        if (viewModel != null) viewModel.setEinkPageTurnAnimationStyle(next)
-                                        else prefs.einkPageTurnAnimationStyle = next
+                                    onCheckedChange = { enabled ->
+                                        vendorFullRefresh = enabled
+                                        if (viewModel != null) viewModel.setEinkSystemFullRefresh(enabled) else prefs.einkSystemFullRefresh = enabled
+                                        if (enabled) {
+                                            try {
+                                                com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEinkForced(
+                                                    context, prefs, null, 100, useActivityRoot = true
+                                                )
+                                            } catch (_: Throwable) {}
+                                        }
                                     }
                                 )
                             }
-                            if (showRefreshScopeDialog) {
-                                TooltipBubble(
-                                    title = stringResource(R.string.onboarding_eink_page_turn_title),
-                                    lines = listOf(stringResource(R.string.onboarding_eink_animation_scope)),
-                                    alignment = Alignment.Center,
-                                    nextLabel = stringResource(R.string.done),
-                                    onNext = {
-                                        showRefreshScopeDialog = false
-                                        DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
-                                    },
-                                    extraContent = { RefreshAnimationGuideContent() },
-                                    onDismiss = {
-                                        showRefreshScopeDialog = false
-                                        DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
+                            if (EinkCapabilities.supportsPageTurnAnimation) {
+                                Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
+                                SettingsComposable.SettingsSwitch(
+                                    text = stringResource(R.string.onboarding_eink_page_turn_title),
+                                    fontSize = extraTitleFontSize,
+                                    description = stringResource(R.string.settings_desc_page_turn_animation),
+                                    defaultState = vendorPageTurnAnim,
+                                    horizontalPadding = 0.dp,
+                                    onCheckedChange = { enabled ->
+                                        vendorPageTurnAnim = enabled
+                                        if (viewModel != null) viewModel.setEinkPageTurnAnimation(enabled)
+                                        else prefs.einkPageTurnAnimation = enabled
+                                        if (enabled && RefreshAnimationDemo.shouldShow(prefs)) {
+                                            RefreshAnimationDemo.markShown(prefs)
+                                            showRefreshScopeDialog = true
+                                        }
+                                        if (!enabled) showRefreshScopeDialog = false
                                     }
                                 )
+                                if (vendorPageTurnAnim) {
+                                    Spacer(modifier = Modifier.height(4.dp.scaled(screenScale)))
+                                    SettingsComposable.SettingsSelect(
+                                        title = stringResource(R.string.settings_page_turn_animation_style),
+                                        option = stringResource(
+                                            if (vendorPageTurnStyle == 1) R.string.option_page_turn_ripple
+                                            else R.string.option_page_turn_directional
+                                        ),
+                                        fontSize = extraTitleFontSize,
+                                        description = stringResource(R.string.settings_desc_page_turn_animation_style),
+                                        horizontalPadding = 0.dp,
+                                        onClick = {
+                                            val next = if (vendorPageTurnStyle == 1) 0 else 1
+                                            vendorPageTurnStyle = next
+                                            if (viewModel != null) viewModel.setEinkPageTurnAnimationStyle(next)
+                                            else prefs.einkPageTurnAnimationStyle = next
+                                        }
+                                    )
+                                }
+                                if (showRefreshScopeDialog) {
+                                    TooltipBubble(
+                                        title = stringResource(R.string.onboarding_eink_page_turn_title),
+                                        lines = listOf(stringResource(R.string.onboarding_eink_animation_scope)),
+                                        alignment = Alignment.Center,
+                                        nextLabel = stringResource(R.string.done),
+                                        onNext = {
+                                            showRefreshScopeDialog = false
+                                            DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
+                                        },
+                                        extraContent = { RefreshAnimationGuideContent() },
+                                        onDismiss = {
+                                            showRefreshScopeDialog = false
+                                            DebugFirstTimeGuide.forceRefreshAnimationScope.value = false
+                                        }
+                                    )
+                                }
+                            }
+                            if (EinkCapabilities.supportsSmartRefreshMode) {
+                                Spacer(modifier = Modifier.height(8.dp.scaled(screenScale)))
+                                SettingsComposable.SettingsSwitch(
+                                    text = stringResource(R.string.settings_interaction_fast_mode),
+                                    fontSize = extraTitleFontSize,
+                                    description = stringResource(R.string.settings_desc_interaction_fast_mode),
+                                    defaultState = vendorSmartRefresh,
+                                    horizontalPadding = 0.dp,
+                                    onCheckedChange = { enabled ->
+                                        vendorSmartRefresh = enabled
+                                        if (viewModel != null) viewModel.setEinkInteractionFastMode(enabled)
+                                        else prefs.einkInteractionFastMode = enabled
+                                        if (enabled && SmartRefreshGuide.shouldShow(prefs)) {
+                                            SmartRefreshGuide.markShown(prefs)
+                                            showSmartRefreshGuide = true
+                                        }
+                                        if (!enabled) showSmartRefreshGuide = false
+                                    }
+                                )
+                                if (showSmartRefreshGuide) {
+                                    TooltipBubble(
+                                        title = stringResource(R.string.settings_interaction_fast_mode),
+                                        lines = listOf(stringResource(R.string.smart_refresh_guide_line)),
+                                        alignment = Alignment.Center,
+                                        nextLabel = stringResource(R.string.done),
+                                        onNext = { showSmartRefreshGuide = false },
+                                        onDismiss = { showSmartRefreshGuide = false }
+                                    )
+                                }
                             }
                         }
 

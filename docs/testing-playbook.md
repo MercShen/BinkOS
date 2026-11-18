@@ -160,6 +160,7 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - 主屏「主屏页重置 / HOME 键回第一页」是自动归位，`setCurrentPage(0, animate = false)` 不播翻页动画：否则 Ripple 样式下返回主屏会看到一次方向式翻页（B651 实测：开了页重置 + 停在非首页时必现）。只有用户手动翻页才播 Directional。
 - 方向动画的保持窗口是 **100ms**（`BigmeEink.DURATION_MS`，原 500ms）：调用 → 重绘只隔一帧，100ms 足够；窗口越长，窗口内时钟/角标刷新越容易被带上动画。回归看 `logcat -s DisplayPolicyService`：`setEinkAnimationTimeout: type=?, duration=100ms`，100ms 后 `eink animation timeout, restoring`。
 - Settings → Extras 的「智能刷新模式」（默认关）：**编辑模式、短滑区域编辑器**打开时把本包波形切到极速 `179`，关闭后回到 Regal `180`。底部面板不参与——面板多是点击型分页列表，且每次切波形都会触发一次策略 apply（观感是一次全刷），「开快捷菜单 → 进设置」这种流程会白闪。回归看 `logcat -s EinkInteractionMode BigmeEink`：进入 `enter fast mode token=edit_mode` + `refreshMode=179`，退出 `leave fast mode … -> Regal` + `refreshMode=180`；嵌套（编辑模式里开面板）不能卡在 179；打开面板本身不应出现任何 `refreshMode=` 日志。
+- 厂商增强开关（系统全刷 / 刷新动画 / 智能刷新模式）的显示只看 `EinkCapabilities` 的能力位，不直接判断 `BigmeEink.isAvailable`；换品牌时实现后端 + 声明能力位即可，界面不改。回归：非大我设备（x86_64 模拟器）装 debug 包，设置 →「更多功能」只剩「自动墨水屏刷新 / 刷新延迟 / 音量键翻页」，onboarding 指示器是 **1/7**（没有厂商页）；B651 上三项仍在，指示器 1/8。
 - 设置页允许从图标/齿轮直接点入：`OpenSettings` 未绑定长滑时也会用默认 R2L 打开、L2R 关闭；但反向长滑仍然不关闭（仍需显式绑定）。
 - Simple Tray 的反向长滑关闭与 Hub 同规则：`OpenSimpleTray` 绑定时（当前下滑开→上滑关）才关闭；未绑定不关闭，也不播动画。
 - 媒体通知（Spotify/网易云/Audible 等 `CATEGORY_TRANSPORT`）不计入主页全局通知数量，也不计入 Tray 顶部数字；Tray 是否显示媒体卡由 Simple Tray 白名单决定；Letters 永不显示 transport/媒体持续通知。
