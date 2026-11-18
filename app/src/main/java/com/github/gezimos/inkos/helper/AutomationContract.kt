@@ -12,7 +12,8 @@ object AutomationContract {
         val skipOnboarding: Boolean = false,
         val refreshEink: Boolean = false,
         val onboardingPage: Int? = null,
-        val guide: String? = null
+        val guide: String? = null,
+        val pkg: String? = null
     ) {
         val isStateCommand: Boolean get() = dest in stateCommands
         val writesPreferences: Boolean get() = isStateCommand || skipOnboarding || onboardingPage != null
@@ -87,6 +88,14 @@ object AutomationContract {
         names("allowlist_clear")
         names("allowlist_tray_clear")
         names("allowlist_hub_clear")
+        names("eink_anim_on")
+        names("eink_anim_off")
+        names("eink_style_directional")
+        names("eink_style_ripple")
+        names("eink_fast_on")
+        names("eink_fast_off")
+        names("back")
+        names("external")
     }
 
     private val types = mapOf(
@@ -101,7 +110,9 @@ object AutomationContract {
     private val stateCommands = setOf(
         "home_reset_off", "home_reset_on", "pager_margin", "pager_on", "pager_off", "bottomwidget",
         "bottom_android", "bottom_shortcuts", "bottom_quote", "bottom_events", "bottom_usage",
-        "bottom_pagedots", "bottom_off", "allowlist_clear", "allowlist_tray_clear", "allowlist_hub_clear"
+        "bottom_pagedots", "bottom_off", "allowlist_clear", "allowlist_tray_clear", "allowlist_hub_clear",
+        "eink_anim_on", "eink_anim_off", "eink_style_directional", "eink_style_ripple",
+        "eink_fast_on", "eink_fast_off"
     )
     private val homeCommands = setOf(
         "quick_menu", "edit_bg", "edit_bg_theme", "edit_bg_align", "edit_bg_islands", "edit_bg_gestures",
@@ -170,8 +181,19 @@ object AutomationContract {
             if (extras.containsKey("guide")) return reject("guide is only supported for firsttime")
             null
         }
+        val pkg = if (dest == "external") {
+            val raw = extras["pkg"] as? String ?: return reject("external requires --es pkg PACKAGE")
+            if (raw.length > 128 || raw.any { it.isISOControl() || it.isWhitespace() }) {
+                return reject("pkg must be a short printable package name")
+            }
+            if (!raw.contains('.')) return reject("pkg must look like a package name")
+            raw
+        } else {
+            if (extras.containsKey("pkg")) return reject("pkg is only supported for external")
+            null
+        }
         val request = Request(dest, tab, value, type, extras["skip_onboarding"] == true,
-            extras["refresh_eink"] == true, onboardingPage, guide)
+            extras["refresh_eink"] == true, onboardingPage, guide, pkg)
         if ((request.writesPreferences || request.refreshEink) && extras["confirm_write"] != true) {
             return reject("This command changes settings or forces a refresh; pass --ez confirm_write true only after authorization")
         }

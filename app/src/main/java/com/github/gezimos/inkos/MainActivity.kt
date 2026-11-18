@@ -249,7 +249,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleAutomationIntent(intent: Intent?): Boolean {
         intent ?: return false
         val keys = listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
-            "onboarding_page", "guide", "tab", "value", "type", "confirm_write", "request_id")
+            "onboarding_page", "guide", "tab", "value", "type", "pkg", "confirm_write", "request_id")
         // Ordinary launcher intents are not automation requests. Never consume their product extras.
         if (!listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
                 "request_id").any { intent.hasExtra(it) }) return false
@@ -292,7 +292,8 @@ class MainActivity : AppCompatActivity() {
             // Navigation is not user dismissal: suppress parent-reopen callbacks.
             com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.dismissAllSheets()
             navController.popBackStack(R.id.mainFragment, false)
-        } else if (!request.writesPreferences) {
+        } else if (!request.writesPreferences && request.dest != "back") {
+            // back 要自己判断「关面板还是返回上一级」，不能被预清理吃掉那一层
             com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.dismissAllSheets()
         }
         val startedAt = android.os.SystemClock.uptimeMillis()
@@ -322,8 +323,8 @@ class MainActivity : AppCompatActivity() {
                     dispatchAutomation(request)
                     if (request.skipOnboarding) prefs.firstOpen = false
                     automationResult(requestId, request.dest,
-                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev")) "applied" else "dispatched",
-                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev")) automationState()
+                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev", "back")) "applied" else "dispatched",
+                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev", "back")) automationState()
                         else "Dispatched; verify the target UI (authentication/loading may still be pending)")
                 } catch (e: Exception) {
                     automationResult(requestId, request.dest, "rejected", "Dispatch failed: ${e.javaClass.simpleName}")
@@ -460,6 +461,39 @@ class MainActivity : AppCompatActivity() {
             "allowlist_clear" -> {
                 viewModel.setAllowedSimpleTrayApps(emptySet())
                 viewModel.setAllowedHubApps(emptySet())
+            }
+            // --- 刷新动画 / 极速刷新：测试时不用点设置页，也不用 run-as 灌 prefs ---
+            "eink_anim_on" -> viewModel.setEinkPageTurnAnimation(true)
+            "eink_anim_off" -> viewModel.setEinkPageTurnAnimation(false)
+            "eink_style_directional" -> viewModel.setEinkPageTurnAnimationStyle(0)
+            "eink_style_ripple" -> viewModel.setEinkPageTurnAnimationStyle(1)
+            "eink_fast_on" -> viewModel.setEinkInteractionFastMode(true)
+            "eink_fast_off" -> viewModel.setEinkInteractionFastMode(false)
+            "back" -> {
+                // 先关掉最上层可见的面板；没有面板才当作「返回上一级」。
+                val closedSheet = try {
+                    com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.dismissAllSheets()
+                } catch (_: Exception) {
+                    false
+                }
+                Log.i(TAG, "automation back: sheet=$closedSheet dest=${navController.currentDestination?.id}")
+                if (!closedSheet) {
+                    val dest = navController.currentDestination?.id
+                    if (dest != null && dest != R.id.mainFragment) navController.popBackStack()
+                }
+            }
+            "external" -> {
+                val pkg = requireNotNull(request.pkg) { "external requires pkg" }
+                val intent = packageManager.getLaunchIntentForPackage(pkg)
+                    ?: Intent(Intent.ACTION_MAIN)
+                        .addCategory(Intent.CATEGORY_LAUNCHER)
+                        .setPackage(pkg)
+                if (intent.resolveActivity(packageManager) == null) {
+                    error("no launchable activity for $pkg")
+                }
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+                Log.i(TAG, "automation external: launched $pkg")
             }
             else -> error("No dispatcher for validated dest")
         }

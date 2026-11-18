@@ -6,6 +6,7 @@
 | 文件 | 作用 |
 |---|---|
 | `home.ps1` | 查看 / 设置 / 校验默认桌面（debug / release / ensure），仓库内独立版本 |
+| `post-install.ps1` | 装包后统一验收：版本 / lastUpdateTime / 默认 HOME（走 home.ps1）/ PID，一条命令出固定四行证据 |
 | `automate.ps1` | 封装 `adb ... --es dest`，用 `request_id` + automation_result 判定结果 |
 | `check-locales.py` | 校验 EN/ZH 字符串 key 对齐、占位符、重复/空值，并告警非术语表写法 |
 | `tests/` | 离线测试：fake adb + 参数契约 + 状态机断言（不连真机、不构建） |
@@ -20,6 +21,17 @@
 - 设备选择：`-Serial` 显式指定；否则只接受**恰好一台** `device` 状态的设备，0 台或多台都直接拒绝（防串机）。
 - `automate.ps1` 默认驱动 debug 包 `app.binkos.debug`；`-App release` 切到 `app.binkos`。
 - 通知探针在 Android 13（API 33）及以上需要运行时 `POST_NOTIFICATIONS` 授权（见 `notifprobe/README.md`）。
+
+## post-install.ps1
+
+```powershell
+.\tools\post-install.ps1 -App debug
+.\tools\post-install.ps1 -App release -Serial <serial> -AdbPath C:\AndroidSDK\sdk\platform-tools\adb.exe
+```
+
+- 固定输出四行：`package=… versionName=… versionCode=… lastUpdateTime=…`、`package=… isDefault=true roleHolders=…`、`component=…`、`pid=…`；汇报直接粘贴，不再手拼 `resolve-activity`。
+- 默认 HOME 的检查与设置全部委托 `home.ps1`（同一套补 role + 校验逻辑），本脚本不自己 set-home。
+- 退出码：`0` 通过 / `2` 参数或设备问题 / `3` 版本或默认 HOME 校验失败。
 
 ## home.ps1
 

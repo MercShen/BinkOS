@@ -164,14 +164,18 @@ class ComposeBottomSheetHost(private val activity: Activity) {
             mutableListOf<java.lang.ref.WeakReference<ComposeBottomSheetHost>>()
         )
 
-        /** 关闭所有仍显示的底部弹窗（回到主页/系统 HOME 时用）。 */
-        fun dismissAllSheets() {
+        /** 关闭所有仍显示的底部弹窗（回到主页/系统 HOME 时用）；返回是否真的有面板被关掉。 */
+        fun dismissAllSheets(): Boolean {
             presentationSlot.cancelAll()
             val snapshot = synchronized(activeHosts) { activeHosts.toList() }
             activeHosts.clear()
+            var hadSheet = false
             snapshot.forEach { ref ->
-                try { ref.get()?.dismiss(suppressCallback = true) } catch (_: Exception) {}
+                val host = try { ref.get() } catch (_: Exception) { null } ?: return@forEach
+                if (host.hasVisibleOrPending()) hadSheet = true
+                try { host.dismiss(suppressCallback = true) } catch (_: Exception) {}
             }
+            return hadSheet
         }
     }
 
@@ -183,6 +187,9 @@ class ComposeBottomSheetHost(private val activity: Activity) {
             }
         })
     }
+
+    /** 面板是否正在显示或已排队显示（`dest=back` 判断这一层关的是不是面板）。 */
+    fun hasVisibleOrPending(): Boolean = composeView != null || pendingShow != null
 
     fun dismiss(suppressCallback: Boolean = false) {
         pendingShow?.let { showHandler.removeCallbacks(it) }

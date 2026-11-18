@@ -5,9 +5,10 @@
   契约（与 MainActivity 的 automation_result 日志配合）：
     - 目标 App 默认 debug（app.binkos.debug），-App release 切到 app.binkos
     - -Dest 必填，本地只接受 ^[a-z_]+$（长度 <= 48），避免远程 sh 拆分/注入
-    - -Tab / -Value / -Type 仅在显式传入时下发；显式 -Type '' 本地拒绝，避免 adb shell 参数歧义
+    - -Tab / -Value / -Type / -Pkg 仅在显式传入时下发；显式 -Type '' 本地拒绝，避免 adb shell 参数歧义
+    - -Pkg 只允许与 -Dest external 搭配，值须形如 com.example.app
     - 每次生成 request_id(UUID)，随 --es request_id 下发
-    - 状态写操作（pager_* / home_reset_* / bottom* / allowlist*）默认本地拒绝；
+    - 状态写操作（pager_* / home_reset_* / bottom* / allowlist* / eink_*）默认本地拒绝；
       必须显式 -AllowStateChanges，才会附加 --ez confirm_write true
     - 结果以 MainActivity 的 automation_result: JSON 为准：
         applied    -> 成功（若给了 -ExpectedText，还会校验 UI 上确有该文字）
@@ -33,6 +34,9 @@
     .\automate.ps1 -Dest settings -ExpectedText Settings
     .\automate.ps1 -Dest edit_clock -Tab 1 -ExpectedText Clock
     .\automate.ps1 -Dest pager_off -AllowStateChanges
+    .\automate.ps1 -Dest eink_anim_on -AllowStateChanges
+    .\automate.ps1 -Dest back
+    .\automate.ps1 -Dest external -Pkg com.android.settings
     .\automate.ps1 -Dest bottomwidget -Type quote -AllowStateChanges
 
   退出码：0 成功 / 2 参数或 dest 校验失败 / 3 rejected / 4 cancelled / 5 超时 / 6 dispatched 无锚点 /
@@ -46,6 +50,7 @@ param(
     [int]$Tab,
     [int]$Value,
     [string]$Type,
+    [string]$Pkg,
 
     [string]$Serial = '',
     [string]$AdbPath = '',
@@ -78,7 +83,7 @@ $packages = @{
     release = 'app.binkos'
 }
 $launcherComponent = 'com.github.gezimos.inkos.MainActivity'
-$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist')
+$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist', '^eink_')
 $destPattern = '^[A-Za-z_]+$'
 $typePattern = '^[A-Za-z0-9_.\-]*$'
 $component = "$($packages[$App])/$launcherComponent"
@@ -346,6 +351,19 @@ foreach ($pattern in $stateDestPatterns) {
     if ($destValue -match $pattern) { $isStateDest = $true; break }
 }
 
+if ($PSBoundParameters.ContainsKey('Pkg')) {
+    $pkgValue = [string]$Pkg
+    if ($destValue -ne 'external') {
+        Write-Host 'error: -Pkg is only supported with -Dest external' -ForegroundColor Red
+        exit $exitUsage
+    }
+    if ($pkgValue.Length -eq 0 -or $pkgValue.Length -gt 128 -or
+        $pkgValue -notmatch '^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$') {
+        Write-Host "error: -Pkg must look like a package name (got '$pkgValue')" -ForegroundColor Red
+        exit $exitUsage
+    }
+}
+
 if ($isStateDest -and -not $AllowStateChanges) {
     Write-Host "refused: '$destValue' is a state-changing dest." -ForegroundColor Red
     Write-Host '  re-run with -AllowStateChanges (adds --ez confirm_write true) if you really mean it.' -ForegroundColor Yellow
@@ -366,6 +384,7 @@ $startArgs = @('shell', 'am', 'start', '-n', $component, '--es', 'dest', $destVa
 if ($PSBoundParameters.ContainsKey('Tab')) { $startArgs += @('--ei', 'tab', [string]$Tab) }
 if ($PSBoundParameters.ContainsKey('Value')) { $startArgs += @('--ei', 'value', [string]$Value) }
 if ($PSBoundParameters.ContainsKey('Type')) { $startArgs += @('--es', 'type', $typeValue) }
+if ($PSBoundParameters.ContainsKey('Pkg')) { $startArgs += @('--es', 'pkg', ([string]$Pkg)) }
 if ($AllowStateChanges) { $startArgs += @('--ez', 'confirm_write', 'true') }
 
 $deadline = (Get-Date).AddSeconds($TimeoutSeconds)

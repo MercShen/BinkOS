@@ -33,6 +33,8 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 本机路径/序列号只是示例，脚本支持 `-AdbPath` 或 PATH/SDK 环境变量，不再依赖仓库外的 home 脚本。`tools/home.ps1` 设置/检查的是默认 HOME，不保证页面已渲染。
 
+**装包后统一验收（不要手拼等价命令）**：`tools/post-install.ps1 -App debug|release` 一次输出版本 / lastUpdateTime / 默认 HOME（内部走 `home.ps1`）/ PID 四行；任一项不过退出非零。`cmd package resolve-activity` 单读一次**不算**验收，也没有把包设为默认 HOME。
+
 - 设备测试产物统一放 `/sdcard/BinkOS-Test/v<versionName>/`，按 `screenshots/`、`ui/`、`tmp/`、`evidence/` 分类；截图/XML 用 `<目的>-<yyyyMMdd-HHmmss>` 命名，禁止散落 `/sdcard` 根目录。详见 [testing-playbook.md](<testing-playbook.md#11-设备测试产物管理>)。
 
 ## 2. 推荐调用与结果协议
@@ -66,6 +68,7 @@ automation_result: {"requestId":"<UUID>","dest":"<规范名称>","status":"<状�
 |---|---|
 | `-Dest` | 必填，规范名或别名 |
 | `-Tab` / `-Value` / `-Type` | 显式传入才映射为 `--ei tab` / `--ei value` / `--es type` |
+| `-Pkg` | 仅与 `-Dest external` 搭配，映射为 `--es pkg`；值须形如 `com.android.settings` |
 | `-Serial` / `-AdbPath` | 指定设备/adb；省略 Serial 必须唯一在线设备 |
 | `-ExpectedText` | UI 验收必须提供；参数本身可省略，缺失仍会发请求，但仅 `dispatched` 时脚本退出 6，不算验收成功 |
 | `-TimeoutSeconds` | 3..120，默认 15；日志与 UI 分阶段预算，不是全命令硬性总时限 |
@@ -119,6 +122,8 @@ GUID 生成依赖 uuidgen 或 Python。Windows 不使用 Bash 的 `\` 续行；�
 | `onboarding` | 可选 `--ei onboarding_page 0..7`；0 欢迎、1 隐私、2 通知、3 默认桌面、7 厂商 e-ink 页、4 设置、5 主题、6 收藏 | 直接导航首启页，不要求/不永久修改 firstOpen；带 `onboarding_page` 时写 `onboardingPage`，需 `confirm_write` |
 | `firsttime` / `first_time` / `preview_guide` | `--es guide NAME` 必填 | Debug 首次引导后门：直接展示，不改任何偏好/已读状态；无需 confirm_write；`guide=close` 关闭当前提示；见下方 guide 列表 |
 | `editfavorites` / `edit_favorites` | 编辑收藏，选择操作可能修改配置；进入本身不等于修改 |
+| `back` | 先关最上层可见/待展示面板；没有面板则返回上一级（`mainFragment` 时不动作）；applied，message 的 currentDestination 是结果 |
+| `external` | 需要 `--es pkg com.example.app`；按启动意图拉起该 App 并离开 BinkOS（没有可启动 Activity 则 rejected）；回到 BinkOS 用 `dest=home` |
 
 无“打开任意页面”的保证：WIDGET、小部件二级选择、语言/字体等子 sheet 暂无独立 dest，按真实产品入口操作。重复导航会改变返回栈；用 home 清理测试路径，不无限叠加同一页。
 
@@ -165,8 +170,24 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 | `bottom_android/shortcuts/quote/events/usage/pagedots/off` | 无 | 分别设置对应类型 |
 | `allowlist_clear` | 无 | 清掉托盘+Hub用户白名单，不清通知；**空集合=不过滤应用** |
 | `allowlist_tray_clear` / `allowlist_hub_clear` | 无 | 分别清掉一个白名单；不是“关闭全部通知” |
+| `eink_anim_on/off` | 无 | 保存翻页动画开关（`EINK_PAGE_TURN_ANIMATION`） |
+| `eink_style_directional` / `eink_style_ripple` | 无 | 保存动画样式，**不会自动打开动画开关**；要出效果需先 `eink_anim_on` |
+| `eink_fast_on/off` | 无 | 保存「交互时极速刷新」开关（`EINK_INTERACTION_FAST_MODE`） |
 
 上表都须 `--ez confirm_write true`。脚本未加 `-AllowStateChanges` 会本地退出2且不发请求；App端缺确认则 rejected/脚本退出3。type合法输入：`android/android_widget`、`shortcuts/search`、`quote`、`events`、`usage/total_usage`、`pagedots/page_dots`、`off/disabled`。
+
+e-ink 四个命令用来替代「点设置页 / 用 run-as 灌 prefs」，典型组合：
+
+```powershell
+# Ripple + 动画开
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest eink_anim_on --ez confirm_write true
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest eink_style_ripple --ez confirm_write true
+# 交互极速开关
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest eink_fast_on --ez confirm_write true
+```
 
 附加extra：
 - `skip_onboarding=true` 永久将firstOpen置false；`refresh_eink=true` 请求刷新。两者都要确认闸门，**必须搭配dest**；脚本暂不封装这两个extra。

@@ -93,4 +93,29 @@ class AutomationContractTest {
         assertFalse(accepted("dest" to "firsttime", "guide" to "recents").needsHome)
         assertFalse(accepted("dest" to "firsttime", "guide" to "close").needsHome)
     }
+    @Test fun einkStateCommandsRequireConfirmationAndAreNotHomeCommands() {
+        for (dest in listOf("eink_anim_on", "eink_anim_off", "eink_style_directional", "eink_style_ripple",
+            "eink_fast_on", "eink_fast_off")) {
+            rejected("dest" to dest)
+            val request = accepted("dest" to dest, "confirm_write" to true)
+            assertTrue(request.writesPreferences)
+            assertFalse(request.needsHome)
+        }
+    }
+    @Test fun backIsCommandOnlyAndExternalNeedsPackage() {
+        val back = accepted("dest" to "BACK")
+        assertEquals("back", back.dest)
+        assertFalse(back.writesPreferences)
+        assertFalse(back.needsHome)
+
+        rejected("dest" to "external")
+        rejected("dest" to "external", "pkg" to "")
+        rejected("dest" to "external", "pkg" to "com.android.settings now")
+        rejected("dest" to "external", "pkg" to "nodot")
+        rejected("dest" to "settings", "pkg" to "com.android.settings")
+
+        val external = accepted("dest" to "external", "pkg" to "com.android.settings")
+        assertEquals("com.android.settings", external.pkg)
+        assertFalse(external.writesPreferences)
+    }
 }
