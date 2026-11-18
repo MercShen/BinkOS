@@ -6,6 +6,9 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## Unreleased
 
+### Language
+- Fix the crash when switching the app language on Android 13+ (`IllegalStateException: Can't change activity type once set … activityType=home`). The platform per-app language API relaunches this app as the home task, and on the vendor Android 14 build that relaunch throws inside the system window manager before the choice is even stored. The app now keeps the choice in its own preference and applies it when the interface is rebuilt, so switching takes effect immediately, survives a restart, and never calls the system locale service on Android 13+.
+
 ### E-ink
 - Short-swipe zone: first install now leaves the bottom 48dp clear (system gesture bar / navigation bar), so pulling the bottom handle no longer triggers the system back-to-home gesture; users can still drag it to 0.
 - Vendor switches (full refresh, refresh animation, Smart Refresh Mode) and their guides only appear when the device actually exposes the vendor e-ink API; devices without it no longer show dead toggles or demos. Capabilities now live behind one `EinkCapabilities` seam so a second vendor can plug in without touching the UI.

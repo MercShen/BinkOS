@@ -1,14 +1,20 @@
 package com.github.gezimos.inkos.services
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import androidx.annotation.RequiresApi
 import com.github.gezimos.common.CrashHandler
+import com.github.gezimos.inkos.helper.AppLocale
 import java.lang.ref.WeakReference
 
 class ActionService : AccessibilityService() {
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrapContext(base))
+    }
 
     override fun onServiceConnected() {
         instance = WeakReference(this)

@@ -1,5 +1,6 @@
 package com.github.gezimos.inkos
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.LauncherApps
 import android.os.Build
@@ -28,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.github.gezimos.common.showShortToast
 import com.github.gezimos.inkos.data.Constants
 import com.github.gezimos.inkos.data.Prefs
+import com.github.gezimos.inkos.helper.AppLocale
 import com.github.gezimos.inkos.helper.PinnedShortcutPolicy
 import com.github.gezimos.inkos.helper.PinnedShortcutUtility
 import com.github.gezimos.inkos.style.SettingsTheme
@@ -44,6 +46,10 @@ import com.github.gezimos.inkos.style.Theme
 class PinShortcutActivity : AppCompatActivity() {
 
     private var pendingRequest: LauncherApps.PinItemRequest? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrapContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

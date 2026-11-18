@@ -2,6 +2,7 @@ package com.github.gezimos.inkos
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
@@ -31,6 +32,7 @@ import com.github.gezimos.inkos.data.Constants
 import com.github.gezimos.inkos.data.Migration
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.databinding.ActivityMainBinding
+import com.github.gezimos.inkos.helper.AppLocale
 import com.github.gezimos.inkos.helper.AudioWidgetHelper
 import com.github.gezimos.inkos.helper.BigmeEink
 import com.github.gezimos.inkos.helper.EditModeHelper
@@ -862,6 +864,11 @@ class MainActivity : AppCompatActivity() {
                 currentScreenOpenDirection = null
             }
         }
+    }
+
+    /** 应用内语言（见 AppLocale）：套上当前选择的 locale，切语言后 rebuild 即生效。 */
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrapContext(newBase))
     }
 
     @RequiresPermission(anyOf = ["android.permission.READ_WALLPAPER_INTERNAL", Manifest.permission.MANAGE_EXTERNAL_STORAGE])

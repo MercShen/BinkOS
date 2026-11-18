@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.github.gezimos.inkos.helper.AppLocale
 import com.github.gezimos.inkos.helper.AudioWidgetHelper
 import com.github.gezimos.inkos.helper.NotificationFilter
 
@@ -393,7 +394,7 @@ class NotificationService : NotificationListenerService() {
         }
     }
 
-    override fun attachBaseContext(base: Context?) {
-        super.attachBaseContext(base)
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrapContext(base))
     }
 }

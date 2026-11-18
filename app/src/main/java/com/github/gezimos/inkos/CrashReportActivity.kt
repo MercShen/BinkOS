@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.github.gezimos.common.CrashHandler
+import com.github.gezimos.inkos.helper.AppLocale
 import com.github.gezimos.inkos.helper.utils.CrashIssueLink
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
@@ -33,6 +34,10 @@ class CrashReportActivity : AppCompatActivity() {
     private var pkgName: String = ""
     private var pkgVersion: String = ""
     private var crashSheet: ComposeBottomSheetHost? = null
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLocale.wrapContext(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -58,7 +58,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.core.os.LocaleListCompat
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
@@ -99,6 +98,7 @@ import com.github.gezimos.inkos.data.Constants.Action
 import com.github.gezimos.inkos.data.Constants.AppDrawerFlag
 import com.github.gezimos.inkos.data.Constants.Theme.Dark
 import com.github.gezimos.inkos.data.Prefs
+import com.github.gezimos.inkos.helper.AppLocale
 import com.github.gezimos.inkos.helper.CalendarEventsHelper
 import com.github.gezimos.inkos.helper.EinkCapabilities
 import com.github.gezimos.inkos.helper.IconPackUtility
@@ -570,10 +570,9 @@ class SettingsFragment : Fragment() {
                     1 -> "en"
                     else -> "zh-CN"
                 }
-                AppCompatDelegate.setApplicationLocales(
-                    if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList()
-                    else LocaleListCompat.forLanguageTags(tag)
-                )
+                // API 33+ 走平台 LocaleManager 会被系统当 home 任务重启，在本机直接抛
+                // "Can't change activity type once set"；AppLocale 自己存 tag + 自己套 locale。
+                AppLocale.setTag(requireContext(), tag)
                 requireActivity().recreate()
             }
         )
@@ -642,7 +641,7 @@ class SettingsFragment : Fragment() {
                 stringResource(R.string.language_english),
                 stringResource(R.string.language_chinese)
             )
-            val currentLanguageTag = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+            val currentLanguageTag = AppLocale.currentTag(requireContext())
             val languageIndex = when {
                 currentLanguageTag.startsWith("zh") -> 2
                 currentLanguageTag.startsWith("en") -> 1

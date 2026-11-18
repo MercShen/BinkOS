@@ -6,9 +6,15 @@ import android.graphics.Typeface
 import android.util.Log
 import com.github.gezimos.common.CrashHandler
 import com.github.gezimos.inkos.data.Prefs
+import com.github.gezimos.inkos.helper.AppLocale
 
 class inkOS : Application() {
     private lateinit var prefs: Prefs
+
+    /** 应用内语言（见 AppLocale）：applicationContext 的资源也跟随所选语言。 */
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(AppLocale.wrapContext(base))
+    }
 
     override fun onCreate() {
         super.onCreate()
