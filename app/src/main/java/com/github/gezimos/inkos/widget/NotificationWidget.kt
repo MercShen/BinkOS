@@ -59,6 +59,7 @@ class NotificationWidget : AppWidgetProvider() {
             val hideSystemOngoing = prefsLocal.hideUndeletableSystemNotifications
             val filtered = raw.filter { sbn ->
                 sbn.notification.category != Notification.CATEGORY_TRANSPORT &&
+                        !com.github.gezimos.inkos.helper.NotificationFilter.isOngoingCall(context, sbn) &&
                         !com.github.gezimos.inkos.helper.NotificationFilter.shouldHideFromViews(
                             context, sbn, hideSystemOngoing
                         ) &&

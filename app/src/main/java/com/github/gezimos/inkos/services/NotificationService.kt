@@ -237,6 +237,10 @@ class NotificationService : NotificationListenerService() {
         ) {
             return
         }
+        // 通话中的状态通知不进 Letters（未接来电是可清除通知，照常记录）。
+        if (NotificationFilter.isOngoingCall(applicationContext, sbn)) {
+            return
+        }
         val packageName = sbn.packageName
         val extras = sbn.notification.extras
         

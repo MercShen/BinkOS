@@ -690,6 +690,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (sbn.notification.category == android.app.Notification.CATEGORY_TRANSPORT) {
                         return@count false
                     }
+                    // 通话中的状态通知不算消息（Tray 可以显示，但不计入数字）。
+                    if (NotificationFilter.isOngoingCall(appContext, sbn)) {
+                        return@count false
+                    }
                     if (NotificationFilter.shouldHideFromViews(appContext, sbn, hideSystemOngoing)) {
                         return@count false
                     }

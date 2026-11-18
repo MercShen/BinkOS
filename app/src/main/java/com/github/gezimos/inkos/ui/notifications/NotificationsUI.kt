@@ -323,12 +323,15 @@ private fun buildCategoryTabs(
     context: Context,
     notifications: List<HubNotification>
 ): List<CategoryTab> {
-    // 电话 tab 只收未接来电（MISSED_CALL）；通话中的 ongoing call 通知不当作消息，
-    // 它会落到「全部」或「其他」，不进这个 tab。
+    // 电话 tab：未接来电（category CALL/MISSED_CALL，或发件包是默认拨号器——部分 ROM 不打 category）。
+    // 通话中的 ongoing 通知不会进 Hub，所以这里实际只剩未接来电。
+    val isCallTab: (HubNotification) -> Boolean = {
+        NotificationFilter.isCallCategory(it.notif.category) ||
+            NotificationFilter.isCallPackage(context, it.packageName)
+    }
     val knownCategories = setOf(
         Notification.CATEGORY_MESSAGE,
         Notification.CATEGORY_SOCIAL,
-        Notification.CATEGORY_MISSED_CALL,
         Notification.CATEGORY_EMAIL,
         Notification.CATEGORY_EVENT
     )
@@ -337,8 +340,8 @@ private fun buildCategoryTabs(
     )
     val msgCount = notifications.count { isMessageNotification(it) }
     tabs.add(CategoryTab(context.getString(R.string.hub_messages), msgCount, icon = Icons.AutoMirrored.Rounded.Chat) { isMessageNotification(it) })
+    tabs.add(CategoryTab(context.getString(R.string.hub_calls), notifications.count { isCallTab(it) }, icon = Icons.Rounded.Phone) { isCallTab(it) })
     val categoryDefs = listOf(
-        Triple(context.getString(R.string.hub_calls), Notification.CATEGORY_MISSED_CALL, Icons.Rounded.Phone),
         Triple(context.getString(R.string.hub_email), Notification.CATEGORY_EMAIL, Icons.Rounded.Email),
         Triple(context.getString(R.string.hub_events), Notification.CATEGORY_EVENT, Icons.Rounded.Event)
     )
@@ -346,8 +349,8 @@ private fun buildCategoryTabs(
         val count = notifications.count { it.notif.category == cat }
         tabs.add(CategoryTab(label, count, icon = icon) { it.notif.category == cat })
     }
-    val otherCount = notifications.count { !isMessageNotification(it) && it.notif.category !in knownCategories }
-    tabs.add(CategoryTab(context.getString(R.string.hub_other), otherCount, icon = Icons.Rounded.MoreHoriz) { !isMessageNotification(it) && it.notif.category !in knownCategories })
+    val otherCount = notifications.count { !isMessageNotification(it) && !isCallTab(it) && it.notif.category !in knownCategories }
+    tabs.add(CategoryTab(context.getString(R.string.hub_other), otherCount, icon = Icons.Rounded.MoreHoriz) { !isMessageNotification(it) && !isCallTab(it) && it.notif.category !in knownCategories })
     return tabs
 }
 
@@ -542,6 +545,8 @@ fun HubScreen(
     val validNotifications = rawNotifications
         .filter { sbn ->
             if (sbn.notification.category == Notification.CATEGORY_TRANSPORT) return@filter false
+            // 通话中的状态通知不进 Hub（未接来电是可清除通知，不受影响）；Tray 仍会显示它。
+            if (NotificationFilter.isOngoingCall(ctx, sbn)) return@filter false
             if (NotificationFilter.shouldHideFromViews(ctx, sbn, hideSystemOngoing)) return@filter false
             !notificationManager.isNotificationSummary(sbn) &&
                 (allowed.isEmpty() || allowed.contains(sbn.packageName))
@@ -1693,9 +1698,11 @@ fun SimpleTrayScreen(
 
     val validNotifications = (notificationsFromSbn + mediaNotifications)
         .sortedByDescending { (_, notif) -> notif.timestamp }
-    // 媒体卡只是控制项，不计入“消息通知数量”；Tray 顶部数字与全局计数保持一致。
+    // 媒体卡只是控制项，不计入“消息通知数量”；通话中的 ongoing 状态同理（Tray 可以显示，但不算消息）。
+    val sbnKeyByNotification = rawNotifications.associateBy { it.key }
     val messageNotificationCount = validNotifications.count { (_, notif) ->
-        notif.category != Notification.CATEGORY_TRANSPORT
+        notif.category != Notification.CATEGORY_TRANSPORT &&
+            !(sbnKeyByNotification[notif.notificationKey]?.let { NotificationFilter.isOngoingCall(ctx, it) } ?: false)
     }
 
     val isDpadModeState = remember { mutableStateOf(false) }
