@@ -51,6 +51,7 @@ Bink OS keeps inkOS's text-first home screen and adds features and quality-of-li
 ### Bigme HiBreak integration
 - **Vendor GC16 full refresh** — use the vendor's GC16 full refresh instead of the app's own full-screen flash, which cuts ghosting.
 - **Refresh animation** — use the Bigme e-ink page-turn effect while navigating Bink OS; Directional and Circular Ripple styles (Ripple since v0.2.7).
+- **Smart Refresh Mode** (Settings → Extras, off by default) — keep Regal as the default and switch to the vendor's Extreme refresh while you scroll or drag in edit mode and the short-swipe zone editor, then go back to Regal when they close, so dragging keeps up without giving up crisp text or page-turn animations elsewhere.
 
 ### Gestures that don't fight the system
 - **Short swipe area** — restrict page-turn short swipes to a configurable band, so system edge gestures still work; fewer conflicts on devices using gesture navigation.
@@ -77,7 +78,7 @@ Bink OS keeps inkOS's text-first home screen and adds features and quality-of-li
 
 Download the signed APK from [Releases](https://github.com/MercShen/BinkOS/releases) and install it over an existing Bink OS build — the signing key is stable, so upgrades keep your data.
 
-Requires Android 8.0+ (API 26). Best on the Bigme HiBreak; other e-ink phones work but the vendor-specific switches are HiBreak-only for now.
+Requires Android 8.0+ (API 26). Best on the Bigme HiBreak; other e-ink phones work, and the vendor switches only appear on devices that actually expose the vendor e-ink API.
 
 ## Build
 
