@@ -37,8 +37,8 @@
         <sub>Icon style — text-only or icons, with a live preview</sub>
       </td>
       <td align="center">
-        <img src="docs/img/bink/app-picker.jpg" height="300" alt="App picker"><br>
-        <sub>Wideget picker — search by name, paged navigation for e-ink</sub>
+        <img src="docs/img/bink/app-picker.jpg" height="300" alt="Widget picker"><br>
+        <sub>Widget picker — search by name, paged navigation for e-ink</sub>
       </td>
     </tr>
     <tr>

@@ -33,12 +33,12 @@
     </tr>
     <tr>
       <td align="center">
-        <img src="docs/img/bink/app-icon-style.jpg" height="300" alt="应用图标样式与形状"><br>
-        <sub>逐应用图标样式 —— 纯文字或图标，实时预览</sub>
+        <img src="docs/img/bink/app-icon-style.jpg" height="300" alt="图标样式与形状"><br>
+        <sub>图标样式 —— 纯文字或图标，实时预览</sub>
       </td>
       <td align="center">
-        <img src="docs/img/bink/app-picker.jpg" height="300" alt="应用选择器"><br>
-        <sub>应用选择器 —— 按名称搜索，分页翻动</sub>
+        <img src="docs/img/bink/app-picker.jpg" height="300" alt="小部件选择器"><br>
+        <sub>小部件选择器 —— 按名称搜索，分页翻动</sub>
       </td>
     </tr>
     <tr>
