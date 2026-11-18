@@ -133,6 +133,7 @@ import com.github.gezimos.inkos.helper.IconShape
 import com.github.gezimos.inkos.helper.IconShapeUtility
 import com.github.gezimos.inkos.helper.IconUtility
 import com.github.gezimos.inkos.helper.NotificationFilter
+import com.github.gezimos.inkos.helper.CallStatusText
 import com.github.gezimos.inkos.helper.utils.BrightnessHelper
 import com.github.gezimos.inkos.helper.utils.VibrationHelper
 import com.github.gezimos.inkos.services.NotificationManager
@@ -470,7 +471,7 @@ internal fun convertSbnToHubConversationNotification(
         conversationId = conversationId,
         conversationTitle = conversationTitle,
         sender = sender,
-        message = finalMessage,
+        message = CallStatusText.localize(ctx, sbn, finalMessage),
         timestamp = sbn.postTime,
         category = sbn.notification.category,
         notificationKey = sbn.key
@@ -1588,7 +1589,7 @@ internal fun convertSbnToSimpleTrayConversationNotification(
         conversationId = conversationId,
         conversationTitle = conversationTitle,
         sender = sender,
-        message = finalMessage,
+        message = CallStatusText.localize(ctx, sbn, finalMessage),
         timestamp = sbn.postTime,
         category = sbn.notification.category,
         notificationKey = sbn.key

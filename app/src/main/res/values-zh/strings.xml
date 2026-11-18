@@ -228,6 +228,9 @@
  <string name="hub_allowlist">Hub 白名单</string>
  <string name="hub_apps">Hub 应用</string>
  <string name="advanced_section">高级</string>
+ <string name="call_status_ongoing">通话中</string>
+ <string name="call_status_calling">正在呼叫…</string>
+ <string name="call_status_missed">未接来电</string>
  <string name="hide_system_notification">隐藏系统通知</string>
 
  <!-- App drawer -->

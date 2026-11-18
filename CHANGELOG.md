@@ -8,6 +8,7 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 - Add an Advanced section at the bottom of Settings → Notifications with a single "Hide System Notification" switch (off by default): ongoing / no-clear notifications posted by system apps (NFC, USB debugging and the like) no longer appear in Hub, Tray or the unread count. Calls are never hidden, and third-party ongoing notifications are kept. The system notification shade is untouched.
 - Remove the separate "enable Letters" master switch; the Letters action and shortcut are always available, so binding a gesture is enough.
 - Keep ongoing-call notifications out of Hub (Tray still shows them, and neither the Tray counter nor Home count includes them); missed calls stay in Hub and land under the Calls tab, detected by category or by the default dialer package.
+- Localize the call status line (ongoing / calling / missed) when the dialer's own text is empty or one of the known English phrases; any other wording is shown as-is.
 - Drop 窗口/"Window" from the Letters strings so the product name stays as-is.
 
 ## v0.2.7 — 2026-11-17

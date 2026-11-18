@@ -513,8 +513,11 @@ class NotificationManager private constructor(private val context: Context) {
         } ?: sbn
 
         val (sender, group, text) = extractNotificationContent(notificationToShow, prefs)
-        val (notifTitle, notifText) = buildNotificationTitleAndText(
+        val (notifTitle, rawNotifText) = buildNotificationTitleAndText(
             sender, group, text, sbn.packageName, notificationToShow.notification.category
+        )
+        val notifText = com.github.gezimos.inkos.helper.CallStatusText.localize(
+            context, notificationToShow, rawNotifText
         )
 
         return NotificationInfo(
@@ -553,8 +556,11 @@ class NotificationManager private constructor(private val context: Context) {
         } ?: return null
         
         val (sender, group, text) = extractNotificationContent(notificationToShow, prefs)
-        val (notifTitle, notifText) = buildNotificationTitleAndText(
+        val (notifTitle, rawNotifText) = buildNotificationTitleAndText(
             sender, group, text, packageName, notificationToShow.notification.category
+        )
+        val notifText = com.github.gezimos.inkos.helper.CallStatusText.localize(
+            context, notificationToShow, rawNotifText
         )
 
         return NotificationInfo(

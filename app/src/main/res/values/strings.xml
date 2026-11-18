@@ -228,6 +228,9 @@
     <string name="hub_allowlist">Hub Allowlist</string>
     <string name="hub_apps">Hub Apps</string>
     <string name="advanced_section">Advanced</string>
+    <string name="call_status_ongoing">Ongoing call</string>
+    <string name="call_status_calling">Calling…</string>
+    <string name="call_status_missed">Missed call</string>
     <string name="hide_system_notification">Hide System Notification</string>
 
     <!-- App drawer -->

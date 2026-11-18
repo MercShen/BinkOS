@@ -353,7 +353,7 @@ class NotificationService : NotificationListenerService() {
                 conversationId = conversationId,
                 conversationTitle = conversationTitle,
                 sender = sender,
-                message = message,
+                message = com.github.gezimos.inkos.helper.CallStatusText.localize(applicationContext, sbn, message),
                 timestamp = timestamp,
                 category = sbn.notification.category,
                 notificationKey = sbn.key
