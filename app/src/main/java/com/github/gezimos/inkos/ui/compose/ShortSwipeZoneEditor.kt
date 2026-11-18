@@ -146,8 +146,10 @@ private fun ShortSwipeZoneEditor(
     val bgColor = Theme.colors.background
     val topPx = with(density) { (top + topBase).dp.toPx() }
     val bottomPx = with(density) { bottom.dp.toPx() }
-    val topHandleOffset = with(density) { topPx.toDp() } - HANDLE_HALF
-    val bottomHandleOffset = with(density) { bottomPx.toDp() } - HANDLE_HALF
+    val topHandleOffset = (with(density) { topPx.toDp() } - HANDLE_HALF).coerceAtLeast(0.dp)
+    // 底部区域为 0 时，「贴底对齐 + 上移 bottom」会把 32dp 高的手柄移出屏幕一半，
+    // 只剩 2dp 的细线看着像不见了；这里保证对齐后不再往下移，整条始终可见。
+    val bottomHandleOffset = (HANDLE_HALF - with(density) { bottomPx.toDp() }).coerceAtMost(0.dp)
 
     // 墨水屏上纯黑半透明最稳：无论浅色/深色主题，被压深的区域都明显暗一档
     val dimColor = Color.Black.copy(alpha = 0.55f)
@@ -213,7 +215,7 @@ private fun ShortSwipeZoneEditor(
         ZoneBoundaryHandle(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .offset(y = -bottomHandleOffset),
+                .offset(y = bottomHandleOffset),
             barColor = textColor,
             value = bottom,
             maxValue = bottomMaxDp,
