@@ -323,10 +323,12 @@ private fun buildCategoryTabs(
     context: Context,
     notifications: List<HubNotification>
 ): List<CategoryTab> {
+    // 电话 tab 只收未接来电（MISSED_CALL）；通话中的 ongoing call 通知不当作消息，
+    // 它会落到「全部」或「其他」，不进这个 tab。
     val knownCategories = setOf(
         Notification.CATEGORY_MESSAGE,
         Notification.CATEGORY_SOCIAL,
-        Notification.CATEGORY_CALL,
+        Notification.CATEGORY_MISSED_CALL,
         Notification.CATEGORY_EMAIL,
         Notification.CATEGORY_EVENT
     )
@@ -336,7 +338,7 @@ private fun buildCategoryTabs(
     val msgCount = notifications.count { isMessageNotification(it) }
     tabs.add(CategoryTab(context.getString(R.string.hub_messages), msgCount, icon = Icons.AutoMirrored.Rounded.Chat) { isMessageNotification(it) })
     val categoryDefs = listOf(
-        Triple(context.getString(R.string.hub_calls), Notification.CATEGORY_CALL, Icons.Rounded.Phone),
+        Triple(context.getString(R.string.hub_calls), Notification.CATEGORY_MISSED_CALL, Icons.Rounded.Phone),
         Triple(context.getString(R.string.hub_email), Notification.CATEGORY_EMAIL, Icons.Rounded.Email),
         Triple(context.getString(R.string.hub_events), Notification.CATEGORY_EVENT, Icons.Rounded.Event)
     )
