@@ -219,6 +219,8 @@ class MainActivity : AppCompatActivity() {
     private val automationHandler = android.os.Handler(android.os.Looper.getMainLooper())
     private var pendingAutomation: Runnable? = null
     private var pendingAutomationCancelled: (() -> Unit)? = null
+    /** 某些命令（备份/恢复）要把文件信息回给调用方，而不是通用状态 JSON。 */
+    private var automationExtraMessage: String? = null
 
     private fun automationResult(requestId: String, dest: String, status: String, message: String) {
         val result = org.json.JSONObject()
@@ -249,7 +251,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleAutomationIntent(intent: Intent?): Boolean {
         intent ?: return false
         val keys = listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
-            "onboarding_page", "guide", "tab", "value", "type", "pkg", "confirm_write", "request_id")
+            "onboarding_page", "guide", "tab", "value", "type", "pkg", "path", "confirm_write", "confirm_clear", "request_id")
         // Ordinary launcher intents are not automation requests. Never consume their product extras.
         if (!listOf(EXTRA_AUTOMATION_DEST, EXTRA_AUTOMATION_SKIP_ONBOARDING, EXTRA_AUTOMATION_REFRESH,
                 "request_id").any { intent.hasExtra(it) }) return false
@@ -320,11 +322,14 @@ class MainActivity : AppCompatActivity() {
                 pendingAutomation = null
                 pendingAutomationCancelled = null
                 try {
+                    automationExtraMessage = null
                     dispatchAutomation(request)
                     if (request.skipOnboarding) prefs.firstOpen = false
+                    val applied = request.isStateCommand ||
+                        request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev", "back")
                     automationResult(requestId, request.dest,
-                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev", "back")) "applied" else "dispatched",
-                        if (request.isStateCommand || request.dest in setOf("home", "editmode", "editmode_on", "editmode_off", "home_next", "home_prev", "back")) automationState()
+                        if (applied) "applied" else "dispatched",
+                        automationExtraMessage ?: if (applied) automationState()
                         else "Dispatched; verify the target UI (authentication/loading may still be pending)")
                 } catch (e: Exception) {
                     automationResult(requestId, request.dest, "rejected", "Dispatch failed: ${e.javaClass.simpleName}")
@@ -494,6 +499,51 @@ class MainActivity : AppCompatActivity() {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 startActivity(intent)
                 Log.i(TAG, "automation external: launched $pkg")
+            }
+            // --- 备份 / 恢复（debug）：给验收流程一个标准入口，产物放 filesDir/backups ---
+            "backup" -> {
+                val temp = com.github.gezimos.inkos.helper.BackupZipHelper.createBackupZip(this, prefs)
+                val dir = java.io.File(filesDir, "backups").apply { mkdirs() }
+                val stamp = java.text.SimpleDateFormat("yyyyMMdd-HHmmss", java.util.Locale.US)
+                    .format(java.util.Date())
+                val target = java.io.File(dir, "backup-$stamp.zip")
+                temp.copyTo(target, overwrite = true)
+                temp.delete()
+                val digest = java.security.MessageDigest.getInstance("SHA-256")
+                target.inputStream().use { input ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read <= 0) break
+                        digest.update(buffer, 0, read)
+                    }
+                }
+                val sha = digest.digest().joinToString("") { "%02x".format(it) }
+                automationExtraMessage =
+                    """{"file":"backups/${target.name}","bytes":${target.length()},"sha256":"$sha"}"""
+                Log.i(TAG, "automation backup: backups/${target.name} ${target.length()}B sha256=$sha")
+            }
+            "restore" -> {
+                val raw = requireNotNull(request.path) { "restore requires path" }
+                val file = if (java.io.File(raw).isAbsolute) java.io.File(raw) else java.io.File(filesDir, raw)
+                // 只允许从应用自己的目录恢复（契约已挡 ..，这里再兜一层）
+                val canonical = file.canonicalPath
+                val allowedRoots = listOf(filesDir.canonicalPath, cacheDir.canonicalPath)
+                if (allowedRoots.none { canonical == it || canonical.startsWith(it + java.io.File.separator) }) {
+                    Log.w(TAG, "automation restore: path outside app dirs $canonical")
+                    error("path must stay inside filesDir or cacheDir")
+                }
+                if (!file.isFile) {
+                    Log.w(TAG, "automation restore: missing ${file.absolutePath}")
+                    error("backup not found: ${file.absolutePath}")
+                }
+                val ok = com.github.gezimos.inkos.helper.BackupZipHelper.restore(this, prefs, file)
+                if (!ok) {
+                    Log.w(TAG, "automation restore failed: ${file.absolutePath}")
+                    error("restore failed: ${file.name}")
+                }
+                automationExtraMessage = """{"restored":true,"file":"${file.name}","restart":"required"}"""
+                Log.i(TAG, "automation restore: ${file.name} ok=true (restart required)")
             }
             else -> error("No dispatcher for validated dest")
         }

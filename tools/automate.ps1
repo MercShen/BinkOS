@@ -6,7 +6,8 @@
     - 目标 App 默认 debug（app.binkos.debug），-App release 切到 app.binkos
     - -Dest 必填，本地只接受 ^[a-z_]+$（长度 <= 48），避免远程 sh 拆分/注入
     - -Tab / -Value / -Type / -Pkg 仅在显式传入时下发；显式 -Type '' 本地拒绝，避免 adb shell 参数歧义
-    - -Pkg 只允许与 -Dest external 搭配，值须形如 com.example.app
+    - -Pkg 只允许与 -Dest external 搭配；-Path 只允许与 -Dest restore 搭配（不含 ..）
+    - restore 额外要求 -AllowClear（附加 --ez confirm_clear true）；backup/restore 属状态写操作，需 -AllowStateChanges
     - 每次生成 request_id(UUID)，随 --es request_id 下发
     - 状态写操作（pager_* / home_reset_* / bottom* / allowlist* / eink_*）默认本地拒绝；
       必须显式 -AllowStateChanges，才会附加 --ez confirm_write true
@@ -38,6 +39,8 @@
     .\automate.ps1 -Dest back
     .\automate.ps1 -Dest external -Pkg com.android.settings
     .\automate.ps1 -Dest bottomwidget -Type quote -AllowStateChanges
+    .\automate.ps1 -Dest backup -AllowStateChanges
+    .\automate.ps1 -Dest restore -Path backups/x.zip -AllowStateChanges -AllowClear
 
   退出码：0 成功 / 2 参数或 dest 校验失败 / 3 rejected / 4 cancelled / 5 超时 / 6 dispatched 无锚点 /
           7 adb 或设备错误 / 8 ExpectedText 未确认
@@ -51,6 +54,7 @@ param(
     [int]$Value,
     [string]$Type,
     [string]$Pkg,
+    [string]$Path,
 
     [string]$Serial = '',
     [string]$AdbPath = '',
@@ -59,6 +63,8 @@ param(
     [string]$App = 'debug',
 
     [switch]$AllowStateChanges,
+
+    [switch]$AllowClear,
 
     [string]$ExpectedText = '',
 
@@ -83,7 +89,7 @@ $packages = @{
     release = 'app.binkos'
 }
 $launcherComponent = 'com.github.gezimos.inkos.MainActivity'
-$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist', '^eink_')
+$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist', '^eink_', '^backup$', '^restore$')
 $destPattern = '^[A-Za-z_]+$'
 $typePattern = '^[A-Za-z0-9_.\-]*$'
 $component = "$($packages[$App])/$launcherComponent"
@@ -364,6 +370,25 @@ if ($PSBoundParameters.ContainsKey('Pkg')) {
     }
 }
 
+if ($PSBoundParameters.ContainsKey('Path')) {
+    $pathValue = [string]$Path
+    if ($destValue -ne 'restore') {
+        Write-Host 'error: -Path is only supported with -Dest restore' -ForegroundColor Red
+        exit $exitUsage
+    }
+    if ($pathValue.Length -eq 0 -or $pathValue.Length -gt 256 -or
+        $pathValue -match '[\x00-\x1f]' -or $pathValue -match '(^|[\\/])\.\.([\\/]|$)') {
+        Write-Host "error: -Path must be a short printable path without .. (got '$pathValue')" -ForegroundColor Red
+        exit $exitUsage
+    }
+}
+
+if ($destValue -eq 'restore' -and -not $AllowClear) {
+    Write-Host 'refused: restore clears current data before importing.' -ForegroundColor Red
+    Write-Host '  re-run with -AllowStateChanges -AllowClear -Path <backups/x.zip> after authorization.' -ForegroundColor Yellow
+    exit $exitUsage
+}
+
 if ($isStateDest -and -not $AllowStateChanges) {
     Write-Host "refused: '$destValue' is a state-changing dest." -ForegroundColor Red
     Write-Host '  re-run with -AllowStateChanges (adds --ez confirm_write true) if you really mean it.' -ForegroundColor Yellow
@@ -385,7 +410,9 @@ if ($PSBoundParameters.ContainsKey('Tab')) { $startArgs += @('--ei', 'tab', [str
 if ($PSBoundParameters.ContainsKey('Value')) { $startArgs += @('--ei', 'value', [string]$Value) }
 if ($PSBoundParameters.ContainsKey('Type')) { $startArgs += @('--es', 'type', $typeValue) }
 if ($PSBoundParameters.ContainsKey('Pkg')) { $startArgs += @('--es', 'pkg', ([string]$Pkg)) }
+if ($PSBoundParameters.ContainsKey('Path')) { $startArgs += @('--es', 'path', ([string]$Path)) }
 if ($AllowStateChanges) { $startArgs += @('--ez', 'confirm_write', 'true') }
+if ($AllowClear) { $startArgs += @('--ez', 'confirm_clear', 'true') }
 
 $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
 

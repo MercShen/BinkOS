@@ -13,7 +13,8 @@ object AutomationContract {
         val refreshEink: Boolean = false,
         val onboardingPage: Int? = null,
         val guide: String? = null,
-        val pkg: String? = null
+        val pkg: String? = null,
+        val path: String? = null
     ) {
         val isStateCommand: Boolean get() = dest in stateCommands
         val writesPreferences: Boolean get() = isStateCommand || skipOnboarding || onboardingPage != null
@@ -96,6 +97,8 @@ object AutomationContract {
         names("eink_fast_off")
         names("back")
         names("external")
+        names("backup")
+        names("restore")
     }
 
     private val types = mapOf(
@@ -112,7 +115,7 @@ object AutomationContract {
         "bottom_android", "bottom_shortcuts", "bottom_quote", "bottom_events", "bottom_usage",
         "bottom_pagedots", "bottom_off", "allowlist_clear", "allowlist_tray_clear", "allowlist_hub_clear",
         "eink_anim_on", "eink_anim_off", "eink_style_directional", "eink_style_ripple",
-        "eink_fast_on", "eink_fast_off"
+        "eink_fast_on", "eink_fast_off", "backup", "restore"
     )
     private val homeCommands = setOf(
         "quick_menu", "edit_bg", "edit_bg_theme", "edit_bg_align", "edit_bg_islands", "edit_bg_gestures",
@@ -129,7 +132,7 @@ object AutomationContract {
     fun validate(extras: Map<String, Any?>, debug: Boolean): Validation {
         fun reject(message: String) = Validation.Rejected(message)
         if (!debug) return reject("Automation is available only in debug builds")
-        for (name in listOf("skip_onboarding", "refresh_eink", "confirm_write")) {
+        for (name in listOf("skip_onboarding", "refresh_eink", "confirm_write", "confirm_clear")) {
             if (extras.containsKey(name) && extras[name] !is Boolean) return reject("$name must be a boolean (--ez)")
         }
         val rawDest = extras["dest"] as? String ?: return reject("dest must be a non-empty string (--es)")
@@ -192,8 +195,23 @@ object AutomationContract {
             if (extras.containsKey("pkg")) return reject("pkg is only supported for external")
             null
         }
+        val path = if (dest == "restore") {
+            val raw = extras["path"] as? String ?: return reject("restore requires --es path <backups/x.zip or absolute>")
+            if (raw.length > 256 || raw.any { it.isISOControl() }) {
+                return reject("path must be a short printable path")
+            }
+            if (raw.isBlank()) return reject("path must not be blank")
+            if (raw.split('/', '\\').any { it == ".." }) return reject("path must not contain ..")
+            raw
+        } else {
+            if (extras.containsKey("path")) return reject("path is only supported for restore")
+            null
+        }
+        if (dest == "restore" && extras["confirm_clear"] != true) {
+            return reject("restore clears current data before importing; pass --ez confirm_clear true as well")
+        }
         val request = Request(dest, tab, value, type, extras["skip_onboarding"] == true,
-            extras["refresh_eink"] == true, onboardingPage, guide, pkg)
+            extras["refresh_eink"] == true, onboardingPage, guide, pkg, path)
         if ((request.writesPreferences || request.refreshEink) && extras["confirm_write"] != true) {
             return reject("This command changes settings or forces a refresh; pass --ez confirm_write true only after authorization")
         }

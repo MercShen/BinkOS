@@ -173,6 +173,8 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 | `eink_anim_on/off` | 无 | 保存翻页动画开关（`EINK_PAGE_TURN_ANIMATION`） |
 | `eink_style_directional` / `eink_style_ripple` | 无 | 保存动画样式，**不会自动打开动画开关**；要出效果需先 `eink_anim_on` |
 | `eink_fast_on/off` | 无 | 保存「智能刷新模式」开关（`EINK_INTERACTION_FAST_MODE`） |
+| `backup` | 无 | 生成完整备份 ZIP，写到 `filesDir/backups/backup-<yyyyMMdd-HHmmss>.zip`；结果 JSON 回 `file/bytes/sha256` |
+| `restore` | path **必填** | 先清空当前数据再导入该 ZIP；path 相对 `filesDir`（如 `backups/x.zip`）或位于 `filesDir`/`cacheDir` 的绝对路径；**额外要求 `--ez confirm_clear true`**，恢复后需重启应用生效 |
 
 上表都须 `--ez confirm_write true`。脚本未加 `-AllowStateChanges` 会本地退出2且不发请求；App端缺确认则 rejected/脚本退出3。type合法输入：`android/android_widget`、`shortcuts/search`、`quote`、`events`、`usage/total_usage`、`pagedots/page_dots`、`off/disabled`。
 
@@ -230,6 +232,39 @@ e-ink 四个命令用来替代「点设置页 / 用 run-as 灌 prefs」，典型
 - refresh先尝试系统全刷（仅einkSystemFullRefresh开启且厂商调用可用），否则100ms覆盖层闪屏；不保证物理GC16或任何波形实际效果。
 - 类型严格：整数用--ei、布尔--ez、字符串--es。tab只允许通用edit_bg/clock/date/apps；value只允许pager_margin；type只允许bottomwidget；onboarding_page只允许onboarding且为0..7；guide只允许firsttime且必须是表中名称。显式错类型、缺必要参数、越界、不适用参数、未知dest一律拒绝，不静默截断或恢复默认。
 - dest值不区分大小写，extra名称区分；request_id用短可打印串(≤128字符)，推荐UUID。脚本对dest/type还做安全字符校验。
+
+## 6.5 备份与恢复（dest backup / restore）
+
+两道确认、两份留档——与 `device-backup/`、`/sdcard/BinkOS-Test/` 的设备数据管理约定一致：
+
+| 层 | 位置 | 谁产生 |
+|---|---|---|
+| 应用内工作副本 | `filesDir/backups/backup-<yyyyMMdd-HHmmss>.zip`（私有） | `dest backup` 直接写 |
+| 设备留档 | `/sdcard/BinkOS-Test/<版本>/evidence/backup-<目的>-<时间>.zip` | 验收脚本 `adb push` |
+| 工作区留档 | `ws3/device-backup/binkos-backups/backup-<目的>-<时间>.zip` | `adb exec-out run-as … cat` 拉取 |
+
+流程（debug 包；路径与时间戳按当次替换）：
+
+```powershell
+# 1) 备份：写 filesDir/backups，automation_result 回 {"file":"backups/…","bytes":N,"sha256":"…"}
+.\tools\automate.ps1 -Dest backup -AllowStateChanges
+
+# 2) 拉回工作区留档（debug 可 run-as；release 包没有这条路）
+cmd /c "adb exec-out run-as app.binkos.debug cat files/backups/backup-20261118-220000.zip > ws3\device-backup\binkos-backups\backup-<目的>-20261118-220000.zip"
+
+# 3) 设备留档
+adb push ws3\device-backup\binkos-backups\backup-<目的>-20261118-220000.zip /sdcard/BinkOS-Test/v0.2.7/evidence/
+
+# 4) 恢复：先把 ZIP 送进 filesDir，再发 restore
+cmd /c "type ws3\device-backup\binkos-backups\backup-<目的>-20261118-220000.zip | adb shell run-as app.binkos.debug sh -c 'cat > files/backups/restore-in.zip'"
+.\tools\automate.ps1 -Dest restore -Path backups/restore-in.zip -AllowStateChanges -AllowClear
+```
+
+- `path` 契约校验：必填、非空、不含 `..`、无控制字符、≤256；App 侧再要求解析后的真实路径落在 `filesDir` 或 `cacheDir` 内。
+- `restore` 会先清空 prefs 与 filesDir（与 UI 导入一致），所以 `confirm_write` 与 `confirm_clear` 缺一不可；只带前者本地退出2/App 端 rejected。
+- 结果 `{"restored":true,"restart":"required"}`：自动化**不自动重启**（避免 `automation_result` 来不及写），调用方自己 `am force-stop` + 启动后再验 UI。
+- `backup` 不覆盖旧文件（时间戳命名）；体积随字体/壁纸增长。
+- 正式包没有这两个 dest（automation 只在 debug 可用），正式包仍走设置 → 高级 → 备份与恢复（SAF）。
 
 ## 7. status（纯只读）
 

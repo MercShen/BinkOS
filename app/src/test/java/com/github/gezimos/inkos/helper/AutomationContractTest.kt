@@ -118,4 +118,23 @@ class AutomationContractTest {
         assertEquals("com.android.settings", external.pkg)
         assertFalse(external.writesPreferences)
     }
+    @Test fun backupNeedsConfirmationAndRestoreNeedsTwoGatesPlusPath() {
+        rejected("dest" to "backup")
+        val backup = accepted("dest" to "backup", "confirm_write" to true)
+        assertTrue(backup.writesPreferences)
+        assertFalse(backup.needsHome)
+
+        rejected("dest" to "restore", "path" to "backups/a.zip")
+        rejected("dest" to "restore", "path" to "backups/a.zip", "confirm_write" to true)
+        rejected("dest" to "restore", "confirm_write" to true, "confirm_clear" to true)
+        rejected("dest" to "restore", "path" to "", "confirm_write" to true, "confirm_clear" to true)
+        rejected("dest" to "restore", "path" to "backups/a\u0000.zip", "confirm_write" to true, "confirm_clear" to true)
+        rejected("dest" to "settings", "path" to "backups/a.zip")
+        rejected("dest" to "restore", "path" to "backups/a.zip", "confirm_write" to "yes", "confirm_clear" to true)
+
+        val restore = accepted("dest" to "restore", "path" to "backups/a.zip",
+            "confirm_write" to true, "confirm_clear" to true)
+        assertEquals("backups/a.zip", restore.path)
+        assertTrue(restore.writesPreferences)
+    }
 }
