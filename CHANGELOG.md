@@ -2,6 +2,8 @@
 
 Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are available on [GitHub Releases](https://github.com/MercShen/BinkOS/releases).
 
+## v0.2.8 — 2026-11-18
+
 ## Unreleased
 
 ### E-ink
