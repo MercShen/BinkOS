@@ -138,7 +138,6 @@ import com.github.gezimos.inkos.data.Constants.Action
 import com.github.gezimos.inkos.data.Constants.AppDrawerFlag
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.ShapeHelper
-import com.github.gezimos.inkos.helper.EinkInteractionMode
 import com.github.gezimos.inkos.helper.hideNavigationBar
 import com.github.gezimos.inkos.helper.hideStatusBar
 import com.github.gezimos.inkos.style.SettingsTheme
@@ -206,7 +205,6 @@ class ComposeBottomSheetHost(private val activity: Activity) {
             (view.parent as? ViewGroup)?.removeView(view)
         }
         composeView = null
-        EinkInteractionMode.end(sheetToken())
         if (wasShowing) {
             onDismissed?.let { cb ->
                 onDismissed = null
@@ -464,12 +462,7 @@ class ComposeBottomSheetHost(private val activity: Activity) {
             )
         )
         composeView = hostView
-        // 面板里是列表/滑杆这类拖动滚动操作：开着「交互时极速刷新」时临时切极速波形。
-        EinkInteractionMode.begin(sheetToken())
     }
-
-    /** 每个 host 一个 token：替换式 show / 重复 dismiss 都不会把极速模式状态弄歪。 */
-    private fun sheetToken(): String = "sheet#" + System.identityHashCode(this)
 
 }
 
