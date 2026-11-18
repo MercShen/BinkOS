@@ -925,8 +925,7 @@
     <string name="option_page_turn_ripple">Ripple</string>
     <string name="settings_interaction_fast_mode">Smart Refresh Mode</string>
     <string name="settings_desc_interaction_fast_mode">Switch Bink OS\'s refresh mode based on interaction</string>
-    <string name="smart_refresh_guide_scope">Drag-heavy screens switch to the fastest waveform; everything else returns to Regal, which refresh animations need.</string>
-    <string name="smart_refresh_guide_flash">Each waveform switch repaints the whole screen once.</string>
+    <string name="smart_refresh_guide_line">Bink OS uses Regal by default and switches to the fastest mode while you drag</string>
     <string name="settings_desc_choose_launcher">Choose which launcher to use</string>
     <string name="settings_desc_view_onboarding">View the setup wizard again</string>
     <string name="settings_desc_guide">Learn gestures and interactions</string>
@@ -1020,7 +1019,7 @@
     <string name="desc_simple_tray_brightness">Show the brightness bar at the top of Simple Tray</string>
     <string name="onboarding_eink_title">EXTRAS</string>
         <string name="onboarding_eink_full_refresh_title">Full Refresh</string>
-    <string name="onboarding_eink_full_refresh_desc">Use Bigme vendor full refresh</string>
+    <string name="onboarding_eink_full_refresh_desc">Use vendor full refresh</string>
     <string name="onboarding_eink_page_turn_title">Refresh Animation</string>
 <string name="onboarding_eink_desc">Your device supports these vendor e-ink features; they apply as soon as you turn them on:</string>
 <string name="onboarding_eink_animation_scope">Refresh animations is only visible when refresh mode is set to Regal or HD256.</string>

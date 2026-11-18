@@ -896,10 +896,7 @@ class SettingsFragment : Fragment() {
             if (showSmartRefreshGuide) {
                 TooltipBubble(
                     title = stringResource(R.string.settings_interaction_fast_mode),
-                    lines = listOf(
-                        stringResource(R.string.smart_refresh_guide_scope),
-                        stringResource(R.string.smart_refresh_guide_flash)
-                    ),
+                    lines = listOf(stringResource(R.string.smart_refresh_guide_line)),
                     nextLabel = stringResource(R.string.done),
                     onNext = { showSmartRefreshGuide = false },
                     onDismiss = { showSmartRefreshGuide = false }
