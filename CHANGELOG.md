@@ -9,6 +9,7 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 - Remove the separate "enable Letters" master switch; the Letters action and shortcut are always available, so binding a gesture is enough.
 - Keep ongoing-call notifications out of Hub (Tray still shows them, and neither the Tray counter nor Home count includes them); missed calls stay in Hub and land under the Calls tab, detected by category or by the default dialer package.
 - Localize the call status line (ongoing / calling / missed) when the dialer's own text is empty or one of the known English phrases; any other wording is shown as-is.
+- Move notification category fallback text (New message, Media playing, …) into string resources so it follows the app language.
 - Drop 窗口/"Window" from the Letters strings so the product name stays as-is.
 
 ## v0.2.7 — 2026-11-17

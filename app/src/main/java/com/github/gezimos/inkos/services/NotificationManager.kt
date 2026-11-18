@@ -473,24 +473,7 @@ class NotificationManager private constructor(private val context: Context) {
             }
             notifTitle = appLabel
             
-            notifText = when (category) {
-                android.app.Notification.CATEGORY_MESSAGE -> "New message"
-                android.app.Notification.CATEGORY_EMAIL -> "New email"
-                android.app.Notification.CATEGORY_CALL -> "Missed call"
-                android.app.Notification.CATEGORY_ALARM -> "Alarm"
-                android.app.Notification.CATEGORY_REMINDER -> "Reminder"
-                android.app.Notification.CATEGORY_EVENT -> "Event"
-                android.app.Notification.CATEGORY_PROMO -> "Promotion"
-                android.app.Notification.CATEGORY_TRANSPORT -> "Media playing"
-                android.app.Notification.CATEGORY_SYSTEM -> "System notification"
-                android.app.Notification.CATEGORY_SERVICE -> "Service notification"
-                android.app.Notification.CATEGORY_ERROR -> "Error"
-                android.app.Notification.CATEGORY_PROGRESS -> "Progress update"
-                android.app.Notification.CATEGORY_SOCIAL -> "Social update"
-                android.app.Notification.CATEGORY_STATUS -> "Status update"
-                android.app.Notification.CATEGORY_RECOMMENDATION -> "Recommendation"
-                else -> null // Don't show generic fallback - just show app name
-            }
+            notifText = com.github.gezimos.inkos.helper.NotificationFallbackText.get(context, category)
         }
         
         return Pair(notifTitle, notifText)

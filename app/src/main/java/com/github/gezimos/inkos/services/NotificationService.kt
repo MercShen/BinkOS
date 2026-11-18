@@ -326,24 +326,10 @@ class NotificationService : NotificationListenerService() {
             conversationTitle = appLabel
             sender = appLabel
             
-            // Provide category-specific fallback text
-            message = when (sbn.notification.category) {
-                android.app.Notification.CATEGORY_MESSAGE -> "New message"
-                android.app.Notification.CATEGORY_EMAIL -> "New email"
-                android.app.Notification.CATEGORY_CALL -> "Missed call"
-                android.app.Notification.CATEGORY_ALARM -> "Alarm"
-                android.app.Notification.CATEGORY_REMINDER -> "Reminder"
-                android.app.Notification.CATEGORY_EVENT -> "Event"
-                android.app.Notification.CATEGORY_PROMO -> "Promotion"
-                android.app.Notification.CATEGORY_SYSTEM -> "System notification"
-                android.app.Notification.CATEGORY_SERVICE -> "Service notification"
-                android.app.Notification.CATEGORY_ERROR -> "Error"
-                android.app.Notification.CATEGORY_PROGRESS -> "Progress update"
-                android.app.Notification.CATEGORY_SOCIAL -> "Social update"
-                android.app.Notification.CATEGORY_STATUS -> "Status update"
-                android.app.Notification.CATEGORY_RECOMMENDATION -> "Recommendation"
-                else -> null
-            }
+            // Provide category-specific fallback text (localized; calls handled by CallStatusText)
+            message = com.github.gezimos.inkos.helper.NotificationFallbackText.get(
+                applicationContext, sbn.notification.category
+            )
         }
         
         val timestamp = sbn.postTime

@@ -231,6 +231,20 @@
     <string name="call_status_ongoing">Ongoing call</string>
     <string name="call_status_calling">Calling…</string>
     <string name="call_status_missed">Missed call</string>
+    <string name="notif_fallback_message">New message</string>
+    <string name="notif_fallback_email">New email</string>
+    <string name="notif_fallback_alarm">Alarm</string>
+    <string name="notif_fallback_reminder">Reminder</string>
+    <string name="notif_fallback_event">Event</string>
+    <string name="notif_fallback_promo">Promotion</string>
+    <string name="notif_fallback_transport">Media playing</string>
+    <string name="notif_fallback_system">System notification</string>
+    <string name="notif_fallback_service">Service notification</string>
+    <string name="notif_fallback_error">Error</string>
+    <string name="notif_fallback_progress">Progress update</string>
+    <string name="notif_fallback_social">Social update</string>
+    <string name="notif_fallback_status">Status update</string>
+    <string name="notif_fallback_recommendation">Recommendation</string>
     <string name="hide_system_notification">Hide System Notification</string>
 
     <!-- App drawer -->

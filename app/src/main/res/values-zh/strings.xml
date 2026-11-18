@@ -231,6 +231,20 @@
  <string name="call_status_ongoing">通话中</string>
  <string name="call_status_calling">正在呼叫…</string>
  <string name="call_status_missed">未接来电</string>
+ <string name="notif_fallback_message">新消息</string>
+ <string name="notif_fallback_email">新邮件</string>
+ <string name="notif_fallback_alarm">闹钟</string>
+ <string name="notif_fallback_reminder">提醒</string>
+ <string name="notif_fallback_event">日程</string>
+ <string name="notif_fallback_promo">推广</string>
+ <string name="notif_fallback_transport">媒体播放中</string>
+ <string name="notif_fallback_system">系统通知</string>
+ <string name="notif_fallback_service">服务通知</string>
+ <string name="notif_fallback_error">错误</string>
+ <string name="notif_fallback_progress">进度更新</string>
+ <string name="notif_fallback_social">社交动态</string>
+ <string name="notif_fallback_status">状态更新</string>
+ <string name="notif_fallback_recommendation">推荐</string>
  <string name="hide_system_notification">隐藏系统通知</string>
 
  <!-- App drawer -->

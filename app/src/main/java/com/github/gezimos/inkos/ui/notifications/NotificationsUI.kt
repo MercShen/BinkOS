@@ -134,6 +134,7 @@ import com.github.gezimos.inkos.helper.IconShapeUtility
 import com.github.gezimos.inkos.helper.IconUtility
 import com.github.gezimos.inkos.helper.NotificationFilter
 import com.github.gezimos.inkos.helper.CallStatusText
+import com.github.gezimos.inkos.helper.NotificationFallbackText
 import com.github.gezimos.inkos.helper.utils.BrightnessHelper
 import com.github.gezimos.inkos.helper.utils.VibrationHelper
 import com.github.gezimos.inkos.services.NotificationManager
@@ -448,23 +449,7 @@ internal fun convertSbnToHubConversationNotification(
         } catch (_: Exception) { packageName }
         conversationTitle = appLabel
         sender = appLabel
-        finalMessage = when (sbn.notification.category) {
-            Notification.CATEGORY_MESSAGE -> "New message"
-            Notification.CATEGORY_EMAIL -> "New email"
-            Notification.CATEGORY_CALL -> "Missed call"
-            Notification.CATEGORY_ALARM -> "Alarm"
-            Notification.CATEGORY_REMINDER -> "Reminder"
-            Notification.CATEGORY_EVENT -> "Event"
-            Notification.CATEGORY_PROMO -> "Promotion"
-            Notification.CATEGORY_SYSTEM -> "System notification"
-            Notification.CATEGORY_SERVICE -> "Service notification"
-            Notification.CATEGORY_ERROR -> "Error"
-            Notification.CATEGORY_PROGRESS -> "Progress update"
-            Notification.CATEGORY_SOCIAL -> "Social update"
-            Notification.CATEGORY_STATUS -> "Status update"
-            Notification.CATEGORY_RECOMMENDATION -> "Recommendation"
-            else -> null
-        }
+        finalMessage = NotificationFallbackText.get(ctx, sbn.notification.category)
     }
 
     return NotificationManager.ConversationNotification(
@@ -1565,24 +1550,7 @@ internal fun convertSbnToSimpleTrayConversationNotification(
         } catch (_: Exception) { packageName }
         conversationTitle = appLabel
         sender = appLabel
-        finalMessage = when (sbn.notification.category) {
-            Notification.CATEGORY_MESSAGE -> "New message"
-            Notification.CATEGORY_EMAIL -> "New email"
-            Notification.CATEGORY_CALL -> "Missed call"
-            Notification.CATEGORY_ALARM -> "Alarm"
-            Notification.CATEGORY_REMINDER -> "Reminder"
-            Notification.CATEGORY_EVENT -> "Event"
-            Notification.CATEGORY_PROMO -> "Promotion"
-            Notification.CATEGORY_TRANSPORT -> "Media playing"
-            Notification.CATEGORY_SYSTEM -> "System notification"
-            Notification.CATEGORY_SERVICE -> "Service notification"
-            Notification.CATEGORY_ERROR -> "Error"
-            Notification.CATEGORY_PROGRESS -> "Progress update"
-            Notification.CATEGORY_SOCIAL -> "Social update"
-            Notification.CATEGORY_STATUS -> "Status update"
-            Notification.CATEGORY_RECOMMENDATION -> "Recommendation"
-            else -> null
-        }
+        finalMessage = NotificationFallbackText.get(ctx, sbn.notification.category)
     }
 
     return NotificationManager.ConversationNotification(
@@ -1687,7 +1655,7 @@ fun SimpleTrayScreen(
                 val mediaNotif = NotificationManager.ConversationNotification(
                     conversationId = "media_${player.packageName}",
                     conversationTitle = null,
-                    sender = player.title ?: "Media playing",
+                    sender = player.title ?: ctx.getString(R.string.notif_fallback_transport),
                     message = player.artist,
                     timestamp = System.currentTimeMillis(),
                     category = Notification.CATEGORY_TRANSPORT,
