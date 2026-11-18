@@ -306,13 +306,16 @@ internal fun openNotificationSettingsForPackage(context: Context, packageName: S
 
 private val messagingPackages = setOf(
     "com.whatsapp", "com.whatsapp.w4b",
-    "org.telegram.messenger", "org.thunderdog.chalern",
+    "org.telegram.messenger", "org.thunderdog.challegram",
     "com.facebook.orca", "com.facebook.mlite",
     "com.discord", "com.Slack",
     "com.viber.voip", "com.google.android.apps.messaging",
     "com.samsung.android.messaging", "com.oneplus.mms",
     "org.thoughtcrime.securesms", "im.vector.app",
-    "com.beeper.chat", "com.snapchat.android"
+    "com.beeper.chat", "com.snapchat.android",
+    // 中文 IM：部分版本发通知不带 CATEGORY_MESSAGE，靠包名归到「消息」tab
+    "com.tencent.mm", "com.tencent.mobileqq",
+    "com.tencent.wework", "com.ss.android.lark"
 )
 
 private fun isMessageNotification(hn: HubNotification): Boolean {
