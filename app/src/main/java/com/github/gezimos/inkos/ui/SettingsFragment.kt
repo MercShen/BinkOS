@@ -2743,6 +2743,11 @@ class SettingsFragment : Fragment() {
                 }
             }
             SettingsTitle(text = stringResource(R.string.option_hub), fontSize = titleFontSize)
+            SettingsSwitch(text = stringResource(R.string.hub_hide_undeletable), fontSize = titleFontSize,
+                description = stringResource(R.string.desc_hub_hide_undeletable),
+                defaultState = uiState.hideUndeletableSystemNotifications,
+                onCheckedChange = { viewModel.setHideUndeletableSystemNotifications(it) },
+                enabled = pushNotificationsEnabled)
             var showHubAllowlistDialog by remember { mutableStateOf(false) }
             SettingsSelect(title = stringResource(R.string.hub_allowlist), option = uiState.allowedHubApps.size.toString(),
                 fontSize = titleFontSize, description = stringResource(R.string.desc_hub_filter), onClick = { showHubAllowlistDialog = true }, enabled = pushNotificationsEnabled)

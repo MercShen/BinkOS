@@ -132,6 +132,7 @@ import com.github.gezimos.inkos.helper.AudioWidgetHelper
 import com.github.gezimos.inkos.helper.IconShape
 import com.github.gezimos.inkos.helper.IconShapeUtility
 import com.github.gezimos.inkos.helper.IconUtility
+import com.github.gezimos.inkos.helper.NotificationFilter
 import com.github.gezimos.inkos.helper.utils.BrightnessHelper
 import com.github.gezimos.inkos.helper.utils.VibrationHelper
 import com.github.gezimos.inkos.services.NotificationManager
@@ -269,9 +270,7 @@ internal fun vibratePaging(context: Context) {
 
 /** 系统是否允许用户清除这条通知（ongoing / FLAG_NO_CLEAR 不允许）。 */
 private fun isNotificationDismissible(sbn: StatusBarNotification): Boolean =
-    !sbn.isOngoing &&
-        (sbn.notification.flags and
-            (Notification.FLAG_NO_CLEAR or Notification.FLAG_ONGOING_EVENT)) == 0
+    NotificationFilter.isDismissible(sbn)
 
 internal fun openNotificationSettingsForPackage(context: Context, packageName: String) {
     try {
@@ -537,9 +536,11 @@ fun HubScreen(
     val notificationManager = NotificationManager.getInstance(ctx)
 
     val allowed = prefsLocal.allowedHubApps
+    val hideSystemOngoing = prefsLocal.hideUndeletableSystemNotifications
     val validNotifications = rawNotifications
         .filter { sbn ->
             if (sbn.notification.category == Notification.CATEGORY_TRANSPORT) return@filter false
+            if (NotificationFilter.shouldHideFromViews(ctx, sbn, hideSystemOngoing)) return@filter false
             !notificationManager.isNotificationSummary(sbn) &&
                 (allowed.isEmpty() || allowed.contains(sbn.packageName))
         }
@@ -1652,10 +1653,12 @@ fun SimpleTrayScreen(
     val screenScale = rememberScreenScale()
 
     val allowed = prefsLocal.allowedSimpleTrayApps
+    val hideSystemOngoing = prefsLocal.hideUndeletableSystemNotifications
 
     val notificationsFromSbn = rawNotifications
         .filter { sbn ->
             if (sbn.notification.category == Notification.CATEGORY_TRANSPORT) return@filter false
+            if (NotificationFilter.shouldHideFromViews(ctx, sbn, hideSystemOngoing)) return@filter false
             !notificationManager.isNotificationSummary(sbn) &&
                 (allowed.isEmpty() || allowed.contains(sbn.packageName))
         }

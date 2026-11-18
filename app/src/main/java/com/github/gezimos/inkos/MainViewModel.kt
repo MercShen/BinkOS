@@ -23,6 +23,7 @@ import com.github.gezimos.inkos.data.Constants.PrefKeys
 import com.github.gezimos.inkos.helper.AudioWidgetHelper
 import com.github.gezimos.inkos.helper.CalendarEventsHelper
 import com.github.gezimos.inkos.helper.IconUtility
+import com.github.gezimos.inkos.helper.NotificationFilter
 import com.github.gezimos.inkos.helper.isinkosDefault
 import com.github.gezimos.inkos.services.NotificationManager
 import com.github.gezimos.inkos.ui.compose.HomeUiRenderState
@@ -131,6 +132,7 @@ data class HomeUiState(
     val allowedNotificationApps: Set<String> = emptySet(),
     val allowedSimpleTrayApps: Set<String> = emptySet(),
     val allowedHubApps: Set<String> = emptySet(),
+    val hideUndeletableSystemNotifications: Boolean = false,
     // SimpleTray Settings
     val notificationsPerPage: Int = 3,
     val enableBottomNav: Boolean = true,
@@ -576,6 +578,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         allowedNotificationApps = prefs.allowedNotificationApps,
         allowedSimpleTrayApps = prefs.allowedSimpleTrayApps,
             allowedHubApps = prefs.allowedHubApps,
+        hideUndeletableSystemNotifications = prefs.hideUndeletableSystemNotifications,
         // SimpleTray Settings
         notificationsPerPage = prefs.notificationsPerPage,
         enableBottomNav = prefs.enableBottomNav,
@@ -684,8 +687,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 // global count (they may still be shown in Tray through its media card).
                 val allowed = homeUi.allowedSimpleTrayApps
                 val notificationManager = NotificationManager.getInstance(appContext)
+                val hideSystemOngoing = homeUi.hideUndeletableSystemNotifications
                 rawNotifications.count { sbn ->
                     if (sbn.notification.category == android.app.Notification.CATEGORY_TRANSPORT) {
+                        return@count false
+                    }
+                    if (NotificationFilter.shouldHideFromViews(appContext, sbn, hideSystemOngoing)) {
                         return@count false
                     }
                     !notificationManager.isNotificationSummary(sbn) &&
@@ -2291,6 +2298,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setHubShowIcons(enabled: Boolean) {
         prefs.hubShowIcons = enabled
         _homeUiState.value = _homeUiState.value.copy(hubShowIcons = enabled)
+    }
+
+    fun setHideUndeletableSystemNotifications(enabled: Boolean) {
+        prefs.hideUndeletableSystemNotifications = enabled
+        _homeUiState.value = _homeUiState.value.copy(hideUndeletableSystemNotifications = enabled)
+        if (enabled) {
+            // 开关打开时补一刀：把此前已被记进「信件」的同类通知清掉，避免 NFC / USB 调试
+            // 这类常驻通知的旧会话继续显示。
+            val notificationManager = NotificationManager.getInstance(appContext)
+            val hiddenPackages = com.github.gezimos.inkos.services.NotificationService.sbnState.value
+                .filter { NotificationFilter.shouldHideFromViews(appContext, it, true) }
+                .map { it.packageName }
+                .toSet()
+            if (hiddenPackages.isNotEmpty()) {
+                notificationManager.conversationNotificationsState.value
+                    .filterKeys { it in hiddenPackages }
+                    .forEach { (pkg, rows) ->
+                        rows.forEach { notificationManager.removeConversationNotification(pkg, it.conversationId) }
+                    }
+            }
+        }
     }
 
     fun setIconSourceMode(mode: Int) = setSurfaceIconSourceMode(0, mode)

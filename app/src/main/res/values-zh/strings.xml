@@ -227,6 +227,7 @@
  <string name="simple_tray_apps">Simple Tray 应用</string>
  <string name="hub_allowlist">Hub 白名单</string>
  <string name="hub_apps">Hub 应用</string>
+ <string name="hub_hide_undeletable">隐藏不可清除的系统通知</string>
 
  <!-- App drawer -->
  <string name="app_drawer">应用抽屉</string>
@@ -1062,4 +1063,5 @@
  <string name="badge_indicator_filled_diamond">实心菱形</string>
  <string name="no_matching_items">没有匹配项</string>
  <string name="desc_hub_filter">选择哪些应用在 Hub 显示通知</string>
+ <string name="desc_hub_hide_undeletable">NFC、USB 调试这类关不掉的系统通知仍留在系统通知栏，但不进 Hub / Tray，也不计入未读数；来电与通话永不隐藏。</string>
 </resources>

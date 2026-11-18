@@ -56,8 +56,12 @@ class NotificationWidget : AppWidgetProvider() {
             val raw = NotificationService.sbnState.value
             val prefsLocal = Prefs(context)
             val allowed = if (prefsLocal.allowedSimpleTrayApps.isNotEmpty()) prefsLocal.allowedSimpleTrayApps else prefsLocal.allowedNotificationApps
+            val hideSystemOngoing = prefsLocal.hideUndeletableSystemNotifications
             val filtered = raw.filter { sbn ->
                 sbn.notification.category != Notification.CATEGORY_TRANSPORT &&
+                        !com.github.gezimos.inkos.helper.NotificationFilter.shouldHideFromViews(
+                            context, sbn, hideSystemOngoing
+                        ) &&
                         !notificationManager.isNotificationSummary(sbn) &&
                         (allowed.isEmpty() || allowed.contains(sbn.packageName))
             }

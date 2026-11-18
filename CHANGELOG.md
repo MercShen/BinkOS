@@ -2,6 +2,11 @@
 
 Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are available on [GitHub Releases](https://github.com/MercShen/BinkOS/releases).
 
+## Unreleased
+
+### Notifications, Tray and Hub
+- Add "Hide non-dismissible system notifications" (Settings → Notifications → Hub, off by default): ongoing / no-clear notifications posted by system apps (NFC, USB debugging, serial console and the like) no longer appear in Hub, Tray or the unread count. Calls are never hidden, and third-party ongoing notifications are kept. The system notification shade is untouched.
+
 ## v0.2.7 — 2026-11-17
 
 ### E-ink and onboarding

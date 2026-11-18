@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import com.github.gezimos.inkos.helper.AudioWidgetHelper
+import com.github.gezimos.inkos.helper.NotificationFilter
 
 class NotificationService : NotificationListenerService() {
     private lateinit var notificationManager: NotificationManager
@@ -229,6 +230,13 @@ class NotificationService : NotificationListenerService() {
     }
 
     private fun updateConversationNotifications(sbn: StatusBarNotification) {
+        val prefs = com.github.gezimos.inkos.data.Prefs(applicationContext)
+        if (NotificationFilter.shouldHideFromViews(
+                applicationContext, sbn, prefs.hideUndeletableSystemNotifications
+            )
+        ) {
+            return
+        }
         val packageName = sbn.packageName
         val extras = sbn.notification.extras
         

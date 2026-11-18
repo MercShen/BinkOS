@@ -1962,6 +1962,11 @@ var pageIndicatorMargin: Int
         get() = prefs.getBoolean(HUB_SHOW_ICONS, false)
         set(value) = prefs.edit { putBoolean(HUB_SHOW_ICONS, value) }
 
+    /** Hub / Tray / 通知计数里隐藏「系统不可清除通知」（NFC、USB 调试等）；默认关闭。系统通知栏与来电不受影响。 */
+    var hideUndeletableSystemNotifications: Boolean
+        get() = prefs.getBoolean(HIDE_UNDELETABLE_SYSTEM_NOTIFICATIONS, false)
+        set(value) = prefs.edit { putBoolean(HIDE_UNDELETABLE_SYSTEM_NOTIFICATIONS, value) }
+
     var iconSourceMode: Int
         get() = prefs.getInt(ICON_SOURCE_MODE, 0)
         set(value) = prefs.edit { putInt(ICON_SOURCE_MODE, value.coerceIn(0, 6)) }
@@ -2291,5 +2296,6 @@ var pageIndicatorMargin: Int
         private const val NOTIFICATIONS_TEXT_SIZE = "notifications_text_size"
         private const val NOTIFICATIONS_PER_PAGE = "notifications_per_page"
         private const val ENABLE_BOTTOM_NAV = "enable_bottom_nav"
+        private const val HIDE_UNDELETABLE_SYSTEM_NOTIFICATIONS = "hide_undeletable_system_notifications"
     }
 }
