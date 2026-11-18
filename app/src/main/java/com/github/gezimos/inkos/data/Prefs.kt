@@ -1798,7 +1798,9 @@ var pageIndicatorMargin: Int
         set(value) = prefs.edit { putInt(SHORT_SWIPE_ZONE_TOP, value.coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)) }
 
     var shortSwipeZoneBottom: Int
-        get() = prefs.getInt(SHORT_SWIPE_ZONE_BOTTOM, 0).coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)
+        // 默认留出底部系统手势条：首次安装就把手柄放在 48dp 处，不贴着屏幕底边
+        get() = prefs.getInt(SHORT_SWIPE_ZONE_BOTTOM, Constants.DEFAULT_SHORT_SWIPE_ZONE_BOTTOM_DP)
+            .coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)
         set(value) = prefs.edit { putInt(SHORT_SWIPE_ZONE_BOTTOM, value.coerceIn(0, Constants.MAX_SHORT_SWIPE_ZONE_DP)) }
 
 

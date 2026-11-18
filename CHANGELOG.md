@@ -5,6 +5,7 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 ## Unreleased
 
 ### E-ink
+- Short-swipe zone: first install now leaves the bottom 48dp clear (system gesture bar / navigation bar), so pulling the bottom handle no longer triggers the system back-to-home gesture; users can still drag it to 0.
 - Vendor switches (full refresh, refresh animation, Smart Refresh Mode) and their guides only appear when the device actually exposes the vendor e-ink API; devices without it no longer show dead toggles or demos. Capabilities now live behind one `EinkCapabilities` seam so a second vendor can plug in without touching the UI.
 - Add "Smart Refresh Mode" (Settings → Extras and the vendor page of onboarding, off by default): edit mode and the short-swipe zone editor temporarily switch this app to Extreme (179) and go back to Regal (180) when they close, so dragging feels responsive while page-turn animations still work elsewhere. Panel sheets stay on Regal: many are tap-only lists, and every waveform switch costs one vendor policy apply that looks like a full refresh. Turning it on for the first time shows a short guide.
 - Rename "System Full Refresh (Bigme)" to "System Full Refresh".

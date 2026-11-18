@@ -58,6 +58,10 @@ object Constants {
     /** 短滑区域顶部计数起点（dp）：编辑器里显示 0 时，实际边界在屏幕顶部 30dp 处，
      *  避开状态栏/挖孔区域，也让手柄初始位置不会贴到屏幕最上沿。 */
     const val SHORT_SWIPE_ZONE_TOP_BASE_DP = 30
+    /** 短滑区域底部默认留白（dp）：首次安装时区域到屏幕底部留 48dp，
+     *  避开系统底部手势条/三键导航，避免「想拖手柄却触发返回桌面」。
+     *  用户仍可在编辑器里把底部区域拖到 0。 */
+    const val DEFAULT_SHORT_SWIPE_ZONE_BOTTOM_DP = 48
     const val DEFAULT_SHORT_SWIPE_RATIO = 0.25f
     const val DEFAULT_LONG_SWIPE_RATIO = 2.5f
     const val MIN_SHORT_SWIPE_RATIO = 0.01f
