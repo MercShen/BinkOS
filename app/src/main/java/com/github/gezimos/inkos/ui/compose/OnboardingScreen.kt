@@ -62,6 +62,7 @@ import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.ShapeHelper
 import com.github.gezimos.inkos.helper.DebugFirstTimeGuide
 import com.github.gezimos.inkos.helper.RefreshAnimationDemo
+import com.github.gezimos.inkos.helper.SmartRefreshGuide
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
 import com.github.gezimos.inkos.style.rememberScreenScale
@@ -180,7 +181,9 @@ object OnboardingScreen {
         var bigmeFullRefresh by remember { mutableStateOf(prefs.einkSystemFullRefresh) }
         var bigmePageTurnAnim by remember { mutableStateOf(prefs.einkPageTurnAnimation) }
         var bigmePageTurnStyle by remember { mutableIntStateOf(prefs.einkPageTurnAnimationStyle) }
+        var bigmeSmartRefresh by remember { mutableStateOf(prefs.einkInteractionFastMode) }
         var showRefreshScopeDialog by remember { mutableStateOf(false) }
+        var showSmartRefreshGuide by remember { mutableStateOf(false) }
 
         LaunchedEffect(Unit) {
             DebugFirstTimeGuide.forceRefreshAnimationScope.collect { forced ->
@@ -472,6 +475,36 @@ object OnboardingScreen {
                                     if (!enabled) showRefreshScopeDialog = false
                                 }
                             )
+                            SettingsComposable.SettingsSwitch(
+                                text = stringResource(R.string.settings_interaction_fast_mode),
+                                fontSize = extraTitleFontSize,
+                                description = stringResource(R.string.settings_desc_interaction_fast_mode),
+                                defaultState = bigmeSmartRefresh,
+                                horizontalPadding = 0.dp,
+                                onCheckedChange = { enabled ->
+                                    bigmeSmartRefresh = enabled
+                                    if (viewModel != null) viewModel.setEinkInteractionFastMode(enabled)
+                                    else prefs.einkInteractionFastMode = enabled
+                                    if (enabled && SmartRefreshGuide.shouldShow(prefs)) {
+                                        SmartRefreshGuide.markShown(prefs)
+                                        showSmartRefreshGuide = true
+                                    }
+                                    if (!enabled) showSmartRefreshGuide = false
+                                }
+                            )
+                            if (showSmartRefreshGuide) {
+                                TooltipBubble(
+                                    title = stringResource(R.string.settings_interaction_fast_mode),
+                                    lines = listOf(
+                                        stringResource(R.string.smart_refresh_guide_scope),
+                                        stringResource(R.string.smart_refresh_guide_flash)
+                                    ),
+                                    alignment = Alignment.Center,
+                                    nextLabel = stringResource(R.string.done),
+                                    onNext = { showSmartRefreshGuide = false },
+                                    onDismiss = { showSmartRefreshGuide = false }
+                                )
+                            }
                             if (bigmePageTurnAnim) {
                                 Spacer(modifier = Modifier.height(4.dp.scaled(screenScale)))
                                 SettingsComposable.SettingsSelect(

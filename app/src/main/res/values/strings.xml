@@ -914,7 +914,7 @@
     <string name="settings_credits_description_fmt">mLauncher, oLauncher — %1$s</string>
     <string name="settings_fork_title">Fork of inkOS</string>
     <string name="settings_fork_description">Bink OS is a personal fork of inkOS by gezimos, with thanks to the original author.</string>
-    <string name="settings_system_full_refresh">System Full Refresh (Bigme)</string>
+    <string name="settings_system_full_refresh">System Full Refresh</string>
     <string name="settings_desc_system_full_refresh">Use vendor full refresh</string>
     <string name="settings_page_turn_animation">Refresh Animation</string>
     <string name="settings_desc_page_turn_animation">Enable vendor refresh animations</string>
@@ -923,8 +923,10 @@
     <string name="settings_desc_page_turn_animation_style">Directional follows the gesture; Ripple uses a circular animation</string>
     <string name="option_page_turn_directional">Directional</string>
     <string name="option_page_turn_ripple">Ripple</string>
-    <string name="settings_interaction_fast_mode">Fast Refresh While Interacting</string>
-    <string name="settings_desc_interaction_fast_mode">Use the fastest waveform while dragging in edit mode, the short-swipe zone editor or a panel; other screens go back to Regal, which animations need</string>
+    <string name="settings_interaction_fast_mode">Smart Refresh Mode</string>
+    <string name="settings_desc_interaction_fast_mode">Switch Bink OS\'s refresh mode based on interaction</string>
+    <string name="smart_refresh_guide_scope">Drag-heavy screens switch to the fastest waveform; everything else returns to Regal, which refresh animations need.</string>
+    <string name="smart_refresh_guide_flash">Each waveform switch repaints the whole screen once.</string>
     <string name="settings_desc_choose_launcher">Choose which launcher to use</string>
     <string name="settings_desc_view_onboarding">View the setup wizard again</string>
     <string name="settings_desc_guide">Learn gestures and interactions</string>

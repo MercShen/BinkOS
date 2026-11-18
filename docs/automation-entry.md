@@ -172,7 +172,7 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 | `allowlist_tray_clear` / `allowlist_hub_clear` | 无 | 分别清掉一个白名单；不是“关闭全部通知” |
 | `eink_anim_on/off` | 无 | 保存翻页动画开关（`EINK_PAGE_TURN_ANIMATION`） |
 | `eink_style_directional` / `eink_style_ripple` | 无 | 保存动画样式，**不会自动打开动画开关**；要出效果需先 `eink_anim_on` |
-| `eink_fast_on/off` | 无 | 保存「交互时极速刷新」开关（`EINK_INTERACTION_FAST_MODE`） |
+| `eink_fast_on/off` | 无 | 保存「智能刷新模式」开关（`EINK_INTERACTION_FAST_MODE`） |
 
 上表都须 `--ez confirm_write true`。脚本未加 `-AllowStateChanges` 会本地退出2且不发请求；App端缺确认则 rejected/脚本退出3。type合法输入：`android/android_widget`、`shortcuts/search`、`quote`、`events`、`usage/total_usage`、`pagedots/page_dots`、`off/disabled`。
 

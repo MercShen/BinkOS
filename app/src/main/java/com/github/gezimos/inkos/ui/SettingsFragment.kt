@@ -104,6 +104,7 @@ import com.github.gezimos.inkos.helper.IconPackUtility
 import com.github.gezimos.inkos.helper.IconUtility
 import com.github.gezimos.inkos.helper.ShapeHelper
 import com.github.gezimos.inkos.helper.RefreshAnimationDemo
+import com.github.gezimos.inkos.helper.SmartRefreshGuide
 import com.github.gezimos.inkos.ui.compose.RefreshAnimationGuideContent
 import com.github.gezimos.inkos.ui.compose.TooltipBubble
 import com.github.gezimos.inkos.helper.getHexForOpacity
@@ -784,6 +785,7 @@ class SettingsFragment : Fragment() {
         val titleFontSize = if (fontSize.isSpecified) (fontSize.value * 1.5).sp else fontSize
         val uiState by viewModel.homeUiState.collectAsState()
         var showRefreshAnimationDemo by remember { mutableStateOf(false) }
+        var showSmartRefreshGuide by remember { mutableStateOf(false) }
         val isMuditaDevice = remember { EinkHelper.isMuditaKompakt() }
         Column(modifier = Modifier.fillMaxSize()) {
             if (isMuditaDevice) {
@@ -882,8 +884,27 @@ class SettingsFragment : Fragment() {
                 fontSize = titleFontSize,
                 description = stringResource(R.string.settings_desc_interaction_fast_mode),
                 defaultState = uiState.einkInteractionFastMode,
-                onCheckedChange = { viewModel.setEinkInteractionFastMode(it) }
+                onCheckedChange = { enabled ->
+                    viewModel.setEinkInteractionFastMode(enabled)
+                    if (enabled && SmartRefreshGuide.shouldShow(prefs)) {
+                        SmartRefreshGuide.markShown(prefs)
+                        showSmartRefreshGuide = true
+                    }
+                    if (!enabled) showSmartRefreshGuide = false
+                }
             )
+            if (showSmartRefreshGuide) {
+                TooltipBubble(
+                    title = stringResource(R.string.settings_interaction_fast_mode),
+                    lines = listOf(
+                        stringResource(R.string.smart_refresh_guide_scope),
+                        stringResource(R.string.smart_refresh_guide_flash)
+                    ),
+                    nextLabel = stringResource(R.string.done),
+                    onNext = { showSmartRefreshGuide = false },
+                    onDismiss = { showSmartRefreshGuide = false }
+                )
+            }
             if (showRefreshAnimationDemo) {
                 TooltipBubble(
                     title = stringResource(R.string.settings_page_turn_animation),
