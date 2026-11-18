@@ -33,8 +33,18 @@
     </tr>
     <tr>
       <td align="center">
+        <img src="docs/img/bink/app-icon-style.jpg" height="300" alt="应用图标样式与形状"><br>
+        <sub>逐应用图标样式 —— 纯文字或图标，实时预览</sub>
+      </td>
+      <td align="center">
+        <img src="docs/img/bink/app-picker.jpg" height="300" alt="应用选择器"><br>
+        <sub>应用选择器 —— 按名称搜索，分页翻动</sub>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
         <img src="docs/img/bink/extras.png" height="300" alt="墨水屏扩展选项"><br>
-        <sub>大我刷新与翻页动画开关</sub>
+        <sub>大我刷新、翻页动画风格与智能刷新开关</sub>
       </td>
       <td align="center">
         <img src="docs/img/bink/settings-language.jpg" height="300" alt="语言选择器"><br>

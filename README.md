@@ -33,8 +33,18 @@
     </tr>
     <tr>
       <td align="center">
+        <img src="docs/img/bink/app-icon-style.jpg" height="300" alt="App icon style and shape"><br>
+        <sub>Per-app icon style — text-only or icons, with a live preview</sub>
+      </td>
+      <td align="center">
+        <img src="docs/img/bink/app-picker.jpg" height="300" alt="App picker"><br>
+        <sub>App picker — search by name, paged for e-ink</sub>
+      </td>
+    </tr>
+    <tr>
+      <td align="center">
         <img src="docs/img/bink/extras.png" height="300" alt="E-ink extras"><br>
-        <sub>Bigme refresh &amp; animation switches</sub>
+        <sub>Bigme refresh, animation style &amp; Smart Refresh switches</sub>
       </td>
       <td align="center">
         <img src="docs/img/bink/settings-language.jpg" height="300" alt="Language picker"><br>
