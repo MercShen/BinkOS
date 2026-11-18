@@ -200,6 +200,8 @@ object SettingsComposable {
         pageCount: Int,
         modifier: Modifier = Modifier
     ) {
+        // 只有一页时页码点没有信息量，直接不显示（与 PagedNavRow 的约定一致）
+        if (pageCount <= 1) return
         val tintColor = SettingsTheme.color.settings
         val screenScale = rememberScreenScale()
         val islandsShape = LocalPrefs.current?.textIslandsShape ?: 0
