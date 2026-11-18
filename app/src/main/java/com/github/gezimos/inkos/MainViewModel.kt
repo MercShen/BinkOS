@@ -143,6 +143,7 @@ data class HomeUiState(
     val einkSystemFullRefresh: Boolean = false,
     val einkPageTurnAnimation: Boolean = false,
     val einkPageTurnAnimationStyle: Int = 0,
+    val einkInteractionFastMode: Boolean = false,
     val useVolumeKeysForPages: Boolean = false,
     val selectedAppShortcuts: Set<String>? = null, // null means all selected by default
     val einkHelperMode: Int = 0,
@@ -588,6 +589,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         einkSystemFullRefresh = prefs.einkSystemFullRefresh,
         einkPageTurnAnimation = prefs.einkPageTurnAnimation,
         einkPageTurnAnimationStyle = prefs.einkPageTurnAnimationStyle,
+        einkInteractionFastMode = prefs.einkInteractionFastMode,
         useVolumeKeysForPages = prefs.useVolumeKeysForPages,
         selectedAppShortcuts = prefs.selectedAppShortcuts.takeIf { it.isNotEmpty() },
         einkHelperMode = prefs.einkHelperMode,
@@ -2674,6 +2676,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _homeUiState.value = _homeUiState.value.copy(einkPageTurnAnimationStyle = value)
         if (value == 0) {
             try { com.github.gezimos.inkos.helper.BigmeEink.resetAppEinkAnimation(appContext) } catch (_: Exception) {}
+        }
+    }
+
+    fun setEinkInteractionFastMode(enabled: Boolean) {
+        prefs.einkInteractionFastMode = enabled
+        _homeUiState.value = _homeUiState.value.copy(einkInteractionFastMode = enabled)
+        // 关掉开关时如果正处在编辑模式/面板里，要立刻把波形恢复到 Regal。
+        if (!enabled) {
+            try { com.github.gezimos.inkos.helper.EinkInteractionMode.reset() } catch (_: Exception) {}
         }
     }
 

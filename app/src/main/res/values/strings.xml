@@ -923,6 +923,8 @@
     <string name="settings_desc_page_turn_animation_style">Directional follows the gesture; Ripple uses a circular animation</string>
     <string name="option_page_turn_directional">Directional</string>
     <string name="option_page_turn_ripple">Ripple</string>
+    <string name="settings_interaction_fast_mode">Fast Refresh While Interacting</string>
+    <string name="settings_desc_interaction_fast_mode">Use the fastest waveform while dragging in edit mode, the short-swipe zone editor or a panel; other screens go back to Regal, which animations need</string>
     <string name="settings_desc_choose_launcher">Choose which launcher to use</string>
     <string name="settings_desc_view_onboarding">View the setup wizard again</string>
     <string name="settings_desc_guide">Learn gestures and interactions</string>

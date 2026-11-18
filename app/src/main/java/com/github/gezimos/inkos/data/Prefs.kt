@@ -132,6 +132,7 @@ private const val PAGE_INDICATOR_MARGIN = "PAGE_INDICATOR_MARGIN"
 private const val EINK_SYSTEM_FULL_REFRESH = "EINK_SYSTEM_FULL_REFRESH"
 private const val EINK_PAGE_TURN_ANIMATION = "EINK_PAGE_TURN_ANIMATION"
 private const val EINK_PAGE_TURN_ANIMATION_STYLE = "EINK_PAGE_TURN_ANIMATION_STYLE"
+private const val EINK_INTERACTION_FAST_MODE = "EINK_INTERACTION_FAST_MODE"
 private const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
 private const val HOME_ALIGNMENT = "HOME_ALIGNMENT"
 private const val TEXT_ISLANDS = "TEXT_ISLANDS"
@@ -1773,6 +1774,14 @@ var pageIndicatorMargin: Int
     var einkPageTurnAnimationStyle: Int
         get() = prefs.getInt(EINK_PAGE_TURN_ANIMATION_STYLE, 0).coerceIn(0, 1)
         set(value) = prefs.edit { putInt(EINK_PAGE_TURN_ANIMATION_STYLE, value.coerceIn(0, 1)) }
+
+    /**
+     * 交互界面（编辑模式 / 短滑区域编辑器 / 底部面板）临时切「极速」刷新波形，
+     * 退出后回到 Regal。Regal 才能看到翻页动画，所以只在拖动/滚动时才放弃它。
+     */
+    var einkInteractionFastMode: Boolean
+        get() = prefs.getBoolean(EINK_INTERACTION_FAST_MODE, false)
+        set(value) = prefs.edit { putBoolean(EINK_INTERACTION_FAST_MODE, value) }
     /** 用大我系统的 GC16 全刷代替原来的整屏闪烁 */
     var einkSystemFullRefresh: Boolean
         get() = prefs.getBoolean(EINK_SYSTEM_FULL_REFRESH, false)

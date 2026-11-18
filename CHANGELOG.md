@@ -5,6 +5,8 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 ## Unreleased
 
 ### E-ink
+- Add "Fast Refresh While Interacting" (Settings → Extras, off by default): edit mode, the short-swipe zone editor and panel sheets temporarily switch this app to the fastest waveform (179) and go back to Regal (180) when they close, so dragging and scrolling feel responsive while page-turn animations still work elsewhere.
+- Tighten the direction animation hold window from 500 ms to 100 ms: on-device logs show the redraw happens within the same frame, and a shorter window keeps clock and badge refreshes from picking up the animation.
 - Ripple refresh animation now covers every transition except home paging: entering a screen sends 10, going back or returning home sends 9, decided from the navigation stack rather than from long-swipe bindings, so screens without a gesture entry (wallpaper, guide, …) animate too. Falling back to a Directional wipe when the vendor call fails is gone.
 - Returning to Home no longer plays a Directional page turn when the home page auto-resets: the auto-reset is not a user page turn, so it no longer animates (a Ripple close plays instead when coming back from another app).
 - Home paging clears any lingering Ripple style first, so paging stays Directional in Ripple mode.

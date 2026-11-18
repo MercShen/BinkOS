@@ -96,6 +96,9 @@ import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.filled.Add
 object EditModeHelper {
     
+    /** 交互极速刷新的 token：编辑模式 */
+    private const val TOKEN_EDIT_MODE = "edit_mode"
+
     private val _isEditModeActive = MutableStateFlow(false)
     val isEditModeFlow: StateFlow<Boolean> = _isEditModeActive
 
@@ -125,6 +128,7 @@ object EditModeHelper {
             return false
         }
         _isEditModeActive.value = true
+        EinkInteractionMode.begin(TOKEN_EDIT_MODE)
         VibrationHelper.trigger(VibrationHelper.Effect.CLICK)
         return true
     }
@@ -134,12 +138,14 @@ object EditModeHelper {
     fun setEditMode(enabled: Boolean) {
         if (enabled) {
             _isEditModeActive.value = true
+            EinkInteractionMode.begin(TOKEN_EDIT_MODE)
         } else {
             exitEditMode()
         }
     }
     fun exitEditMode() {
         _isEditModeActive.value = false
+        EinkInteractionMode.end(TOKEN_EDIT_MODE)
         // 退出编辑模式时短滑区域编辑器也不应继续占位
         zoneEditorVisible.value = false
         try {

@@ -877,6 +877,13 @@ class SettingsFragment : Fragment() {
                     }
                 )
             }
+            SettingsSwitch(
+                text = stringResource(R.string.settings_interaction_fast_mode),
+                fontSize = titleFontSize,
+                description = stringResource(R.string.settings_desc_interaction_fast_mode),
+                defaultState = uiState.einkInteractionFastMode,
+                onCheckedChange = { viewModel.setEinkInteractionFastMode(it) }
+            )
             if (showRefreshAnimationDemo) {
                 TooltipBubble(
                     title = stringResource(R.string.settings_page_turn_animation),

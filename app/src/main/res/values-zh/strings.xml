@@ -922,6 +922,8 @@
  <string name="settings_desc_page_turn_animation_style">方向式跟随手势方向；波纹式使用圆形动画</string>
  <string name="option_page_turn_directional">方向式</string>
  <string name="option_page_turn_ripple">波纹式</string>
+ <string name="settings_interaction_fast_mode">交互时极速刷新</string>
+ <string name="settings_desc_interaction_fast_mode">编辑模式、短滑区域编辑器、面板拖动/滚动时用极速刷新；其它界面回到 Regal（翻页动画需要 Regal）</string>
  <string name="settings_desc_choose_launcher">选择要使用的桌面</string>
  <string name="settings_desc_view_onboarding">再次查看设置向导</string>
  <string name="settings_desc_guide">了解手势与交互</string>

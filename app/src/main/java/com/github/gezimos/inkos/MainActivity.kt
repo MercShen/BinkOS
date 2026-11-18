@@ -34,6 +34,7 @@ import com.github.gezimos.inkos.databinding.ActivityMainBinding
 import com.github.gezimos.inkos.helper.AudioWidgetHelper
 import com.github.gezimos.inkos.helper.BigmeEink
 import com.github.gezimos.inkos.helper.EditModeHelper
+import com.github.gezimos.inkos.helper.EinkInteractionMode
 import com.github.gezimos.inkos.helper.GestureBindings
 import com.github.gezimos.inkos.helper.hideNavigationBar
 import com.github.gezimos.inkos.helper.isTablet
@@ -814,6 +815,7 @@ class MainActivity : AppCompatActivity() {
         // --- Bigme (大我) e-ink animation: resolve the vendor DisplayPolicyManager once ---
         try {
             BigmeEink.init(this)
+            EinkInteractionMode.init(this)
         } catch (_: Exception) {}
 
         try {
@@ -1145,6 +1147,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         cancelPendingAutomation()
+        // 交互极速模式不能跨 Activity 生命周期残留：否则下次进来一直是极速波形。
+        try { EinkInteractionMode.reset() } catch (_: Exception) {}
         // 编辑器覆盖层挂在 decorView 上，随 Activity 一起销毁；顺手清掉标志位，避免下次进来还隐藏拖动条
         com.github.gezimos.inkos.helper.EditModeHelper.zoneEditorVisible.value = false
         super.onDestroy()

@@ -44,13 +44,22 @@ object BigmeEink {
     private const val APP_ANIMATION_METHOD = "setEinkAnimationForPackage"
     private const val REGAL_MODE = 180
     private const val HD_256_MODE = 0x800000B1.toInt()
+    /** 刷新波形：Regal（翻页动画可见所必需）。 */
+    const val MODE_REGAL = 180
+    /** 刷新波形：极速（交互跟手，但翻页动画不可见）。 */
+    const val MODE_SUPER = 179
     private const val PAGE_TURN_STYLE_RIPPLE = 1
     /** OEM appEinkAnimation codes: 10 = circle→middle (open), 9 = middle→circle (close). */
     private const val APP_ANIMATION_RIPPLE_OPEN = 10
     private const val APP_ANIMATION_RIPPLE_CLOSE = 9
 
-    /** 触发后动画模式的保持时长：要覆盖「调用 → 真正重绘」的间隔。 */
-    private const val DURATION_MS = 500L
+    /**
+     * 触发后动画模式的保持时长：要覆盖「调用 → 真正重绘」的间隔。
+     *
+     * 2026-11-18 实测：dev bundle 探针把窗口压到 100ms 仍稳定出动画（挂完就重绘，间隔只有一帧），
+     * 之前 500ms 明显偏保守 —— 窗口越长，窗口内时钟/角标等无关刷新越容易被带上动画。
+     */
+    private const val DURATION_MS = 100L
 
     /** 手势与导航之间的时间窗：超过这个间隔就不再认为动画由该手势触发。 */
     private const val SWIPE_WINDOW_MS = 600L
@@ -163,6 +172,24 @@ object BigmeEink {
             Log.i(TAG, "refresh mode $current -> $REGAL_MODE for ${context.packageName}")
         } catch (t: Throwable) {
             Log.w(TAG, "ensureAnimationVisible failed: ${t.javaClass.simpleName}: ${t.message}")
+        }
+    }
+
+    /**
+     * 直接改写本包的刷新波形（Regal / 极速 …）。用于「交互界面临时切极速」，
+     * 切回 Regal 才能继续看到翻页动画。非大我设备返回 false。
+     */
+    fun setPackageRefreshMode(context: Context, mode: Int): Boolean {
+        if (!init(context)) return false
+        val target = policy ?: return false
+        val setter = refreshModeSetter ?: return false
+        return try {
+            val result = setter.invoke(target, context.packageName, mode)
+            Log.i(TAG, "refreshMode=$mode pkg=${context.packageName} result=$result")
+            true
+        } catch (t: Throwable) {
+            Log.w(TAG, "setRefreshModeForPackage($mode) failed: ${t.javaClass.simpleName}: ${t.message}")
+            false
         }
     }
 

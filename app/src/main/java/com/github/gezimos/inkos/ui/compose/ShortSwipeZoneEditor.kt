@@ -42,6 +42,9 @@ import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
 import kotlin.math.roundToInt
 
+/** 短滑区域编辑器的「交互极速刷新」token。 */
+private const val TOKEN_ZONE_EDITOR = "short_swipe_zone"
+
 /**
  * 短滑（翻页）生效区域编辑器。
  *
@@ -71,6 +74,7 @@ fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Uni
         // 让首页恢复自己的拖动条
         EditModeHelper.zoneEditorVisible.value = false
         EditModeHelper.zoneEditorCloseHook = null
+        com.github.gezimos.inkos.helper.EinkInteractionMode.end(TOKEN_ZONE_EDITOR)
         try { backCallback?.remove() } catch (_: Exception) {}
         backCallback = null
         try { root.removeView(overlay) } catch (_: Exception) {}
@@ -107,6 +111,9 @@ fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Uni
             android.view.ViewGroup.LayoutParams.MATCH_PARENT
         )
     )
+
+    // 拖动手柄需要跟手：开着「交互时极速刷新」时切到极速波形，关闭时回到 Regal。
+    com.github.gezimos.inkos.helper.EinkInteractionMode.begin(TOKEN_ZONE_EDITOR)
 
     // 返回键也能退出编辑
     try {
