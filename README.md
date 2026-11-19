@@ -59,9 +59,10 @@ Bink OS keeps inkOS's text-first home screen and adds features and quality-of-li
 ## Bink OS Unique features
 
 ### Bigme HiBreak integration
+These features will be available to you if you device is Bigme Hibreak series. (*Refresh animations will require a newer firmware that shows **page-turn animations** inside E-ink center to work)
 - **Vendor GC16 full refresh** — use the vendor's GC16 full refresh instead of the app's own full-screen flash, which cuts ghosting.
 - **Refresh animation** — use the Bigme e-ink page-turn effect while navigating Bink OS; Directional and Circular Ripple styles (Ripple since v0.2.7).
-- **Smart Refresh Mode** (Settings → Extras, off by default) — keep Regal as the default and switch to the vendor's Extreme refresh while you scroll or drag in edit mode and the short-swipe zone editor, then go back to Regal when they close, so dragging keeps up without giving up crisp text or page-turn animations elsewhere.
+- **Smart Refresh Mode** (Settings → Extras, off by default) — keep Regal as the default and switch to the vendor's Extreme refresh while you scroll or drag in edit mode and the short-swipe zone editor, then go back to Regal when they close, so dragging and scrolling keeps up without giving up crisp text or page-turn animations elsewhere.
 
 ### Gestures that don't fight the system
 - **Short swipe area** — restrict page-turn short swipes to a configurable band, so system edge gestures still work; fewer conflicts on devices using gesture navigation.
