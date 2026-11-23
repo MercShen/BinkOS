@@ -368,6 +368,22 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
         }
     }
 
+    fun showUpdateAvailable(versionName: String, onView: () -> Unit) {
+        sheetHost.show {
+            ConfirmSheet(
+                title = context.getString(R.string.update_available_title),
+                message = context.getString(R.string.update_sheet_message_fmt, versionName),
+                confirmText = context.getString(R.string.update_view),
+                cancelText = context.getString(R.string.update_later),
+                onConfirm = {
+                    sheetHost.dismiss()
+                    onView()
+                },
+                onDismiss = { sheetHost.dismiss() }
+            )
+        }
+    }
+
     fun showBackupRestoreDialog() {
         val mainActivity = activity as MainActivity
         sheetHost.show {

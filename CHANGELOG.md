@@ -6,6 +6,9 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## Unreleased
 
+### Updates
+- Add Settings → Support → Check for Update: the app asks GitHub Releases for the latest version, says whether one is available, and — when there is — offers a sheet that opens the release page in the browser. Bink OS still never downloads or installs an APK itself, so it needs no install permission; the only new permission is internet access, used for that single request. Any failure (offline, GitHub unreachable, unexpected reply) becomes "Couldn't check for updates. Tap to retry." instead of an error dialog, and the app version row stays as a way into App info.
+
 ### Language
 - Fix the crash when switching the app language on Android 13+ (`IllegalStateException: Can't change activity type once set … activityType=home`). The platform per-app language API relaunches this app as the home task, and on the vendor Android 14 build that relaunch throws inside the system window manager before the choice is even stored. The app now keeps the choice in its own preference and applies it when the interface is rebuilt, so switching takes effect immediately, survives a restart, and never calls the system locale service on Android 13+.
 

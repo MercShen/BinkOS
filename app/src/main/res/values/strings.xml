@@ -910,6 +910,17 @@
     <string name="settings_file_error_title">File Error</string>
     <string name="settings_file_error_message">Could not copy the selected file. Please try again.</string>
     <string name="settings_paused_suffix">" (paused)"</string>
+    <!-- In-app update check (Settings -> Support) -->
+    <string name="settings_check_update">Check for Update</string>
+    <string name="desc_check_update">See whether a newer Bink OS is available</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_up_to_date_fmt">v%1$s is the latest version</string>
+    <string name="update_available_desc_fmt">Update to v%1$s</string>
+    <string name="update_check_failed">Couldn\'t check for updates. Tap to retry.</string>
+    <string name="update_available_title">Update Available</string>
+    <string name="update_sheet_message_fmt">See what\'s new in v%1$s and download on GitHub</string>
+    <string name="update_view">View Update</string>
+    <string name="update_later">Later</string>
     <string name="settings_app_version_title_fmt">%1$s v%2$s</string>
     <string name="settings_credits_description_fmt">mLauncher, oLauncher — %1$s</string>
     <string name="settings_fork_title">Fork of inkOS</string>

@@ -49,6 +49,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.OfflineBolt
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.SwipeVertical
@@ -79,6 +80,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import com.github.gezimos.inkos.ui.compose.gestureHelper
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.os.bundleOf
@@ -106,6 +109,8 @@ import com.github.gezimos.inkos.helper.IconUtility
 import com.github.gezimos.inkos.helper.ShapeHelper
 import com.github.gezimos.inkos.helper.RefreshAnimationDemo
 import com.github.gezimos.inkos.helper.SmartRefreshGuide
+import com.github.gezimos.inkos.helper.update.UpdateChecker
+import com.github.gezimos.inkos.helper.update.UpdateResult
 import com.github.gezimos.inkos.ui.compose.RefreshAnimationGuideContent
 import com.github.gezimos.inkos.ui.compose.TooltipBubble
 import com.github.gezimos.inkos.helper.getHexForOpacity
@@ -178,6 +183,23 @@ sealed interface SettingsRoute {
 }
 
 // ---------------------------------------------------------------------------
+// Update check (Settings -> Support)
+// ---------------------------------------------------------------------------
+
+/**
+ * Check-and-open only: Bink OS compares versions and hands the release page to the browser.
+ * The app never downloads or installs an APK itself, so there is no install permission and
+ * no self-update path to recover from.
+ */
+private sealed interface UpdateUiState {
+    data object Idle : UpdateUiState
+    data object Checking : UpdateUiState
+    data object UpToDate : UpdateUiState
+    data class Available(val versionName: String, val pageUrl: String) : UpdateUiState
+    data object Failed : UpdateUiState
+}
+
+// ---------------------------------------------------------------------------
 // Fragment
 // ---------------------------------------------------------------------------
 
@@ -195,6 +217,9 @@ class SettingsFragment : Fragment() {
     // Page indicator state
     private var currentPage by mutableStateOf(0)
     private var pageCount by mutableStateOf(1)
+
+    // Last update-check result; kept on the fragment so it survives switching Settings pages.
+    private var updateState by mutableStateOf<UpdateUiState>(UpdateUiState.Idle)
 
     // Scroll infrastructure
     private lateinit var contentComposeView: ComposeView
@@ -744,6 +769,27 @@ class SettingsFragment : Fragment() {
             )
             SettingsTitle(text = stringResource(R.string.about), fontSize = titleFontSize)
             SettingsHomeItem(
+                title = stringResource(R.string.settings_check_update),
+                imageVector = Icons.Rounded.Refresh,
+                description = when (val state = updateState) {
+                    UpdateUiState.Idle -> stringResource(R.string.desc_check_update)
+                    UpdateUiState.Checking -> stringResource(R.string.update_checking)
+                    UpdateUiState.UpToDate ->
+                        stringResource(R.string.update_up_to_date_fmt, BuildConfig.VERSION_NAME)
+                    is UpdateUiState.Available ->
+                        stringResource(R.string.update_available_desc_fmt, state.versionName)
+                    UpdateUiState.Failed -> stringResource(R.string.update_check_failed)
+                },
+                titleFontSize = titleFontSize,
+                onClick = {
+                    when (val state = updateState) {
+                        is UpdateUiState.Available -> openReleasePage(context, state.pageUrl)
+                        UpdateUiState.Checking -> Unit
+                        else -> startUpdateCheck()
+                    }
+                }
+            )
+            SettingsHomeItem(
                 title = stringResource(R.string.settings_app_version_title_fmt, stringResource(R.string.app_version), BuildConfig.VERSION_NAME),
                 imageVector = Icons.Rounded.Info,
                 description = stringResource(R.string.desc_app_version),
@@ -773,6 +819,52 @@ class SettingsFragment : Fragment() {
                     try { context.startActivity(Intent(Intent.ACTION_VIEW, "https://github.com/gezimos/inkOS".toUri())) } catch (_: Exception) {}
                 }
             )
+        }
+    }
+
+    /**
+     * One-shot check against GitHub Releases. Runs off the main thread with short timeouts;
+     * a failure is a normal outcome and only changes the row's description.
+     */
+    private fun startUpdateCheck() {
+        if (updateState == UpdateUiState.Checking) return
+        updateState = UpdateUiState.Checking
+
+        val hostContext = requireContext()
+        val userAgent = "BinkOS/${BuildConfig.VERSION_NAME}"
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                UpdateChecker.check(BuildConfig.VERSION_NAME, userAgent)
+            }
+
+            updateState = when (result) {
+                UpdateResult.UpToDate -> UpdateUiState.UpToDate
+                is UpdateResult.Available ->
+                    UpdateUiState.Available(result.release.versionName, result.release.pageUrl)
+                is UpdateResult.Failed -> UpdateUiState.Failed
+            }
+
+            if (result is UpdateResult.Available) {
+                dialogBuilder.showUpdateAvailable(result.release.versionName) {
+                    openReleasePage(hostContext, result.release.pageUrl)
+                }
+            }
+        }
+    }
+
+    /** Opens the release page in the browser; only HTTPS on github.com is accepted. */
+    private fun openReleasePage(context: Context, pageUrl: String) {
+        val candidate = pageUrl.toUri()
+        val target = if (candidate.scheme == "https" && candidate.host == "github.com") {
+            candidate
+        } else {
+            UpdateChecker.RELEASES_PAGE.toUri()
+        }
+
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, target))
+        } catch (_: Exception) {
         }
     }
 
