@@ -486,6 +486,16 @@ class MainActivity : AppCompatActivity() {
             "eink_style_ripple" -> viewModel.setEinkPageTurnAnimationStyle(1)
             "eink_fast_on" -> viewModel.setEinkInteractionFastMode(true)
             "eink_fast_off" -> viewModel.setEinkInteractionFastMode(false)
+            // --- 调试后门：无厂商固件（模拟器）时也显示厂商专属开关；只影响 UI 可见性 ---
+            "vendor_switches_on", "vendor_switches_off" -> {
+                val enabled = request.dest == "vendor_switches_on"
+                prefs.debugForceVendorSwitches = enabled
+                com.github.gezimos.inkos.helper.EinkCapabilities.setDebugForceAll(enabled)
+                automationExtraMessage = org.json.JSONObject()
+                    .put("vendor_switches", enabled)
+                    .toString()
+                Log.i(TAG, "automation vendor switches: forced=${enabled}")
+            }
             // --- 应用内语言：写自管偏好并重建界面，等价于设置页的语言选择器 ---
             "language" -> {
                 val tag = requireNotNull(request.language) { "language requires a value" }
@@ -926,6 +936,7 @@ class MainActivity : AppCompatActivity() {
         try {
             BigmeEink.init(this)
             EinkInteractionMode.init(this)
+            com.github.gezimos.inkos.helper.EinkCapabilities.init(this)
         } catch (_: Exception) {}
 
         try {

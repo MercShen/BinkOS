@@ -97,6 +97,8 @@ object AutomationContract {
         names("eink_style_ripple")
         names("eink_fast_on")
         names("eink_fast_off")
+        names("vendor_switches_on", "force_vendor_on")
+        names("vendor_switches_off", "force_vendor_off")
         names("language", "lang", "locale")
         names("back")
         names("external")
@@ -124,7 +126,8 @@ object AutomationContract {
         "bottom_android", "bottom_shortcuts", "bottom_quote", "bottom_events", "bottom_usage",
         "bottom_pagedots", "bottom_off", "allowlist_clear", "allowlist_tray_clear", "allowlist_hub_clear",
         "eink_anim_on", "eink_anim_off", "eink_style_directional", "eink_style_ripple",
-        "eink_fast_on", "eink_fast_off", "language", "backup", "restore"
+        "eink_fast_on", "eink_fast_off", "vendor_switches_on", "vendor_switches_off",
+        "language", "backup", "restore"
     )
     private val homeCommands = setOf(
         "quick_menu", "edit_bg", "edit_bg_theme", "edit_bg_align", "edit_bg_islands", "edit_bg_gestures",

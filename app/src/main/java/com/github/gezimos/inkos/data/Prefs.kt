@@ -133,6 +133,8 @@ private const val EINK_SYSTEM_FULL_REFRESH = "EINK_SYSTEM_FULL_REFRESH"
 private const val EINK_PAGE_TURN_ANIMATION = "EINK_PAGE_TURN_ANIMATION"
 private const val EINK_PAGE_TURN_ANIMATION_STYLE = "EINK_PAGE_TURN_ANIMATION_STYLE"
 private const val EINK_INTERACTION_FAST_MODE = "EINK_INTERACTION_FAST_MODE"
+/** 调试后门：无厂商固件（模拟器）时也强制显示厂商专属开关；只对 debug 构建生效。 */
+private const val DEBUG_FORCE_VENDOR_SWITCHES = "DEBUG_FORCE_VENDOR_SWITCHES"
 private const val HIDE_HOME_APPS = "HIDE_HOME_APPS"
 private const val HOME_ALIGNMENT = "HOME_ALIGNMENT"
 private const val TEXT_ISLANDS = "TEXT_ISLANDS"
@@ -1782,6 +1784,11 @@ var pageIndicatorMargin: Int
     var einkInteractionFastMode: Boolean
         get() = prefs.getBoolean(EINK_INTERACTION_FAST_MODE, false)
         set(value) = prefs.edit { putBoolean(EINK_INTERACTION_FAST_MODE, value) }
+
+    /** 调试后门（仅 debug 构建读取）：强制显示厂商专属开关，方便模拟器调 UI。 */
+    var debugForceVendorSwitches: Boolean
+        get() = prefs.getBoolean(DEBUG_FORCE_VENDOR_SWITCHES, false)
+        set(value) = prefs.edit { putBoolean(DEBUG_FORCE_VENDOR_SWITCHES, value) }
     /** 用大我系统的 GC16 全刷代替原来的整屏闪烁 */
     var einkSystemFullRefresh: Boolean
         get() = prefs.getBoolean(EINK_SYSTEM_FULL_REFRESH, false)

@@ -173,6 +173,7 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 | `eink_anim_on/off` | 无 | 保存翻页动画开关（`EINK_PAGE_TURN_ANIMATION`） |
 | `eink_style_directional` / `eink_style_ripple` | 无 | 保存动画样式，**不会自动打开动画开关**；要出效果需先 `eink_anim_on` |
 | `eink_fast_on/off` | 无 | 保存「智能刷新模式」开关（`EINK_INTERACTION_FAST_MODE`） |
+| `vendor_switches_on/off`（别名 `force_vendor_on/off`） | 无 | **调试后门**：无厂商固件（模拟器）时也强制显示「系统全刷 / 刷新动画 / 智能刷新模式」三项专属开关及厂商引导页；只改 UI 可见性，不伪造厂商接口。写在 `DEBUG_FORCE_VENDOR_SWITCHES`，重进 App 仍生效；release 构建忽略 |
 | `language` | --es language **必填**：`system` / `en` / `zh-CN`（另有 english、chinese、zh_cn、default 等别名） | 写应用内语言偏好并重建界面，与设置页「语言」选择器同一路径；applied message 是 `{"language":"en"}`（`system` 表示跟随系统）。 |
 | `backup` | 无 | 生成完整备份 ZIP，写到 `filesDir/backups/backup-<yyyyMMdd-HHmmss>.zip`；结果 JSON 回 `file/bytes/sha256` |
 | `restore` | path **必填** | 先清空当前数据再导入该 ZIP；path 相对 `filesDir`（如 `backups/x.zip`）或位于 `filesDir`/`cacheDir` 的绝对路径；**额外要求 `--ez confirm_clear true`**，恢复后需重启应用生效 |
@@ -190,6 +191,9 @@ e-ink 四个命令用来替代「点设置页 / 用 run-as 灌 prefs」，典型
 # 交互极速开关
 & $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
   --es dest eink_fast_on --ez confirm_write true
+# 模拟器上强开厂商专属开关（只改可见性；关掉重进仍生效）
+& $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
+  --es dest vendor_switches_on --ez confirm_write true
 # 应用内语言（写偏好 + 重建界面；system = 跟随系统）
 & $ADB -s $SERIAL shell am start -n $PKG/com.github.gezimos.inkos.MainActivity `
   --es dest language --es language en --ez confirm_write true
