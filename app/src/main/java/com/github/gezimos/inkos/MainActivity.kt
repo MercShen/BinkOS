@@ -800,13 +800,12 @@ class MainActivity : AppCompatActivity() {
         val alreadyAtHome = navController.currentDestination?.id == R.id.mainFragment
         val returningFromBackground = wasInBackground
         navController.popBackStack(R.id.mainFragment, false)
-        // 已经在主屏时 pop 不会产生导航变化（例如从其它 App 按 Home 回来）：
-        // 这里补一次 Ripple 关闭。内部界面的返回由导航监听负责，不会重复播放。
-        if (alreadyAtHome && returningFromBackground &&
-            prefs.einkPageTurnAnimation && prefs.einkPageTurnAnimationStyle == 1
-        ) {
-            Log.i(TAG, "ripple close: returning to home from another app")
-            try { BigmeEink.onScreenClosed(this) } catch (_: Exception) {}
+        // 已经在主屏时 pop 不会产生导航变化（例如从其它 App 回来）：这里**故意不补任何动画**。
+        // 那次整屏刷新是厂商在顶层应用切换时自己做的（本应用没有触发，自动刷新关时更没有），
+        // 之前在这里补一次 Ripple 9，波纹样式下就会让厂商的基础全刷带上波纹；方向式不补，
+        // 两种样式的行为于是不一致。保持「返回主屏的基础全刷不带动画」。
+        if (alreadyAtHome && returningFromBackground) {
+            Log.i(TAG, "return to home from another app: keep the vendor refresh plain (no animation)")
         }
         try {
             com.github.gezimos.inkos.helper.utils.EinkRefreshHelper.refreshEink(
