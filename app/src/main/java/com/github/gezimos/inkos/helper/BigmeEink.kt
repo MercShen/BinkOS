@@ -2,8 +2,6 @@ package com.github.gezimos.inkos.helper
 
 import android.content.Context
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
 import android.view.WindowManager
@@ -26,7 +24,11 @@ import java.lang.reflect.Method
  * HD256(0x800000B1) 时可见，因此 [init] 里会把本包的刷新模式拉到 Regal（与大我自家
  * 阅读器一致）。
  *
- * 只在「打开 / 关闭 App Drawer」两处调用；非大我设备 init() 失败后所有调用都是空操作。
+ * 所有动画都只用这一个**临时**接口下发（方向擦除 1–4、波纹开关 9/10、0 = 无），
+ * 到期由厂商服务自己恢复，**不写持久策略** —— 尤其不碰 e-ink center 里「每应用动画」
+ * 那个字段（`appEinkAnimation`），否则等于替用户把它常开，之后每次屏幕变化都会播动画。
+ *
+ * 非大我设备 init() 失败后所有调用都是空操作。
  */
 object BigmeEink {
 
@@ -41,7 +43,6 @@ object BigmeEink {
     private const val TAG = "BigmeEink"
     private const val CLASS_NAME = "xrz.framework.manager.XrzEinkManager"
     private const val ANIMATION_METHOD = "setEinkAnimationTimeout"
-    private const val APP_ANIMATION_METHOD = "setEinkAnimationForPackage"
     private const val REGAL_MODE = 180
     private const val HD_256_MODE = 0x800000B1.toInt()
     /** 刷新波形：Regal（翻页动画可见所必需）。大我 Refresh mode 菜单里的 "Regal" = 180。 */
@@ -49,23 +50,31 @@ object BigmeEink {
     /** 刷新波形：大我菜单里的 "Extreme"（=179，交互跟手，但翻页动画不可见）。 */
     const val MODE_SUPER = 179
     private const val PAGE_TURN_STYLE_RIPPLE = 1
-    /** OEM appEinkAnimation codes: 10 = circle→middle (open), 9 = middle→circle (close). */
-    private const val APP_ANIMATION_RIPPLE_OPEN = 10
-    private const val APP_ANIMATION_RIPPLE_CLOSE = 9
+    /** 厂商动画样式：10 = 中间→圆周（打开），9 = 圆周→中间（关闭），0 = 无。 */
+    private const val RIPPLE_OPEN = 10
+    private const val RIPPLE_CLOSE = 9
+    /** Ripple 一次界面切换要跨过 Compose 首帧与面板刷新，窗口比方向擦除长。 */
+    private const val RIPPLE_DURATION_MS = 800L
+    /** 下发 0 清掉临时样式时的短窗口（1ms 服务端会拒绝）。 */
+    private const val RESET_DURATION_MS = 200L
 
     /**
      * 触发后动画模式的保持时长：要覆盖「调用 → 真正重绘」的间隔。
      *
      * 2026-11-18 实测：dev bundle 探针把窗口压到 100ms 仍稳定出动画（挂完就重绘，间隔只有一帧），
      * 之前 500ms 明显偏保守 —— 窗口越长，窗口内时钟/角标等无关刷新越容易被带上动画。
+     *
+     * 2026-11-24：100ms 在「从应用抽屉返回主屏」这条路径上不够 —— 主屏 view 是重建的，
+     * 首帧可能晚于窗口，擦除看不到；开抽屉/首页翻页仍是单帧，不受影响。先放到 280ms 试验。
+     * 若窗口内的无关刷新（时钟、角标）被带出动画，再改成按调用点区分时长（打开 100 / 关闭 280）。
      */
-    private const val DURATION_MS = 100L
+    private const val DURATION_MS = 280L
 
     /** 手势与导航之间的时间窗：超过这个间隔就不再认为动画由该手势触发。 */
     private const val SWIPE_WINDOW_MS = 600L
 
-    /** 连击节流：与动画时长一致，避免上一个动画窗口还没结束就被下一段覆盖。 */
-    private const val THROTTLE_MS = 500L
+    /** 连击节流：比动画窗口（280ms）多留一点余量，避免上一个窗口还没结束就被下一段覆盖。 */
+    private const val THROTTLE_MS = 300L
 
     /** 旋转 0/90/180/270 → 四个方向对应的面板模式（行 = 旋转档位，列 = Direction.base - 1）。 */
     private val PANEL_MODES = arrayOf(
@@ -77,7 +86,6 @@ object BigmeEink {
 
     @Volatile private var policy: Any? = null
     @Volatile private var animationMethod: Method? = null
-    @Volatile private var appAnimationMethod: Method? = null
     @Volatile private var policyGetter: Method? = null
     @Volatile private var refreshModeSetter: Method? = null
     @Volatile private var initialized = false
@@ -85,10 +93,7 @@ object BigmeEink {
 
     @Volatile private var lastSwipe: Direction? = null
     @Volatile private var lastSwipeAt = 0L
-    @Volatile private var lastAppAnimationCode = -1
     private var lastTriggerAt = 0L
-    private val resetHandler = Handler(Looper.getMainLooper())
-    private var pendingReset: Runnable? = null
 
     val isAvailable: Boolean get() = available
 
@@ -121,13 +126,6 @@ object BigmeEink {
 
                 policy = p
                 animationMethod = m
-                appAnimationMethod = runCatching {
-                    p.javaClass.getMethod(
-                        APP_ANIMATION_METHOD,
-                        String::class.java,
-                        Int::class.javaPrimitiveType
-                    ).apply { isAccessible = true }
-                }.getOrNull()
                 policyGetter = runCatching {
                     p.javaClass.getMethod("getPolicyByPackage", String::class.java)
                         .apply { isAccessible = true }
@@ -205,50 +203,27 @@ object BigmeEink {
     /**
      * 打开一个界面。
      *
-     * Ripple 样式：下发固定样式 10（与方向无关），**绝不回退 Directional** ——
+     * Ripple 样式：挂临时样式 10（与方向无关），**绝不回退 Directional** ——
      * 回退会让「打开/返回」在 Ripple 样式下突然变成方向式擦除。
      * Directional 样式才需要 [direction]。
      */
     fun onScreenOpened(context: Context, direction: Direction? = null) {
         val ctx = context.applicationContext
         if (isRippleStyle(ctx)) {
-            if (applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_OPEN)) {
-                scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_OPEN)
-            } else {
-                Log.w(TAG, "ripple open skipped: app animation unavailable (never fall back to directional)")
-            }
+            triggerType(ctx, RIPPLE_OPEN, RIPPLE_DURATION_MS, "open ripple")
             return
         }
-        // Directional 模式不能残留上一次的 Ripple 固定样式。
-        applyAppAnimation(ctx, 0)
         if (direction != null) trigger(ctx, direction, "open")
     }
 
-    /** 关闭同一个界面。Ripple 样式下发 9；Directional 样式按关闭方向播放。 */
+    /** 关闭同一个界面。Ripple 样式挂 9；Directional 样式按关闭方向播放。 */
     fun onScreenClosed(context: Context, direction: Direction? = null) {
         val ctx = context.applicationContext
         if (isRippleStyle(ctx)) {
-            if (applyAppAnimation(ctx, APP_ANIMATION_RIPPLE_CLOSE)) {
-                scheduleAppAnimationReset(ctx, APP_ANIMATION_RIPPLE_CLOSE)
-            } else {
-                Log.w(TAG, "ripple close skipped: app animation unavailable (never fall back to directional)")
-            }
+            triggerType(ctx, RIPPLE_CLOSE, RIPPLE_DURATION_MS, "close ripple")
             return
         }
-        applyAppAnimation(ctx, 0)
         if (direction != null) trigger(ctx, direction, "close")
-    }
-
-    /** 固定样式只服务于这一次界面切换；动画结束后回到 none，避免时钟等刷新一直播 Ripple。 */
-    private fun scheduleAppAnimationReset(context: Context, code: Int) {
-        pendingReset?.let { resetHandler.removeCallbacks(it) }
-        val runnable = Runnable {
-            if (lastAppAnimationCode == code) {
-                applyAppAnimation(context, 0)
-            }
-        }
-        pendingReset = runnable
-        resetHandler.postDelayed(runnable, 800L)
     }
 
     private fun isRippleStyle(context: Context): Boolean = try {
@@ -258,48 +233,25 @@ object BigmeEink {
     }
 
     /**
-     * 设置 OEM 的固定按应用动画（appEinkAnimation）。
-     * 10 = 中间→圆周（打开），9 = 圆周→中间（关闭），0 = none。
+     * 清掉当前挂着的临时动画（切回 Directional / 关掉开关时用）。
      *
-     * 厂商实现里 `applyDisplayPolicy` 在 `insertDisplayPolicy` 之前执行，所以返回 false
-     * （入库失败）并不代表动画没下发 —— 这里只记录结果，不据此回退。
+     * 走临时接口下发 0：到期厂商自己恢复原策略，**不写持久策略** —— e-ink center 里
+     * 「每应用动画」保持用户自己的值，不会被这里改成 0。
      */
-    private fun applyAppAnimation(context: Context, code: Int): Boolean {
-        if (!available || policy == null) return false
-        val method = appAnimationMethod ?: return false
-        if (lastAppAnimationCode == code) return true
-        return try {
-            val result = method.invoke(policy, context.packageName, code)
-            lastAppAnimationCode = code
-            Log.i(TAG, "appEinkAnimation=$code pkg=${context.packageName} result=$result")
-            true
-        } catch (t: Throwable) {
-            Log.w(TAG, "setEinkAnimationForPackage($code) failed: ${t.javaClass.simpleName}: ${t.message}")
-            false
-        }
-    }
-
-    /** 关闭翻页动画或切回 Directional 时清掉固定样式，避免残留 Ripple。 */
-    fun resetAppEinkAnimation(context: Context) {
-        pendingReset?.let { resetHandler.removeCallbacks(it) }
-        pendingReset = null
-        if (applyAppAnimation(context.applicationContext, 0)) {
-            Log.i(TAG, "appEinkAnimation reset to 0")
-        }
+    fun resetTempAnimation(context: Context) {
+        triggerType(context.applicationContext, 0, RESET_DURATION_MS, "reset temp animation")
     }
 
     /**
      * 主页收藏应用列表翻页。方向由「翻到哪一页」决定，与手指方向无关：
      * 下一页 = 新内容自下而上进入（4），上一页 = 自上而下（3）。
      *
-     * 主页翻页是唯一保留 Directional 的场景；Ripple 样式下先清掉可能残留的固定样式，
-     * 否则这次翻页会被厂商当成 Ripple 播放（临时动画只覆盖 500ms，持久样式可覆盖更久）。
+     * 主页翻页是唯一保留 Directional 的场景；临时动画是单槽，这次翻页会直接覆盖
+     * 仍挂着的 Ripple 样式，不需要额外清理。
      */
     fun onHomePageTurn(context: Context, forward: Boolean) {
-        val ctx = context.applicationContext
-        if (isRippleStyle(ctx)) resetAppEinkAnimation(ctx)
         trigger(
-            ctx,
+            context.applicationContext,
             if (forward) Direction.B2T else Direction.T2B,
             if (forward) "home page next" else "home page prev",
         )
@@ -337,21 +289,46 @@ object BigmeEink {
         lastSwipe?.takeIf { SystemClock.uptimeMillis() - lastSwipeAt <= SWIPE_WINDOW_MS }
 
     private fun trigger(context: Context, direction: Direction, reason: String) {
-        if (!init(context)) return
-        val method = animationMethod ?: return
-        val target = policy ?: return
+        if (!init(context)) {
+            Log.d(TAG, "eink animation $reason dir=${direction.name} skipped: vendor API unavailable")
+            return
+        }
 
         val now = SystemClock.uptimeMillis()
-        if (now - lastTriggerAt < THROTTLE_MS) return
+        if (now - lastTriggerAt < THROTTLE_MS) {
+            Log.d(TAG, "eink animation throttled: $reason dir=${direction.name}")
+            return
+        }
         lastTriggerAt = now
 
         val rotation = rotationOf(context)
         val mode = panelMode(direction.base, rotation)
+        triggerType(
+            context,
+            mode,
+            DURATION_MS,
+            "$reason dir=${direction.name} rotation=$rotation panelMode=$mode",
+        )
+    }
+
+    /**
+     * 按厂商动画样式下发**临时**窗口：1–4 = 方向擦除，9/10 = Ripple 打开/关闭，0 = 无。
+     *
+     * 只用临时接口（[ANIMATION_METHOD]）—— 到期厂商服务自己恢复，不写持久策略，也不碰
+     * e-ink center 里「每应用动画」那个字段。单槽语义：后一次调用会覆盖前一次的方向/样式。
+     */
+    private fun triggerType(context: Context, type: Int, durationMs: Long, reason: String) {
+        if (!init(context)) {
+            Log.d(TAG, "eink animation $reason type=$type duration=${durationMs}ms skipped: vendor API unavailable")
+            return
+        }
+        val method = animationMethod ?: return
+        val target = policy ?: return
         try {
-            val result = method.invoke(target, mode, DURATION_MS)
-            Log.d(TAG, "screen $reason dir=${direction.name} rotation=$rotation panelMode=$mode -> $result")
+            val result = method.invoke(target, type, durationMs)
+            Log.i(TAG, "eink animation $reason type=$type duration=${durationMs}ms -> $result")
         } catch (t: Throwable) {
-            Log.w(TAG, "invoke failed: ${t.javaClass.simpleName}: ${t.message}")
+            Log.w(TAG, "invoke($type) failed: ${t.javaClass.simpleName}: ${t.message}")
         }
     }
 

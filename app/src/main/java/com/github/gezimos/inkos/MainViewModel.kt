@@ -2666,7 +2666,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.einkPageTurnAnimation = enabled
         _homeUiState.value = _homeUiState.value.copy(einkPageTurnAnimation = enabled)
         if (!enabled) {
-            try { com.github.gezimos.inkos.helper.BigmeEink.resetAppEinkAnimation(appContext) } catch (_: Exception) {}
+            try { com.github.gezimos.inkos.helper.BigmeEink.resetTempAnimation(appContext) } catch (_: Exception) {}
         }
     }
 
@@ -2675,7 +2675,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.einkPageTurnAnimationStyle = value
         _homeUiState.value = _homeUiState.value.copy(einkPageTurnAnimationStyle = value)
         if (value == 0) {
-            try { com.github.gezimos.inkos.helper.BigmeEink.resetAppEinkAnimation(appContext) } catch (_: Exception) {}
+            try { com.github.gezimos.inkos.helper.BigmeEink.resetTempAnimation(appContext) } catch (_: Exception) {}
         }
     }
 
