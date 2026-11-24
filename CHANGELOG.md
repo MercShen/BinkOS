@@ -4,7 +4,8 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## v0.3.0 — unreleased
 
-<!-- v0.3.0 entries go here; add a "### <area>" subsection for each group of changes. -->
+### E-ink
+- Every Directional wipe (opening a screen, closing it, home paging) now holds its animation window for 325 ms instead of 280 ms, so the wipe shows up reliably when leaving the app drawer with the edge-back gesture. On-device HAL logs show the panel's next Regal full refresh can arrive only after the previous panel commit finishes, which the old window sometimes missed; 300 ms already dropped wipes again, while 325 / 420 / 800 ms were stable, so 325 ms was picked as the shortest stable window.
 
 ## v0.2.9 — 2026-11-24
 

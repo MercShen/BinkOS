@@ -59,21 +59,21 @@ object BigmeEink {
     private const val RESET_DURATION_MS = 200L
 
     /**
-     * 触发后动画模式的保持时长：要覆盖「调用 → 真正重绘」的间隔。
+     * 触发后动画模式的保持时长：必须覆盖「下发 → 面板下一次 Regal 全屏刷新（mode=b4）」的间隔。
      *
-     * 2026-11-18 实测：dev bundle 探针把窗口压到 100ms 仍稳定出动画（挂完就重绘，间隔只有一帧），
-     * 之前 500ms 明显偏保守 —— 窗口越长，窗口内时钟/角标等无关刷新越容易被带上动画。
+     * 擦除只会在这种整屏提交上可见（看 hwcomposer 的 `[DRMDEV] eink animation mode` 行）。
+     * 2026-11-24 真机实测 b4 相对下发延迟 +0.31s / +0.35s / +0.65s / +0.68s —— 面板上一条提交
+     * 还在跑，下一次只能排队；100ms / 280ms 会漏，300ms 实测开始偶发丢。
      *
-     * 2026-11-24：100ms 在「从应用抽屉返回主屏」这条路径上不够 —— 主屏 view 是重建的，
-     * 首帧可能晚于窗口，擦除看不到；开抽屉/首页翻页仍是单帧，不受影响。先放到 280ms 试验。
-     * 若窗口内的无关刷新（时钟、角标）被带出动画，再改成按调用点区分时长（打开 100 / 关闭 280）。
+     * 定值 325ms：真机上 325 / 420 / 450 / 800ms 稳定（300ms 偶发丢），取最短稳定值，减少窗口内时钟、
+     * 角标等无关刷新被带上动画的机会。若某个机型上又出现偶发丢动画，先怀疑这个窗口。
      */
-    private const val DURATION_MS = 280L
+    private const val DURATION_MS = 325L
 
     /** 手势与导航之间的时间窗：超过这个间隔就不再认为动画由该手势触发。 */
     private const val SWIPE_WINDOW_MS = 600L
 
-    /** 连击节流：比动画窗口（280ms）多留一点余量，避免上一个窗口还没结束就被下一段覆盖。 */
+    /** 连击节流：只防止同一次操作被重复下发；面板刷新的覆盖由 [DURATION_MS] 负责。 */
     private const val THROTTLE_MS = 300L
 
     /** 旋转 0/90/180/270 → 四个方向对应的面板模式（行 = 旋转档位，列 = Direction.base - 1）。 */
@@ -288,7 +288,12 @@ object BigmeEink {
     private fun recentSwipe(): Direction? =
         lastSwipe?.takeIf { SystemClock.uptimeMillis() - lastSwipeAt <= SWIPE_WINDOW_MS }
 
-    private fun trigger(context: Context, direction: Direction, reason: String) {
+    private fun trigger(
+        context: Context,
+        direction: Direction,
+        reason: String,
+        durationMs: Long = DURATION_MS,
+    ) {
         if (!init(context)) {
             Log.d(TAG, "eink animation $reason dir=${direction.name} skipped: vendor API unavailable")
             return
@@ -306,7 +311,7 @@ object BigmeEink {
         triggerType(
             context,
             mode,
-            DURATION_MS,
+            durationMs,
             "$reason dir=${direction.name} rotation=$rotation panelMode=$mode",
         )
     }
