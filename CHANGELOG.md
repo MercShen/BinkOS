@@ -2,12 +2,21 @@
 
 Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are available on [GitHub Releases](https://github.com/MercShen/BinkOS/releases).
 
-## v0.2.8 — 2026-11-18
-
-## Unreleased
+## v0.2.9 — 2026-11-24
 
 ### Updates
 - Add Settings → Support → Check for Update: the app asks GitHub Releases for the latest version, says whether one is available, and — when there is — offers a sheet that opens the release page in the browser. Bink OS still never downloads or installs an APK itself, so it needs no install permission; the only new permission is internet access, used for that single request. Any failure (offline, GitHub unreachable, unexpected reply) becomes "Couldn't check for updates. Tap to retry." instead of an error dialog, and the app version row stays as a way into App info.
+
+### E-ink
+- Refresh animation no longer writes the vendor's per-app animation setting: the Ripple style now uses the same temporary window as Directional (10 on open, 9 on close, 800 ms), so the E-ink center's own "animation for this app" value is left untouched and a stale value can no longer animate unrelated refreshes.
+- Coming back to Home from another app keeps the vendor's full refresh plain in both styles: Ripple no longer adds a close animation to that refresh (Directional never did).
+- Widen the direction-animation hold window from 100 ms to 280 ms (the Home screen is rebuilt on the way back from the app drawer and its first frame could miss a shorter window) and trim the trigger throttle from 500 ms to 300 ms so consecutive transitions still animate.
+
+### Development
+- Debug builds can force the vendor e-ink switches on devices without vendor firmware (`--es dest vendor_switches_on/off`); the flag is ignored by release builds.
+- Add a `language` automation entry so tests can switch the app language without tapping the picker.
+
+## v0.2.8 — 2026-11-18
 
 ### Language
 - Fix the crash when switching the app language on Android 13+ (`IllegalStateException: Can't change activity type once set … activityType=home`). The platform per-app language API relaunches this app as the home task, and on the vendor Android 14 build that relaunch throws inside the system window manager before the choice is even stored. The app now keeps the choice in its own preference and applies it when the interface is rebuilt, so switching takes effect immediately, survives a restart, and never calls the system locale service on Android 13+.
