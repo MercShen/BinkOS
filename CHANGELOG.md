@@ -4,7 +4,11 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## v0.3.0 — unreleased
 
+### Onboarding
+- The first-run guide answers the Back key again: it goes to the previous page instead of doing nothing, and it still refuses to step past the first page, so the guide cannot be exited by accident. While the guide was up every key was swallowed, which left a keypad phone no way back except D-pading to the on-screen Back button.
+
 ### Notifications
+- Volume-key paging now works in the Hub and the Simple Tray, not only on the home screen, the app drawer and Letters — those two screens silently dropped it. With the switch off, or while music is playing, the volume keys keep doing what volume keys do.
 - Keyboard users can dismiss one notification on the Hub and in the Simple Tray: `Del`, the menu key and `1` clear the **highlighted** notification and `3` opens it. Those keys were wired through a side channel that no longer reached either screen — measured with injected keypad events, they did nothing at all — and the code behind them aimed at the first row of the page instead of the selection. Ongoing and media notifications stay protected by the same check the row's ✕ uses. The long-press-`Del`-to-clear-all shortcut went away with that dead path; clearing a category still happens from the Clear All row.
 - The "Hide system notifications" switch now also hides clearable notifications sent by system apps, not just the ones that cannot be dismissed: OEM alerts like DuraSpeed's "apps were restricted" message disappear from the Hub, Tray, the home count and Letters while the switch is on. The system notification shade is left completely alone — those notifications still show there and can still be dismissed as usual. Calls are never hidden, and third-party app notifications are unaffected.
 

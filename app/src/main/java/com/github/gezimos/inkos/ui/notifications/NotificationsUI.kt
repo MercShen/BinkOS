@@ -273,6 +273,16 @@ internal fun vibratePaging(context: Context) {
 private fun isNotificationDismissible(sbn: StatusBarNotification): Boolean =
     NotificationFilter.isDismissible(sbn)
 
+/**
+ * 此刻是否有音频在放。Hub / Simple Tray 的音量键翻页要用它做例外判断：
+ * 播放中音量键属于系统音量，不属于翻页——与主页/抽屉在 MainActivity 里的规则一致。
+ */
+internal fun isAudioPlayingNow(context: Context): Boolean = try {
+    AudioWidgetHelper.getInstance(context).getCurrentMediaPlayer()?.isPlaying == true
+} catch (_: Exception) {
+    false
+}
+
 internal fun openNotificationSettingsForPackage(context: Context, packageName: String) {
     try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -715,6 +725,7 @@ fun HubScreen(
                             ?.takeIf { isNotificationDismissible(it.sbn) }
                             ?.let { hn -> dismissHubNotification(hn) }
                     },
+                    volumeKeysForPages = { prefs.useVolumeKeysForPages && !isAudioPlayingNow(ctx) },
                     bottomNavEnabled = false
                 )
             }
@@ -2199,6 +2210,7 @@ fun SimpleTrayScreen(
                             }
                         }
                     },
+                    volumeKeysForPages = { prefs.useVolumeKeysForPages && !isAudioPlayingNow(ctx) },
                     selectedBottomNavIndex = selectedBottomNavIndex,
                     onBottomNavActivate = { index ->
                         if (isEditMode) {

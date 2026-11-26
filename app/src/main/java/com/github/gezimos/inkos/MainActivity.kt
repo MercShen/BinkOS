@@ -607,7 +607,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (isOnboarding()) return true
+        if (isOnboarding()) {
+            // 首启引导期间只放行 BACK：引导页自己有 BackHandler -> onboardingPrev()，
+            // 第 0 页它会拦住，不会把用户踢出桌面。其余按键（MENU / ESCAPE / HOME /
+            // 音量）继续吞掉，免得在引导中途被当成桌面快捷键用掉。
+            // 以前这里是无条件 return true，连 BACK 都吃——键盘用户进了引导就退不出去，
+            // 只能靠 D-pad 走到「返回」按钮。
+            return keyCode == KeyEvent.KEYCODE_BACK && super.onKeyDown(keyCode, event)
+        }
         return when (keyCode) {
             KeyEvent.KEYCODE_MENU -> {
                 when (navController.currentDestination?.id) {
