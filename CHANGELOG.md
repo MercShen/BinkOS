@@ -4,8 +4,11 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## v0.3.0 — unreleased
 
+### Notifications
+- The "Hide system notifications" switch now also hides clearable notifications sent by system apps, not just the ones that cannot be dismissed: OEM alerts like DuraSpeed's "apps were restricted" message disappear from the Hub, Tray, the home count and Letters while the switch is on. The system notification shade is left completely alone — those notifications still show there and can still be dismissed as usual. Calls are never hidden, and third-party app notifications are unaffected.
+
 ### E-ink
-- Every Directional wipe (opening a screen, closing it, home paging) now holds its animation window for 325 ms instead of 280 ms, so the wipe shows up reliably when leaving the app drawer with the edge-back gesture. On-device HAL logs show the panel's next Regal full refresh can arrive only after the previous panel commit finishes, which the old window sometimes missed; 300 ms already dropped wipes again, while 325 / 420 / 800 ms were stable, so 325 ms was picked as the shortest stable window.
+- Every Directional wipe (opening a screen, closing it, home paging) now holds its animation window for 350 ms instead of 280 ms, so the wipe shows up reliably when leaving the app drawer with the edge-back gesture. On-device HAL logs show the panel's next Regal full refresh can arrive only after the previous panel commit finishes, which the old window sometimes missed; 300 ms already dropped wipes again, and 325 ms still leaked occasionally in daily use, so 350 ms is now the shortest stable window.
 
 ## v0.2.9 — 2026-11-24
 
