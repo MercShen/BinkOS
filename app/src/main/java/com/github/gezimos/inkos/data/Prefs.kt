@@ -2160,6 +2160,30 @@ var pageIndicatorMargin: Int
         get() = prefs.getBoolean("use_volume_keys_for_pages", false)
         set(value) = prefs.edit { putBoolean("use_volume_keys_for_pages", value) }
 
+    /**
+     * 自定义翻页键（上游 issue #125）。存的是 keycode 的 CSV。
+     *
+     * 这里是**附加**绑定：`PAGE_UP` / `PAGE_DOWN` 永远翻页，不在这份列表里也照样生效，
+     * 「音量键翻页」开关也继续按老规则走。清列表不等于关掉 Page 键——避免用户把
+     * 界面弄坏。判定统一在 `helper/PageKeyRouter.kt`。
+     */
+    var pageUpKeys: Set<Int>
+        get() = readKeyCsv("page_up_keys") ?: setOf(android.view.KeyEvent.KEYCODE_PAGE_UP)
+        set(value) = writeKeyCsv("page_up_keys", value)
+
+    var pageDownKeys: Set<Int>
+        get() = readKeyCsv("page_down_keys") ?: setOf(android.view.KeyEvent.KEYCODE_PAGE_DOWN)
+        set(value) = writeKeyCsv("page_down_keys", value)
+
+    private fun readKeyCsv(key: String): Set<Int>? {
+        val raw = prefs.getString(key, null)?.takeIf { it.isNotBlank() } ?: return null
+        return raw.split(',').mapNotNull { part -> part.trim().toIntOrNull() }.toSet()
+    }
+
+    private fun writeKeyCsv(key: String, value: Set<Int>) = prefs.edit {
+        putString(key, value.filter { it > 0 }.sorted().joinToString(","))
+    }
+
     var longPressAppInfoEnabled: Boolean
         get() = prefs.getBoolean("long_press_app_info_enabled", false)
         set(value) = prefs.edit { putBoolean("long_press_app_info_enabled", value) }

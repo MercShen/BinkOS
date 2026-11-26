@@ -952,6 +952,48 @@ class SettingsFragment : Fragment() {
                 defaultState = uiState.useVolumeKeysForPages,
                 onCheckedChange = { viewModel.setUseVolumeKeysForPages(it) }
             )
+            // 自定义翻页键（上游 issue #125）：侧键映射成其它 keycode 的机型用它自救。
+            // 追加式绑定 + 黑名单 + 冲突二次确认 + 恢复默认，绑坏的可能性已经被挡在外面。
+            SettingsSelect(
+                title = stringResource(R.string.page_up_key),
+                option = com.github.gezimos.inkos.helper.PageKeyLabels.summary(
+                    requireContext(), uiState.pageUpKeys
+                ),
+                fontSize = titleFontSize,
+                description = stringResource(R.string.desc_page_keys),
+                onClick = {
+                    dialogBuilder.showPageKeyCapture(
+                        upDirection = true,
+                        currentCodes = uiState.pageUpKeys,
+                        otherDirectionCodes = uiState.pageDownKeys,
+                        onPick = { code -> viewModel.addPageUpKey(code) }
+                    )
+                }
+            )
+            SettingsSelect(
+                title = stringResource(R.string.page_down_key),
+                option = com.github.gezimos.inkos.helper.PageKeyLabels.summary(
+                    requireContext(), uiState.pageDownKeys
+                ),
+                fontSize = titleFontSize,
+                description = stringResource(R.string.desc_page_keys),
+                onClick = {
+                    dialogBuilder.showPageKeyCapture(
+                        upDirection = false,
+                        currentCodes = uiState.pageDownKeys,
+                        otherDirectionCodes = uiState.pageUpKeys,
+                        onPick = { code -> viewModel.addPageDownKey(code) }
+                    )
+                }
+            )
+            // 恢复默认单独成行：捕获面板要吞掉所有按键，面板里放个需要方向键选中的按钮
+            // 只会互相抢焦点（实测第一颗键还会被丢掉）。
+            SettingsHomeItem(
+                title = stringResource(R.string.page_key_reset),
+                description = stringResource(R.string.desc_page_key_reset),
+                titleFontSize = titleFontSize,
+                onClick = { viewModel.resetPageKeys() }
+            )
             if (supportsFullRefresh) {
                 // 与自动刷新开关独立：手势触发全刷（refreshEinkForced）同样走这里
                 SettingsSwitch(

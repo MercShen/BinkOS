@@ -368,8 +368,35 @@ class ComposeDialogManager(val context: Context, val activity: Activity) {
         }
     }
 
-    fun showUpdateAvailable(versionName: String, onView: () -> Unit) {
+    /**
+     * 自定义翻页键（上游 issue #125）。方向决定读写哪一份绑定。
+     * 绑定是追加式的：Page 键与「音量键翻页」开关的行为都不会被绑掉。
+     */
+    fun showPageKeyCapture(
+        upDirection: Boolean,
+        currentCodes: Set<Int>,
+        otherDirectionCodes: Set<Int>,
+        onPick: (Int) -> Unit
+    ) {
+        val titleRes = if (upDirection) R.string.page_up_key else R.string.page_down_key
         sheetHost.show {
+            PageKeyCaptureSheet(
+                title = context.getString(titleRes),
+                hint = context.getString(R.string.page_key_capture_hint),
+                currentText = com.github.gezimos.inkos.helper.PageKeyLabels.summary(context, currentCodes),
+                blockedText = { name -> context.getString(R.string.page_key_blocked, name) },
+                confirmSharedText = { name -> context.getString(R.string.page_key_confirm_shared, name) },
+                labelOf = { code -> com.github.gezimos.inkos.helper.PageKeyLabels.label(context, code) },
+                otherDirectionKeys = otherDirectionCodes,
+                onPick = { code ->
+                    sheetHost.dismiss()
+                    onPick(code)
+                }
+            )
+        }
+    }
+
+    fun showUpdateAvailable(versionName: String, onView: () -> Unit) {        sheetHost.show {
             ConfirmSheet(
                 title = context.getString(R.string.update_available_title),
                 message = context.getString(R.string.update_sheet_message_fmt, versionName),

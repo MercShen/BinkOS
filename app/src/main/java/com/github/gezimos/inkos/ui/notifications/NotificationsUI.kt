@@ -725,7 +725,6 @@ fun HubScreen(
                             ?.takeIf { isNotificationDismissible(it.sbn) }
                             ?.let { hn -> dismissHubNotification(hn) }
                     },
-                    volumeKeysForPages = { prefs.useVolumeKeysForPages && !isAudioPlayingNow(ctx) },
                     bottomNavEnabled = false
                 )
             }
@@ -2210,7 +2209,6 @@ fun SimpleTrayScreen(
                             }
                         }
                     },
-                    volumeKeysForPages = { prefs.useVolumeKeysForPages && !isAudioPlayingNow(ctx) },
                     selectedBottomNavIndex = selectedBottomNavIndex,
                     onBottomNavActivate = { index ->
                         if (isEditMode) {

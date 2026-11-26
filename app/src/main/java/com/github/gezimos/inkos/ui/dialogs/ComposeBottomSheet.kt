@@ -37,6 +37,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.offset
@@ -3499,6 +3501,90 @@ fun BadgeIndicatorPickerSheet(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * 自定义翻页键的捕获面板（上游 issue #125）。
+ *
+ * 为什么必须是 sheet（Dialog 窗口）而不是又一层 decorView 覆盖：短滑区编辑器就是挂在
+ * decorView 上的 ComposeView，和主页同窗口，实测抢不到键盘焦点；Dialog 有自己的窗口，
+ * 按键才会落到它身上。
+ *
+ * 规则：
+ *  - BACK 不消费，交给 Dialog 自己关闭（= 取消）
+ *  - 黑名单键（CENTER/ENTER/BACK/HOME/ESCAPE/MENU/DEL）直接拒绝：绑上去等于把激活键
+ *    或返回键扔掉，界面就按不动了
+ *  - 与另一方向重复、或本来另有职责的键（方向键、音量键）：第一次按下只给警告，
+ *    同一颗键再按一次才确认改绑
+ *  - 这里**不放**「恢复默认」按钮：那按钮要靠方向键选中，而本面板要吞下所有按键做捕获，
+ *    两者会互相打架。恢复默认是设置里独立的一行，键盘与触摸都直接可达。
+ */
+@Composable
+fun PageKeyCaptureSheet(
+    title: String,
+    hint: String,
+    currentText: String,
+    blockedText: (String) -> String,
+    confirmSharedText: (String) -> String,
+    labelOf: (Int) -> String,
+    otherDirectionKeys: Set<Int>,
+    onPick: (Int) -> Unit
+) {
+    val textColor = Theme.colors.text
+    var pendingCode by remember { mutableStateOf<Int?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
+    val rootRequester = remember { androidx.compose.ui.focus.FocusRequester() }
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .focusRequester(rootRequester)
+            .focusable()
+            .onPreviewKeyEvent { event ->
+                val code = event.nativeKeyEvent.keyCode
+                if (code == android.view.KeyEvent.KEYCODE_BACK) return@onPreviewKeyEvent false
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent true
+                when {
+                    code in com.github.gezimos.inkos.helper.PageKeyRouter.blockedKeys -> {
+                        pendingCode = null
+                        message = blockedText(labelOf(code))
+                    }
+                    pendingCode == code -> onPick(code)
+                    code in com.github.gezimos.inkos.helper.PageKeyRouter.sharedKeys ||
+                        code in otherDirectionKeys -> {
+                        pendingCode = code
+                        message = confirmSharedText(labelOf(code))
+                    }
+                    else -> onPick(code)
+                }
+                true
+            }
+    ) {
+        // 必须主动把焦点要过来：sheet 组合里一开始没有焦点节点时，第一颗键会被丢掉
+        // （实测「按下去没反应，再按一次才生效」）。
+        LaunchedEffect(Unit) {
+            try { rootRequester.requestFocus() } catch (_: Exception) {}
+        }
+        SheetTitle(title)
+        Text(
+            text = hint,
+            style = SettingsTheme.typography.item,
+            color = textColor.copy(alpha = 0.8f)
+        )
+        Text(
+            text = currentText,
+            style = SettingsTheme.typography.title,
+            color = textColor
+        )
+        message?.let { text ->
+            Text(
+                text = text,
+                style = SettingsTheme.typography.item,
+                color = textColor
+            )
         }
     }
 }

@@ -193,6 +193,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * 音量键要不要让位给系统音量：正在放音频时让位。
+     * 这条例外原来长在 dispatchKeyEvent 的音量分支里，现在由 PageKeyRouter 统一判断，
+     * 所以抽出来给两处（Activity 分发 + Hub/Tray 的 zone 模型）共用同一条规则。
+     */
+    internal fun isAudioPlayingNow(): Boolean = try {
+        AudioWidgetHelper.getInstance(this).getCurrentMediaPlayer()?.isPlaying == true
+    } catch (_: Exception) {
+        false
+    }
+
+    /**
      * 无手势入口：把「只挂在手势上的界面」变成可以用 adb 直接打开的。
      *
      * 支持的 dest：
@@ -259,6 +270,8 @@ class MainActivity : AppCompatActivity() {
             .put("onboarding", isOnboarding())
             .put("windowFocus", hasWindowFocus())
             .put("volumeKeys", prefs.useVolumeKeysForPages)
+            .put("pageUpKeys", org.json.JSONArray(prefs.pageUpKeys.toList().sorted()))
+            .put("pageDownKeys", org.json.JSONArray(prefs.pageDownKeys.toList().sorted()))
             .put("notifListener", isNotificationServiceEnabled())
             .toString()
     }
@@ -666,51 +679,33 @@ class MainActivity : AppCompatActivity() {
     var suppressKeyForwarding: Boolean = false
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (isOnboarding()) return super.dispatchKeyEvent(event)
+        // 自定义翻页键：在**入口**把绑定的键改写成 PAGE_UP / PAGE_DOWN。
+        // 后面所有已经认 Page 键的地方（主页 zone 模型、抽屉、最近任务、Hub、Tray、
+        // Letters、Modifier.onPageKeys 覆盖的设置页/sheet/引导页/指南）就自动支持自定义键，
+        // 不必每加一个分页界面再补一遍。放在 onboarding 闸门之前，是因为引导页现在也吃 Page 键。
+        val keyEvent = com.github.gezimos.inkos.helper.PageKeyRouter.rewrittenEvent(
+            event = event,
+            pageUpKeys = prefs.pageUpKeys,
+            pageDownKeys = prefs.pageDownKeys,
+            volumeKeysForPages = prefs.useVolumeKeysForPages,
+            audioPlaying = isAudioPlayingNow()
+        ) ?: event
+        if (isOnboarding()) return super.dispatchKeyEvent(keyEvent)
 
         // --- Fragment key handler ---
         val fragHandler = fragmentKeyHandler
-        if (event.action == KeyEvent.ACTION_DOWN && fragHandler != null) {
+        if (keyEvent.action == KeyEvent.ACTION_DOWN && fragHandler != null) {
             try {
-                if (fragHandler.handleKeyEvent(event.keyCode, event)) return true
+                if (fragHandler.handleKeyEvent(keyEvent.keyCode, keyEvent)) return true
             } catch (_: Exception) {}
         }
 
         val handler = pageNavigationHandler
         if (handler != null) {
-            // --- Volume keys for page navigation ---
-            if (prefs.useVolumeKeysForPages) {
-                val audioWidgetHelper = AudioWidgetHelper.getInstance(this)
-                val currentMediaPlayer = audioWidgetHelper.getCurrentMediaPlayer()
-                val isAudioPlaying = currentMediaPlayer?.isPlaying == true
-                
-                when (event.keyCode) {
-                    KeyEvent.KEYCODE_VOLUME_UP -> {
-                        if (event.action == KeyEvent.ACTION_DOWN) {
-                            if (!isAudioPlaying) {
-                                handler.pageUp()
-                            } else {
-                                return super.dispatchKeyEvent(event)
-                            }
-                        }
-                        return true
-                    }
-                    KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                        if (event.action == KeyEvent.ACTION_DOWN) {
-                            if (!isAudioPlaying) {
-                                handler.pageDown()
-                            } else {
-                                return super.dispatchKeyEvent(event)
-                            }
-                        }
-                        return true
-                    }
-                }
-            }
-
-            // --- DPAD / PAGE keys ---
-            if (event.action == KeyEvent.ACTION_DOWN && handler.handleDpadAsPage) {
-                when (event.keyCode) {
+            // 音量键翻页已经由上面的 rewrittenEvent 统一处理（连同「播放中让位系统音量」
+            // 这条例外），这里只保留 Letters 那类把方向键当翻页的屏幕。
+            if (keyEvent.action == KeyEvent.ACTION_DOWN && handler.handleDpadAsPage) {
+                when (keyEvent.keyCode) {
                     KeyEvent.KEYCODE_DPAD_UP, KeyEvent.KEYCODE_PAGE_UP -> {
                         handler.pageUp()
                         return true
@@ -723,14 +718,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val superHandled = super.dispatchKeyEvent(event)
+        val superHandled = super.dispatchKeyEvent(keyEvent)
         if (superHandled) return true
 
         // --- Forward unhandled keys to app drawer search ---
         try {
-            if (event.action == KeyEvent.ACTION_DOWN && !suppressKeyForwarding && prefs.appDrawerSearchEnabled) {
+            if (keyEvent.action == KeyEvent.ACTION_DOWN && !suppressKeyForwarding && prefs.appDrawerSearchEnabled) {
                 try {
-                    val ch = com.github.gezimos.inkos.helper.SearchHelper.keyEventToChar(event)
+                    val ch = com.github.gezimos.inkos.helper.SearchHelper.keyEventToChar(keyEvent)
                     if (ch != null) {
                         try { viewModel.emitTypedChar(ch) } catch (_: Exception) {}
                         try {
@@ -745,7 +740,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 } catch (_: Exception) {}
 
-                if (event.keyCode == KeyEvent.KEYCODE_DEL) {
+                if (keyEvent.keyCode == KeyEvent.KEYCODE_DEL) {
                     try { viewModel.emitBackspaceEvent() } catch (_: Exception) {}
                     try {
                         if (::navController.isInitialized && navController.currentDestination?.id == R.id.mainFragment) {

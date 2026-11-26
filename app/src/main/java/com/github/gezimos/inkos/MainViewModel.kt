@@ -145,6 +145,9 @@ data class HomeUiState(
     val einkPageTurnAnimationStyle: Int = 0,
     val einkInteractionFastMode: Boolean = false,
     val useVolumeKeysForPages: Boolean = false,
+    /** 自定义翻页键（附加绑定，Page 键本身永远翻页）。 */
+    val pageUpKeys: Set<Int> = com.github.gezimos.inkos.helper.PageKeyRouter.defaultUpKeys,
+    val pageDownKeys: Set<Int> = com.github.gezimos.inkos.helper.PageKeyRouter.defaultDownKeys,
     val selectedAppShortcuts: Set<String>? = null, // null means all selected by default
     val einkHelperMode: Int = 0,
     // Advanced Settings
@@ -591,6 +594,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         einkPageTurnAnimationStyle = prefs.einkPageTurnAnimationStyle,
         einkInteractionFastMode = prefs.einkInteractionFastMode,
         useVolumeKeysForPages = prefs.useVolumeKeysForPages,
+        pageUpKeys = prefs.pageUpKeys,
+        pageDownKeys = prefs.pageDownKeys,
         selectedAppShortcuts = prefs.selectedAppShortcuts.takeIf { it.isNotEmpty() },
         einkHelperMode = prefs.einkHelperMode,
         // Advanced Settings
@@ -2701,6 +2706,32 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setUseVolumeKeysForPages(enabled: Boolean) {
         prefs.useVolumeKeysForPages = enabled
         _homeUiState.value = _homeUiState.value.copy(useVolumeKeysForPages = enabled)
+    }
+
+    /**
+     * 绑定一颗翻页键是**追加**，不是替换：这样无论绑成什么，Page Up/Down 与
+     * 「音量键翻页」开关的既有行为都不会被弄丢，用户不可能把自己关在界面外面。
+     * 想回到初始状态用 [resetPageKeys]。
+     */
+    fun addPageUpKey(keyCode: Int) {
+        val next = prefs.pageUpKeys + keyCode
+        prefs.pageUpKeys = next
+        _homeUiState.value = _homeUiState.value.copy(pageUpKeys = next)
+    }
+
+    fun addPageDownKey(keyCode: Int) {
+        val next = prefs.pageDownKeys + keyCode
+        prefs.pageDownKeys = next
+        _homeUiState.value = _homeUiState.value.copy(pageDownKeys = next)
+    }
+
+    fun resetPageKeys() {
+        prefs.pageUpKeys = com.github.gezimos.inkos.helper.PageKeyRouter.defaultUpKeys
+        prefs.pageDownKeys = com.github.gezimos.inkos.helper.PageKeyRouter.defaultDownKeys
+        _homeUiState.value = _homeUiState.value.copy(
+            pageUpKeys = com.github.gezimos.inkos.helper.PageKeyRouter.defaultUpKeys,
+            pageDownKeys = com.github.gezimos.inkos.helper.PageKeyRouter.defaultDownKeys
+        )
     }
 
     fun setSelectedAppShortcuts(shortcuts: Set<String>?) {

@@ -31,10 +31,9 @@ object KeyMapperHelper {
         if (event.action != KeyEvent.ACTION_DOWN) return HomeKeyAction.None
 
         return when (keyCode) {
-            // Volume keys for page navigation (if enabled)
-            KeyEvent.KEYCODE_VOLUME_UP -> if (prefs.useVolumeKeysForPages) HomeKeyAction.PageUp else HomeKeyAction.None
-            KeyEvent.KEYCODE_VOLUME_DOWN -> if (prefs.useVolumeKeysForPages) HomeKeyAction.PageDown else HomeKeyAction.None
-
+            // 音量键翻页不在这里处理：MainActivity 会把音量键（以及用户自定义的翻页键）
+            // 统一改写成 PAGE_UP/PAGE_DOWN 再分发，连同「正在放音频就让位给系统音量」
+            // 那条例外。留一份音量分支在这里，就会出现「播放中仍然被当成翻页」的分裂行为。
             GestureKeyCodes.CLOCK -> if (prefs.clickClockAction != Action.Disabled) HomeKeyAction.ClickClock else HomeKeyAction.None
             GestureKeyCodes.DATE -> if (prefs.clickDateAction != Action.Disabled) HomeKeyAction.ClickDate else HomeKeyAction.None
             GestureKeyCodes.QUOTE -> if (prefs.quoteAction != Action.Disabled) HomeKeyAction.ClickQuote else HomeKeyAction.None

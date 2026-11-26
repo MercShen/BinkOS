@@ -149,6 +149,14 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - 颜色编辑器、主题预设：手写 zone 状态机完整；`←/→` 切 tab/卡片，`↑/↓` 换区，CENTER 激活。
 - 壁纸页：←/→ 切条目。
 - PAGE_UP/PAGE_DOWN：主页、抽屉、最近任务、Hub、Tray、Letters 都认（实测 Hub 12 条两页可翻）。
+- **自定义翻页键（2026-11-26 新增，实测通过）**：设置 → 更多 → 「上一页按键 / 下一页按键」，打开捕获面板后**第一颗键就要生效**（这里曾经丢过第一次按键，因为 sheet 组合内没有焦点节点，现在由 `LaunchedEffect` 主动 `requestFocus`）。断言：
+  - 绑 `KEYCODE_BOOKMARK`(174) 到下一页 → 行值变「Page Down、书签键」→ `dest hub` 按 174 翻到第二页、`dest drawer` 按 174 也翻页；
+  - 按 `MENU`(82) 被拒绝并说明原因（黑名单）；
+  - 按 `DPAD_RIGHT`(22) 第一次只警告「还有别的用途」，第二次才绑上（软警告）；
+  - `BACK` 取消捕获，不改绑定；
+  - 「恢复默认翻页键」独立一行，按下去绑定回到只剩 Page Up/Down；
+  - 用 `dest status` 的 `pageUpKeys/pageDownKeys` 自证，别靠读界面猜。
+  - 纯规则（无条件 Page 键、音量键看开关、黑名单、软警告）在 `PageKeyRouterTest` 里钉死，不需要真机。
 
 **实测确认的缺口（回归时按这些断言，别重新发现一遍）**
 

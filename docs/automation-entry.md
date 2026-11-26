@@ -297,6 +297,7 @@ message是需二次解析的JSON字符串：
 | onboarding | Boolean：当前是否在首启引导页。为 true 时 `onKeyDown` 会吞掉**所有**按键（BACK/ESC/音量都到不了系统），别把「按键没反应」当成键位缺失 |
 | windowFocus | Boolean：本 Activity 是否持有窗口焦点。为 false 说明按键被系统弹窗/其它 App 吃掉，此时任何按键结论都无效 |
 | volumeKeys | Boolean：「音量键翻页」偏好的实际值（与 `volume_keys_on/off` 配对使用） |
+| pageUpKeys / pageDownKeys | **keycode 数组**：自定义翻页键的当前绑定（默认 `[92]` / `[93]`，即 PAGE_UP/PAGE_DOWN）。脚本要验「某颗键是否已绑上/是否真的翻页」，读这两个字段比猜界面可靠 |
 | notifListener | Boolean：通知使用权是否已授予本包。为 false 时 Hub/Tray 必然「无通知」，那是环境没铺对，不是 App 缺陷 |
 
 `type=android/shortcuts/usage/pagedots/off` 分别存为android_widget/search/total_usage/page_dots/disabled。status可随时读，不取消等待动作；不允许附带skip_onboarding或refresh_eink=true。状态命令仍会启动/前置Activity，因此“只读”指不改偏好，不是无任何UI副作用。
@@ -343,6 +344,32 @@ adb shell settings put secure enabled_notification_listeners app.binkos.debug/co
 ```
 
 监听组件是 **`.services.NotificationService`**（写成 `NotificationManager` 会静默无效，Hub 显示「无通知」，容易被误判成缺陷）。改完用 `status.notifListener=true` 自证。
+
+### 自定义翻页键怎么被验
+
+绑定动作在 `MainActivity.dispatchKeyEvent` **入口**完成：`PageKeyRouter.rewriteTarget` 判定这颗键该不该被改写成 `PAGE_UP/PAGE_DOWN`，改写后的事件才继续分发。所以全 App 只需要认 Page 键，不存在「某屏支持自定义键、某屏不支持」。
+
+脚本验证顺序（不要用 UI 猜）：
+
+```powershell
+# 1) 绑一颗键（例：KEYCODE_BOOKMARK=174 绑到下一页）
+adb shell input keyevent 174          # 前提是捕获面板已打开
+# 2) 读回绑定表，确认写进去了
+.\tools\automate.ps1 -Dest status     # message.pageDownKeys 应包含 174
+# 3) 到真的分页界面上按它，看内容换页
+.\tools\automate.ps1 -Dest hub -ExpectedText 'All ('
+adb shell input keyevent 174
+```
+
+三条规则必须在 JVM 测试里钉住（`PageKeyRouterTest`），不要靠真机试：
+
+| 规则 | 为什么 |
+|---|---|
+| `PAGE_UP/PAGE_DOWN` 无条件翻页 | 这两颗键没有别的消费者，不该藏在开关后面（上游 #125 的原始诉求） |
+| 音量键仍看 `useVolumeKeysForPages`，且播放中不改写 | 音量键同时是系统音量，抢不得 |
+| `CENTER/ENTER/BACK/HOME/ESCAPE/MENU/DEL` 是黑名单 | 绑成翻页等于把激活键或返回键扔掉，界面会按不动 |
+
+方向键与音量键属于**软警告**名单：允许绑定，但第一次按下只给警告，同一颗键再按一次才确认——因为它们在 `Home`/`Letters` 里本来就有职责。
 
 ### 已知取证盲区
 

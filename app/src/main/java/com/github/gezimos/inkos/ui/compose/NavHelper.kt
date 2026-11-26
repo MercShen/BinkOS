@@ -332,10 +332,9 @@ object NavHelper {
             android.view.KeyEvent.KEYCODE_PAGE_UP -> NotificationKeyAction.PageUp
             android.view.KeyEvent.KEYCODE_PAGE_DOWN -> NotificationKeyAction.PageDown
 
-            // Volume keys for page navigation (if enabled)
-            android.view.KeyEvent.KEYCODE_VOLUME_UP -> if (prefs.useVolumeKeysForPages) NotificationKeyAction.PageUp else NotificationKeyAction.None
-            android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> if (prefs.useVolumeKeysForPages) NotificationKeyAction.PageDown else NotificationKeyAction.None
-
+            // 音量键不在这张表里：MainActivity 的 PageKeyRouter 会先把音量键（和自定义
+            // 翻页键）改写成 PAGE_UP/PAGE_DOWN，并在那里判断「正在放音频就让位系统音量」。
+            // 在这里再留一份音量映射，就会出现两处规则不一致。
             android.view.KeyEvent.KEYCODE_DEL, android.view.KeyEvent.KEYCODE_MENU, android.view.KeyEvent.KEYCODE_1 -> NotificationKeyAction.Dismiss
             android.view.KeyEvent.KEYCODE_DPAD_CENTER, android.view.KeyEvent.KEYCODE_ENTER, android.view.KeyEvent.KEYCODE_3 -> NotificationKeyAction.Open
             else -> NotificationKeyAction.None
@@ -658,11 +657,6 @@ object NavHelper {
         onNotificationLongClick: (index: Int) -> Unit,
         /** 键盘删除高亮那条通知（Del / MENU / #1），与行内小叉走同一个实现。 */
         onNotificationDismiss: (index: Int) -> Unit = {},
-        /**
-         * 音量键翻页是否可用。由调用方每次按键判断：偏好开着，且没有正在播放的音频
-         * （播放中要让位给系统音量，与主页/抽屉在 MainActivity 里的规则一致）。
-         */
-        volumeKeysForPages: () -> Boolean = { false },
         // Bottom Nav (2 buttons)
         selectedBottomNavIndex: MutableState<Int>,
         onBottomNavActivate: (index: Int) -> Unit,
@@ -721,30 +715,8 @@ object NavHelper {
         
         // --- Keypad dismiss / open aliases (Del, MENU, #1 = 删高亮那条；#3 = 打开) ---
         // 同 Hub：以前这几颗键只挂在 SimpleTrayFragment 的 View 级监听器上，靠 setTag 取数据，
-        // 实测不生效；删除目标也是页首而不是高亮那条。
-        // 音量键翻页：这两屏以前把 pageNavigationHandler 置 null，MainActivity 的音量分支
-        // 整块跳过，所以偏好开着也翻不动。现在在这里补上，不启用时不消费，留给系统音量。
-        when(keyEvent.nativeKeyEvent.keyCode) {
-            android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (volumeKeysForPages()) {
-                    if (keyEvent.type == KeyEventType.KeyDown) {
-                        isDpadModeSetter(true)
-                        onPreviousPage()
-                    }
-                    return true
-                }
-            }
-            android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (volumeKeysForPages()) {
-                    if (keyEvent.type == KeyEventType.KeyDown) {
-                        isDpadModeSetter(true)
-                        onNextPage()
-                    }
-                    return true
-                }
-            }
-        }
-
+        // 实测不生效；删除目标也是页首而不是高亮那条。音量键翻页不在这里，由
+        // MainActivity 的 PageKeyRouter 统一改写成 PAGE_UP/PAGE_DOWN。
         if (focusZone.value == SimpleTrayFocusZone.NOTIFICATIONS) {
             val nativeCode = keyEvent.nativeKeyEvent.keyCode
             when (nativeCode) {
@@ -946,11 +918,6 @@ object NavHelper {
         onNotificationLongClick: (index: Int) -> Unit,
         /** 键盘删除高亮那条通知（Del / MENU / #1），与行内小叉走同一个实现。 */
         onNotificationDismiss: (index: Int) -> Unit = {},
-        /**
-         * 音量键翻页是否可用。由调用方每次按键判断：偏好开着，且没有正在播放的音频
-         * （播放中要让位给系统音量，与主页/抽屉在 MainActivity 里的规则一致）。
-         */
-        volumeKeysForPages: () -> Boolean = { false },
         // Bottom Nav (kept for API compat, ignored)
         bottomNavEnabled: Boolean = false
     ): Boolean {
@@ -1005,29 +972,8 @@ object NavHelper {
         // 这几颗键以前只挂在 HubFragment 的 View 级 setOnKeyListener 上，靠 setTag 取
         // pagerState 和列表，实测在 Hub 里根本不生效；而且用的是 currentPage * pageSize，
         // 删的是页首那条而不是高亮那条。改到这里之后，索引与触摸小叉共用同一个高亮值。
-        // 音量键翻页：Hub 以前把 pageNavigationHandler 置 null，MainActivity 的音量分支
-        // 整块跳过，所以偏好开着也翻不动。不启用时不消费，留给系统音量。
-        when(keyEvent.nativeKeyEvent.keyCode) {
-            android.view.KeyEvent.KEYCODE_VOLUME_UP -> {
-                if (volumeKeysForPages()) {
-                    if (keyEvent.type == KeyEventType.KeyDown) {
-                        isDpadModeSetter(true)
-                        onPreviousPage()
-                    }
-                    return true
-                }
-            }
-            android.view.KeyEvent.KEYCODE_VOLUME_DOWN -> {
-                if (volumeKeysForPages()) {
-                    if (keyEvent.type == KeyEventType.KeyDown) {
-                        isDpadModeSetter(true)
-                        onNextPage()
-                    }
-                    return true
-                }
-            }
-        }
-
+        // 音量键 / 自定义翻页键不在这里：MainActivity 的 PageKeyRouter 已经把它们
+        // 改写成 PAGE_UP/PAGE_DOWN，下面 when 里的 Page 分支会接住。
         if (focusZone.value == HubFocusZone.NOTIFICATIONS) {
             val nativeCode = keyEvent.nativeKeyEvent.keyCode
             when (nativeCode) {
