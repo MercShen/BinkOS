@@ -2308,8 +2308,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         prefs.hideUndeletableSystemNotifications = enabled
         _homeUiState.value = _homeUiState.value.copy(hideUndeletableSystemNotifications = enabled)
         if (enabled) {
-            // 开关打开时补一刀：把此前已被记进「信件」的同类通知清掉，避免 NFC / USB 调试
-            // 这类常驻通知的旧会话继续显示。
+            // 开关打开时补一刀：把此前已被记进「信件」的同类通知清掉，避免 NFC / USB 调试、
+            // 快霸「限制信息」这类系统应用通知的旧会话继续显示。
             val notificationManager = NotificationManager.getInstance(appContext)
             val hiddenPackages = com.github.gezimos.inkos.services.NotificationService.sbnState.value
                 .filter { NotificationFilter.shouldHideFromViews(appContext, it, true) }

@@ -7,13 +7,14 @@ import android.service.notification.StatusBarNotification
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * 「系统不可清除通知」过滤：NFC、USB 调试、充电、常驻服务这类关不掉的系统通知，
+ * 「系统通知」过滤：系统应用（ApplicationInfo.FLAG_SYSTEM）发出的通知，
  * 只从 Bink OS 自己的 Hub / Tray / 计数里隐藏，不碰系统通知本身
- * （普通应用本来也取消不掉 ongoing / FLAG_NO_CLEAR 通知，系统通知栏照常显示）。
+ * （下拉通知栏照常显示、照常可清除；大我快霸「限制信息」这类可清除的系统通知也在覆盖范围内）。
  *
  * 规则：
- * - 只处理不可清除的（isOngoing 或 FLAG_NO_CLEAR / FLAG_ONGOING_EVENT）；
- * - 只处理系统应用（ApplicationInfo.FLAG_SYSTEM）发出的，第三方常驻通知（下载、录音、导航）保留；
+ * - 开关打开时隐藏发件包是系统应用的全部通知，不再要求不可清除
+ *   （快霸这类 OEM 通知是可清除的，旧规则漏掉它们）；
+ * - 第三方通知（下载、录音、导航、IM）一律保留；
  * - 电话类一律放行（category 是 CALL/MISSED_CALL，或发件包是默认拨号器）：
  *   Hub 隐藏「通话中」的 ongoing 状态，Tray 保留；未接来电是可清除通知，正常显示并计入。
  */
@@ -86,14 +87,13 @@ object NotificationFilter {
             }
         }
 
-    /** 这条通知是否应从 Hub / Tray / 通知计数里隐藏。 */
+    /** 这条通知是否应从 Hub / Tray / 通知计数里隐藏（系统应用发的都隐藏，电话类放行）。 */
     fun shouldHideFromViews(
         context: Context,
         sbn: StatusBarNotification,
-        hideUndeletableSystemNotifications: Boolean
+        hideSystemNotifications: Boolean
     ): Boolean {
-        if (!hideUndeletableSystemNotifications) return false
-        if (isDismissible(sbn)) return false
+        if (!hideSystemNotifications) return false
         if (isCallNotification(context, sbn)) return false
         return isSystemApp(context, sbn.packageName)
     }

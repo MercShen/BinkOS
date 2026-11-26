@@ -1976,7 +1976,11 @@ var pageIndicatorMargin: Int
         get() = prefs.getBoolean(HUB_SHOW_ICONS, false)
         set(value) = prefs.edit { putBoolean(HUB_SHOW_ICONS, value) }
 
-    /** Hub / Tray / 通知计数里隐藏「系统不可清除通知」（NFC、USB 调试等）；默认关闭。系统通知栏与来电不受影响。 */
+    /**
+     * Hub / Tray / 通知计数里隐藏系统应用（`FLAG_SYSTEM`）发出的全部通知（NFC、USB 调试、
+     * 大我快霸「限制信息」等，不再要求不可清除）；默认关闭。来电与第三方通知保留，系统通知栏不受影响。
+     * 属性名里的「Undeletable」是历史遗留（早期只隐藏不可清除项），存储键保持不变以免丢失用户设置。
+     */
     var hideUndeletableSystemNotifications: Boolean
         get() = prefs.getBoolean(HIDE_UNDELETABLE_SYSTEM_NOTIFICATIONS, false)
         set(value) = prefs.edit { putBoolean(HIDE_UNDELETABLE_SYSTEM_NOTIFICATIONS, value) }
