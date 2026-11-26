@@ -14,10 +14,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,6 +32,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
@@ -112,6 +120,17 @@ fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Uni
         )
     )
 
+    // 关键：这个编辑器是挂在 decorView 上的 ComposeView，和主页在**同一个窗口**里。
+    // 面板本身是 Dialog 的 sheet 没这个问题（Dialog 有自己的窗口焦点），所以这里先尝试
+    // 接管焦点。**2026-11-26 实测：接管没有生效**——按键仍然由主页的 ComposeView 收到，
+    // DPAD_LEFT 照样触发 swipeLeftAction 打开最近任务，± 按钮收不到 CENTER。
+    // 下面这组调用是必要的但不充分；要真正键盘可用，得把编辑器改成 Dialog 窗口
+    // （见 docs/testing-playbook.md 键盘章节第 4 条），不能只靠 requestFocus。
+    overlay.isFocusable = true
+    overlay.isFocusableInTouchMode = true
+    overlay.descendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
+    overlay.requestFocus()
+
     // 拖动手柄需要跟手：开着「交互时极速刷新」时切到极速波形，关闭时回到 Regal。
     com.github.gezimos.inkos.helper.EinkInteractionMode.begin(TOKEN_ZONE_EDITOR)
 
@@ -154,7 +173,13 @@ private fun ShortSwipeZoneEditor(
     // 墨水屏上纯黑半透明最稳：无论浅色/深色主题，被压深的区域都明显暗一档
     val dimColor = Color.Black.copy(alpha = 0.55f)
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier = Modifier
+        .fillMaxSize()
+        // 编辑器开着的时候，按键不该再落到下层主页的手势上（实测 DPAD_LEFT 会打开最近任务）。
+        // BACK 例外：它由 OnBackPressedCallback 负责关闭编辑器。
+        .onKeyEvent { event ->
+            event.nativeKeyEvent.keyCode != android.view.KeyEvent.KEYCODE_BACK
+        }) {
         // 真实可用高度：LocalConfiguration 在挂到 decorView 的 ComposeView 上不可靠
         val screenHeightDp = maxHeight.value.roundToInt()
 
@@ -227,7 +252,7 @@ private fun ShortSwipeZoneEditor(
             }
         )
 
-        // 居中的说明面板：标题 + 一行小字
+        // 居中的说明面板：标题 + 说明 + 两行 ± 步进
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -249,9 +274,127 @@ private fun ShortSwipeZoneEditor(
                 style = SettingsTheme.typography.header,
                 fontSize = (SettingsTheme.typography.header.fontSize.value * 0.9f).sp
             )
+            // 键盘取证：这个编辑器以前只认拖动，方向键不但调不了边界，
+            // 还会穿透到下层主页触发滑动动作（DPAD_LEFT 会打开最近任务）。
+            // 现在给两行 ± 步进，触摸和键盘都能用同一套值。
+            ZoneStepperRow(
+                label = stringResource(R.string.zone_top_boundary),
+                value = top + topBase,
+                canDecrease = (top + topBase) > topBase,
+                canIncrease = top < topMaxDp,
+                onStep = { delta -> applyTop((top + delta).coerceIn(0, topMaxDp)) },
+                textColor = textColor,
+                bgColor = bgColor,
+                firstRow = true
+            )
+            ZoneStepperRow(
+                label = stringResource(R.string.zone_bottom_boundary),
+                value = bottom,
+                canDecrease = bottom > 0,
+                canIncrease = bottom < bottomMaxDp,
+                onStep = { delta -> applyBottom((bottom + delta).coerceIn(0, bottomMaxDp)) },
+                textColor = textColor,
+                bgColor = bgColor
+            )
+            Text(
+                text = stringResource(R.string.zone_stepper_hint),
+                color = textColor,
+                style = SettingsTheme.typography.header,
+                fontSize = (SettingsTheme.typography.header.fontSize.value * 0.75f).sp
+            )
         }
     }
 }
+
+/** 边界步进的一行：标题 + 当前 dp + − / +。− / + 是 clickable，方向键能选中、CENTER 能按。 */
+@Composable
+private fun ZoneStepperRow(
+    label: String,
+    value: Int,
+    canDecrease: Boolean,
+    canIncrease: Boolean,
+    onStep: (Int) -> Unit,
+    textColor: Color,
+    bgColor: Color,
+    firstRow: Boolean = false
+) {
+    val shape = RoundedCornerShape(8.dp)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = label,
+            color = textColor,
+            style = SettingsTheme.typography.header,
+            fontSize = (SettingsTheme.typography.header.fontSize.value * 0.8f).sp,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            text = value.toString(),
+            color = textColor,
+            style = SettingsTheme.typography.header,
+            fontSize = (SettingsTheme.typography.header.fontSize.value * 0.8f).sp
+        )
+        ZoneStepButton(text = "−", enabled = canDecrease, onClick = { onStep(-ZONE_STEP_DP) }, textColor, bgColor, shape)
+        ZoneStepButton(
+            text = "+",
+            enabled = canIncrease,
+            onClick = { onStep(ZONE_STEP_DP) },
+            textColor = textColor,
+            bgColor = bgColor,
+            shape = shape,
+            bringFocusIntoEditor = firstRow
+        )
+    }
+}
+
+@Composable
+private fun ZoneStepButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    textColor: Color,
+    bgColor: Color,
+    shape: androidx.compose.ui.graphics.Shape,
+    bringFocusIntoEditor: Boolean = false
+) {
+    val interaction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val focused = interaction.collectIsFocusedAsState().value
+    val requester = remember { androidx.compose.ui.focus.FocusRequester() }
+    if (bringFocusIntoEditor) {
+        // 编辑器的组合里原本没有任何焦点起点：不主动请求一次的话，
+        // 方向键即使在编辑器窗口内也无从「跳到下一个控件」。
+        LaunchedEffect(Unit) {
+            try { requester.requestFocus() } catch (_: Exception) {}
+        }
+    }
+    Box(
+        modifier = Modifier
+            .size(44.dp)
+            .clip(shape)
+            .background(if (focused) textColor else bgColor)
+            .border(1.5.dp, textColor, shape)
+            .focusRequester(requester)
+            .clickable(
+                interactionSource = interaction,
+                indication = null,
+                enabled = enabled
+            ) { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            color = if (focused) bgColor else textColor.copy(alpha = if (enabled) 1f else 0.3f),
+            style = SettingsTheme.typography.header,
+            fontSize = (SettingsTheme.typography.header.fontSize.value * 0.9f).sp
+        )
+    }
+}
+
+/** 步进粒度：8dp 一格，墨水屏上按着连发也不会有太多中间刷新。 */
+private const val ZONE_STEP_DP = 8
 
 /**
  * 与首页编辑模式（时钟 / 底部组件）同款细胶囊拖动条，实心、无描边：

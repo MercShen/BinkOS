@@ -1016,6 +1016,9 @@
     <!-- Short swipe zone editor -->
     <string name="short_swipe_zone_title">Short swipe area</string>
     <string name="short_swipe_zone_caption">Short-swipe gestures only work inside the highlighted area</string>
+    <string name="zone_top_boundary">Top boundary</string>
+    <string name="zone_bottom_boundary">Bottom boundary</string>
+    <string name="zone_stepper_hint">Step the boundaries with − and +, or drag the two bars</string>
 
     <!-- Short swipe zone editor -->
     <!-- Simple tray brightness bar -->

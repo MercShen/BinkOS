@@ -4,6 +4,9 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## v0.3.0 — unreleased
 
+### Wallpapers
+- Custom wallpapers now carry a permanent trash button in the corner of the preview. Press it — tap it or move the D-pad onto it and press the centre key — and a confirmation asks before the entry leaves the gallery; the image file on the device is never touched. Previously the only way to reach removal was a long press on the preview, which no keyboard can do, and the button stayed hidden until you did it right. The centre key still applies the selected wallpaper directly.
+
 ### Keyboard
 - Page Up and Page Down now turn pages everywhere that has pages: the settings pages, the paged pickers (multi-select lists, badge style, shortcut icon, icon style, theme apply scope, widget app list), the first-run guide and the in-app guide. Those surfaces only ever responded to a horizontal drag, which matters on devices whose side keys are configured to send page keys instead of volume — and unlike the volume keys, page keys have nothing else to do, so they are honoured without a switch. The settings header takes the same keys as the list below it: it steals focus when a page opens, and without that the keys would look dead until you pressed the D-pad once.
 
@@ -19,6 +22,7 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 - The debug automation `status` now also reports whether a sheet is covering the screen, whether the short-swipe zone editor is open, whether the app is on the first-run guide, whether the window holds focus, and the real values of the volume-key paging and notification-access settings — so a scripted check can prove the screen it is testing is the screen it asked for. Add `volume_keys_on/off` to toggle volume-key paging without tapping through Settings. `docs/automation-entry.md` gains a keyboard-probing section (keycode table, which judgements are trustworthy, how to seed notifications); `docs/testing-playbook.md` records the measured keyboard/T9 reachability baseline and its known gaps.
 
 ### E-ink
+- The short-swipe area editor gained −/+ rows for both boundaries, 8dp a step, so the area no longer needs a drag to set. Tapping them works today; reaching them from the keyboard still needs the editor to move into a dialog window of its own, which it does not have yet.
 - Every Directional wipe (opening a screen, closing it, home paging) now holds its animation window for 350 ms instead of 280 ms, so the wipe shows up reliably when leaving the app drawer with the edge-back gesture. On-device HAL logs show the panel's next Regal full refresh can arrive only after the previous panel commit finishes, which the old window sometimes missed; 300 ms already dropped wipes again, and 325 ms still leaked occasionally in daily use, so 350 ms is now the shortest stable window.
 
 ## v0.2.9 — 2026-11-24

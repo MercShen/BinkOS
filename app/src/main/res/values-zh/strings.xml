@@ -1015,6 +1015,9 @@
  <!-- Short swipe zone editor -->
  <string name="short_swipe_zone_title">短滑区域</string>
  <string name="short_swipe_zone_caption">短滑手势将只在高亮区域内生效</string>
+ <string name="zone_top_boundary">上边界</string>
+ <string name="zone_bottom_boundary">下边界</string>
+ <string name="zone_stepper_hint">用 − 和 + 步进调整边界，也可以直接拖动两条边界</string>
 
  <!-- Short swipe zone editor -->
  <!-- Simple tray brightness bar -->

@@ -10,7 +10,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.rounded.DeleteOutline
 import com.github.gezimos.inkos.ui.dialogs.ConfirmSheet
@@ -48,7 +47,7 @@ import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -95,12 +94,8 @@ fun WallpaperUI(
             customNames.map { WallpaperEntry(null, it) }
     }
     var selectedIndex by remember { mutableIntStateOf(0) }
-    var removalMode by remember { mutableStateOf(false) }
     val safeIndex = selectedIndex.coerceIn(0, entries.lastIndex)
     val selectedEntry = entries[safeIndex]
-    LaunchedEffect(safeIndex) {
-        removalMode = false
-    }
 
     @Composable
     fun entryTitle(entry: WallpaperEntry): String =
@@ -202,7 +197,6 @@ fun WallpaperUI(
         val updated = prefs.customWallpapers.toMutableList().also { it.remove(relPath) }
         prefs.customWallpapers = updated
         customNames = updated.toList()
-        removalMode = false
         selectedIndex = 0
     }
     /** 相册导入：fit → 存 filesDir/wallpapers/ → 追加画廊条目并选中（不立即应用）。 */
@@ -252,8 +246,10 @@ fun WallpaperUI(
             modifier = Modifier
                 .fillMaxSize()
                 .background(bgColor)
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                // 用 onKeyEvent（后序）而不是 onPreviewKeyEvent：焦点在删除图标 / 浏览 / 应用
+                // 这些可点击子节点上时，CENTER 应该先给它们；只有没人消费时才落到「应用壁纸」。
+                .onKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
                     when (event.key) {
                         Key.DirectionLeft -> { if (selectedIndex > 0) selectedIndex--; true }
                         Key.DirectionRight -> { if (selectedIndex < entries.lastIndex) selectedIndex++; true }
@@ -305,20 +301,6 @@ fun WallpaperUI(
                     .padding(top = 12.dp.scaled(screenScale), bottom = 12.dp.scaled(screenScale))
                     .clip(cardShape)
                     .border(1.5.dp.scaled(screenScale), textColor, cardShape)
-                    .pointerInput(selectedEntry.customRelPath) {
-                        detectTapGestures(
-                            onLongPress = {
-                                if (selectedEntry.customRelPath != null) {
-                                    removalMode = true
-                                }
-                            },
-                            onTap = {
-                                if (removalMode) {
-                                    removalMode = false
-                                }
-                            }
-                        )
-                    }
                     .pointerInput(entries.size) {
                         detectHorizontalDragGestures(
                             onHorizontalDrag = { _, dragAmount -> previewDragX += dragAmount },
@@ -343,16 +325,20 @@ fun WallpaperUI(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                if (removalMode && selectedEntry.customRelPath != null) {
+                // 自定义壁纸常驻一个删除入口：触摸直接点，键盘用方向键选中再 CENTER。
+                // 以前它藏在「长按预览」后面，键盘用户永远摸不到。
+                val deleteInteraction = remember { MutableInteractionSource() }
+                val deleteFocused = deleteInteraction.collectIsFocusedAsState().value
+                if (selectedEntry.customRelPath != null) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomEnd)
                             .padding(6.dp.scaled(screenScale))
                             .size(44.dp.scaled(screenScale))
-                            .background(bgColor)
+                            .background(if (deleteFocused) textColor else bgColor)
                             .border(1.5.dp.scaled(screenScale), textColor, RoundedCornerShape(6.dp.scaled(screenScale)))
                             .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
+                                interactionSource = deleteInteraction,
                                 indication = null
                             ) {
                                 val rel = selectedEntry.customRelPath ?: return@clickable
@@ -372,7 +358,7 @@ fun WallpaperUI(
                         Icon(
                             imageVector = Icons.Rounded.DeleteOutline,
                             contentDescription = stringResource(R.string.wallpaper_delete),
-                            tint = textColor,
+                            tint = if (deleteFocused) bgColor else textColor,
                             modifier = Modifier.size(24.dp.scaled(screenScale))
                         )
                     }
@@ -425,13 +411,7 @@ fun WallpaperUI(
                             .combinedClickable(
                                 interactionSource = interactionSource,
                                 indication = null,
-                                onClick = { selectedIndex = globalIndex },
-                                onLongClick = {
-                                    if (entry.customRelPath != null) {
-                                        selectedIndex = globalIndex
-                                        removalMode = true
-                                    }
-                                }
+                                onClick = { selectedIndex = globalIndex }
                             )
                     ) {
                         Box(Modifier.fillMaxSize().clip(cardShape)) {
