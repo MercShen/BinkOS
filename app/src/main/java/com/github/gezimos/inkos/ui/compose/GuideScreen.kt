@@ -142,6 +142,13 @@ object GuideScreen {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    // 键盘取证：指南以前只认页底 BACK / NEXT。Page 键按「上一页 / 下一页」
+                    // 的常规语义处理——到边界就停住，不像 NEXT 那样在末页退回目录，
+                    // 免得键盘用户按一下就丢了正在看的那节。
+                    .onPageKeys(
+                        onPrevious = { if (category != null && page > 0) page-- },
+                        onNext = { if (category != null && page < totalPages - 1) page++ }
+                    )
                     .background(bgColor)
                     .inkOsSafeDrawingPadding()
             ) {

@@ -13,6 +13,7 @@ import com.github.gezimos.inkos.helper.IconUtility
 import com.github.gezimos.inkos.helper.IconShape
 import com.github.gezimos.inkos.helper.IconShapeUtility
 import com.github.gezimos.inkos.ui.compose.AppIconBox
+import com.github.gezimos.inkos.ui.compose.onPageKeys
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.runtime.CompositionLocalProvider
@@ -1453,6 +1454,10 @@ fun MultiChoiceSheet(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .onPageKeys(
+                            onPrevious = { if (pageIndex > 0) pageIndex-- },
+                            onNext = { if (pageIndex < pageCount - 1) pageIndex++ }
+                        )
                         .pointerInput(pageCount) {
                             detectHorizontalDragGestures(
                                 onHorizontalDrag = { _, dragAmount -> dragX += dragAmount },
@@ -2645,6 +2650,10 @@ fun IconStylePickerSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp.scaled(screenScale))
+                .onPageKeys(
+                    onPrevious = { if (currentPage > 0) currentPage-- },
+                    onNext = { if (currentPage < pageCount - 1) currentPage++ }
+                )
                 .pointerInput(pageCount) {
                     var totalDrag = 0f
                     detectHorizontalDragGestures(
@@ -2905,6 +2914,10 @@ fun ShortcutIconPickerSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onPageKeys(
+                        onPrevious = { if (pageIndex > 0) pageIndex-- },
+                        onNext = { if (pageIndex < pageCount - 1) pageIndex++ }
+                    )
                     .pointerInput(pageCount) {
                         detectHorizontalDragGestures(
                             onHorizontalDrag = { _, dragAmount -> dragX += dragAmount },
@@ -3261,6 +3274,10 @@ fun ThemeConfigSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp.scaled(screenScale))
+                    .onPageKeys(
+                        onPrevious = { if (currentPage > 0) currentPage-- },
+                        onNext = { if (currentPage < pageCount - 1) currentPage++ }
+                    )
                     .pointerInput(pageCount) {
                         var totalDrag = 0f
                         detectHorizontalDragGestures(
@@ -3362,6 +3379,10 @@ fun BadgeIndicatorPickerSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onPageKeys(
+                        onPrevious = { if (pageIndex > 0) pageIndex-- },
+                        onNext = { if (pageIndex < pageCount - 1) pageIndex++ }
+                    )
                     .pointerInput(pageCount) {
                         detectHorizontalDragGestures(
                             onHorizontalDrag = { _, dragAmount -> dragX += dragAmount },

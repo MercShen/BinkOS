@@ -4,6 +4,9 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 
 ## v0.3.0 — unreleased
 
+### Keyboard
+- Page Up and Page Down now turn pages everywhere that has pages: the settings pages, the paged pickers (multi-select lists, badge style, shortcut icon, icon style, theme apply scope, widget app list), the first-run guide and the in-app guide. Those surfaces only ever responded to a horizontal drag, which matters on devices whose side keys are configured to send page keys instead of volume — and unlike the volume keys, page keys have nothing else to do, so they are honoured without a switch. The settings header takes the same keys as the list below it: it steals focus when a page opens, and without that the keys would look dead until you pressed the D-pad once.
+
 ### Onboarding
 - The first-run guide answers the Back key again: it goes to the previous page instead of doing nothing, and it still refuses to step past the first page, so the guide cannot be exited by accident. While the guide was up every key was swallowed, which left a keypad phone no way back except D-pading to the on-screen Back button.
 

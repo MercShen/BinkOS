@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import com.github.gezimos.inkos.ui.compose.onPageKeys
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -80,7 +81,13 @@ internal fun WidgetAppListContent(
     val backLabel = stringResource(R.string.btn_back)
     val nextLabel = stringResource(R.string.home_tooltip_next)
 
-    SubcomposeLayout(Modifier.fillMaxWidth().pointerInput(apps.size, swipeThreshold) {
+    SubcomposeLayout(Modifier.fillMaxWidth()
+        // 键盘取证：这里以前只有横拖，Page 键不认
+        .onPageKeys(
+            onPrevious = { page = (page - 1).coerceAtLeast(0) },
+            onNext = { page = (page + 1).coerceAtMost(gesturePageCount.get() - 1) }
+        )
+        .pointerInput(apps.size, swipeThreshold) {
         var dragX = 0f
         detectDragGestures(
             onDragStart = { dragX = 0f },

@@ -270,6 +270,8 @@ object OnboardingScreen {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    // 键盘取证：引导页以前只认页底的「返回 / 下一步」，Page 键不认
+                    .onPageKeys(onPrevious = { onboardingPrev() }, onNext = { onboardingNext() })
                     .background(bgColor)
                     .inkOsSafeDrawingPadding()
             ) {

@@ -158,7 +158,10 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 4. **短滑区域编辑器对键盘零响应，且按键穿透到下层主页手势**（DPAD_LEFT 会触发 `swipeLeftAction` 打开最近任务）。编辑器是挂在 decorView 的覆盖层，用 `status.zoneEditor` 判它在不在。
 5. **引导页 BACK（2026-11-26 已修）**：`MainActivity.onKeyDown` 以前在 `isOnboarding()` 时无条件 `return true`，连 BACK 都吞，键盘用户只能 D-pad 走到页底「返回」。现在只放行 BACK 给引导页自己的 `BackHandler -> onboardingPrev()`，其余键（MENU / ESCAPE / HOME / 音量）继续吞。回归：`dest onboarding --ei onboarding_page 3 --ez confirm_write true` → 页码 4 → `BACK` → 3 → 再三次 → 1 → 再按四次**仍停在 1**（不能被踢出引导）。`status.onboarding` 用来判当前是否处于引导态。
 6. **壁纸 CENTER 立即应用并退出**（无确认）；fork 新加的「长按删除自定义壁纸」无键盘路径。
-7. **Settings / 各 sheet / Onboarding / Guide / ColorEditor / ThemePresets 不认 PAGE_UP/PAGE_DOWN**（键位层 `NavHelper`/`KeyMapperHelper` 从 fork 点 `4aeb4e9` 起长期没跟着功能走，2026-11-26 才开始补）。
+7. **PAGE_UP / PAGE_DOWN 覆盖（2026-11-26 已补齐）**：主页、抽屉、最近任务、Hub、Tray、Letters 本来就认；现在**设置各页、分页 sheet（多选/角标/快捷方式图标/图标样式/主题配置/小部件选应用）、引导页、使用指南**也认。统一走 `ui/compose/PageKeys.kt` 的 `Modifier.onPageKeys(onPrevious, onNext)`——新增分页界面请用它，别再只留横拖。
+   - **关键坑（实测踩到）**：设置页的页头是**另一个 ComposeView**，进页就 `requestFocus()`；正文根节点上的按键处理器在焦点还在页头时**收不到键**。表现为「刚进设置页按 PAGE_DOWN 没反应，先按一次 DPAD_DOWN 才生效」。因此页头 `PageHeader` 也挂了同一套键，翻页动作由正文通过 `settingsPageMove` 交出来（`SideEffect` 赋值、`DisposableEffect` 置空）。回归时必须**进页后立刻按 PAGE_DOWN**，不能先按方向键。
+   - 断言：`dest fonts` → `PAGE_DOWN` 一次，文本从「• 通用字体 | 全部重置…」变成「时钟小部件字体 | 时钟字号 | 48…」；`PAGE_UP` ×2 回第 1 页；再验一次触摸长滑仍能翻页（两条路共用 `pageBy`）。
+   - 图标样式 sheet 的第 2 页要**装了第三方图标包**才会出现（模拟器上 5 个选项 = 1 页，测不出翻页）；同一接线已在角标 sheet 上验过（`PAGE_DOWN` 翻出「实心方块」那页）。
 8. 引导页截图看不到焦点落点（无 pillHighlight），设置页有。新增可聚焦控件时沿用 `collectIsFocusedAsState` + `pillHighlight`，否则键盘用户是盲按。
 
 **模拟器盲区**：没有 T9 数字键盘 IME（仓内无 multi-tap，`SearchHelper` 只认 `a..z`）、没有厂商物理侧键、没有墨水屏波形。数字→字母、侧键真实 keycode、刷新观感只能真机验。

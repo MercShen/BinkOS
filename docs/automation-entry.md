@@ -346,7 +346,9 @@ adb shell settings put secure enabled_notification_listeners app.binkos.debug/co
 
 ### 已知取证盲区
 
-模拟器没有厂商墨水屏接口，也**没有 T9 数字键盘 IME**：数字→字母（multi-tap）、物理侧键真实 keycode、刷新波形与残影只能在真机验证。仓内也没有自带 IME（`SearchHelper` 只认 `a..z`），所以「T9 能否打字」这类问题在模拟器上无法定论。
+- **焦点在哪，uiautomator 和 status 都看不见**：设置页页头与正文是两个 ComposeView，页头进页即抢焦点，正文的按键处理器那时收不到键（PAGE 键已在页头也挂了一份）。验按键时**先按目标键再看结果**，不要先按方向键"热身"，否则会把只有焦点在正文才生效的路径误判成全局可用。
+- 模拟器没有 T9 数字键盘 IME（仓内无 multi-tap，`SearchHelper` 只认 `a..z`）、没有厂商物理侧键、没有墨水屏波形。数字→字母、侧键真实 keycode、刷新观感只能真机验。
+- 图标包相关的分页（图标样式 sheet 第 2 页）在干净模拟器上造不出来：没有第三方图标包时选项不足一页。
 
 ## 8. Debug探针 — 不属于dest协议
 

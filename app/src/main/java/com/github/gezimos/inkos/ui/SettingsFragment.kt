@@ -58,7 +58,9 @@ import androidx.compose.material.icons.rounded.Widgets
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
@@ -79,6 +81,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import com.github.gezimos.inkos.ui.compose.gestureHelper
+import com.github.gezimos.inkos.ui.compose.onPageKeys
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -217,6 +220,8 @@ class SettingsFragment : Fragment() {
     // Page indicator state
     private var currentPage by mutableStateOf(0)
     private var pageCount by mutableStateOf(1)
+    /** 正文组合里算出来的翻页动作，交给页头，让 PAGE_UP/PAGE_DOWN 在焦点还在页头时也生效。 */
+    private var settingsPageMove: ((Int) -> Unit)? = null
 
     // Last update-check result; kept on the fragment so it survives switching Settings pages.
     private var updateState by mutableStateOf<UpdateUiState>(UpdateUiState.Idle)
@@ -458,6 +463,7 @@ class SettingsFragment : Fragment() {
                                 pageIndicator = {
                                     PageIndicator(currentPage = currentPage, pageCount = pageCount)
                                 },
+                                onPageMove = { delta -> settingsPageMove?.invoke(delta) },
                                 titleFontSize = if (settingsSize > 0) (settingsSize * 1.5).sp else TextUnit.Unspecified
                             )
                         }
@@ -511,28 +517,40 @@ class SettingsFragment : Fragment() {
                         }
                     }
 
+                    // 翻页的唯一实现：触摸长滑、PAGE_UP/PAGE_DOWN 都走这里，别再各写一份。
+                    fun pageBy(delta: Int) {
+                        val vp = viewportHeightPx.intValue
+                        if (vp <= 0) return
+                        val overlap = (vp * overlapFraction).toInt()
+                        val step = (vp - overlap).coerceAtLeast(1)
+                        val maxScroll = scrollState.maxValue.coerceAtLeast(0)
+                        val pages = if (maxScroll <= 0) 1 else (1 + ((maxScroll + step - 1) / step))
+                        val targetPage = (currentPage + delta).coerceIn(0, pages - 1)
+                        if (targetPage != currentPage) {
+                            val targetScroll = (targetPage * step).coerceAtMost(maxScroll)
+                            scope.launch { scrollState.scrollTo(targetScroll) }
+                        }
+                    }
+
+                    // 页头 ComposeView 进页就抢焦点，那时正文的按键处理器收不到键；
+                    // 把同一个翻页函数交给页头，键盘用户刚进页就能按 PAGE_UP/PAGE_DOWN。
+                    SideEffect { settingsPageMove = { delta -> pageBy(delta) } }
+                    DisposableEffect(Unit) {
+                        onDispose { settingsPageMove = null }
+                    }
+
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
                             .onSizeChanged { viewportHeightPx.intValue = it.height }
+                            // 键盘取证：设置各页以前只有左右长滑一条翻页路，Page 键不认。
+                            .onPageKeys(onPrevious = { pageBy(-1) }, onNext = { pageBy(1) })
                             .closeOnReverseLongSwipe(
                                 action = com.github.gezimos.inkos.data.Constants.Action.OpenSettings,
                                 prefs = prefs
                             ) { try { findNavController().popBackStack() } catch (_: Exception) {} }
                             .gestureHelper(
-                                onVerticalPageMove = { delta ->
-                                    val vp = viewportHeightPx.intValue
-                                    if (vp <= 0) return@gestureHelper
-                                    val overlap = (vp * overlapFraction).toInt()
-                                    val step = (vp - overlap).coerceAtLeast(1)
-                                    val maxScroll = scrollState.maxValue.coerceAtLeast(0)
-                                    val pages = if (maxScroll <= 0) 1 else (1 + ((maxScroll + step - 1) / step))
-                                    val targetPage = (currentPage + delta).coerceIn(0, pages - 1)
-                                    if (targetPage != currentPage) {
-                                        val targetScroll = (targetPage * step).coerceAtMost(maxScroll)
-                                        scope.launch { scrollState.scrollTo(targetScroll) }
-                                    }
-                                }
+                                onVerticalPageMove = { delta -> pageBy(delta) }
                             )
                     ) {
                         Column(

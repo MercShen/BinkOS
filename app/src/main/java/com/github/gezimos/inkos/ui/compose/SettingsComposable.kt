@@ -246,7 +246,13 @@ object SettingsComposable {
         modifier: Modifier = Modifier,
         pageIndicator: (@Composable () -> Unit)? = null,
         titleFontSize: TextUnit = TextUnit.Unspecified,
-        backHighlighted: Boolean = false
+        backHighlighted: Boolean = false,
+        /**
+         * 键盘 PageUp/PageDown 翻页。页头进页就会主动抢焦点（好让 OK 直接返回上级），
+         * 这时正文那层的按键处理器收不到键——实测「刚进设置页按 PAGE_DOWN 没反应，
+         * 先按一次 DPAD_DOWN 才生效」。所以页头也要挂同一套键，共用正文的翻页回调。
+         */
+        onPageMove: ((Int) -> Unit)? = null
     ) {
         val prefTextColor = Theme.colors.text
         val prefBackgroundColor = Theme.colors.background
@@ -254,6 +260,14 @@ object SettingsComposable {
         Row(
             modifier = modifier
                 .fillMaxWidth()
+                .then(
+                    if (onPageMove != null) {
+                        Modifier.onPageKeys(
+                            onPrevious = { onPageMove(-1) },
+                            onNext = { onPageMove(1) }
+                        )
+                    } else Modifier
+                )
                 .padding(top = 12.dp)
                 .padding(horizontal = SettingsTheme.color.horizontalPadding),
             verticalAlignment = Alignment.CenterVertically
