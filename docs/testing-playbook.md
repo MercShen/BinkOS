@@ -179,6 +179,8 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 **模拟器盲区**：没有 T9 数字键盘 IME（仓内无 multi-tap，`SearchHelper` 只认 `a..z`）、没有厂商物理侧键、没有墨水屏波形。数字→字母、侧键真实 keycode、刷新观感只能真机验。
 
+**键盘手工回归用虚拟 T9 面板**：`ws3\emulator\t9pad.ps1`（独立窗口，每个按钮发一次 `adb shell input keyevent`，所以是**真 KeyEvent**，与物理键盘同一条分发路径；支持长按 `--longpress`、连发次数、设备切换，`-Probe` 可无窗口自检通路）。脚本化取证仍走本文档上面的 `input keyevent` + `dest status` 组合。注意面板能覆盖的只有「按键逻辑」：数字→字母与侧键真实 keycode 依旧必须真机（见上）。
+
 **取证纪律（本轮踩实）**：导航必须带 `-ExpectedText` 或按完后读 `status` 的 `currentDestination/sheetOpen/onboarding/windowFocus`；本轮有三轮结论因为「dest 分发成功但画面没落地」而作废（应用一直停在 onboardingFragment）。整帧截图 md5 会被状态栏时钟污染，不能单独当判据。
 
 ## 5. 通知探针
