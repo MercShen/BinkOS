@@ -173,6 +173,7 @@ edit_apps 锚点：0页 Apps Font；1页图标卡片；2页 Nr of Apps/Pages 与
 | `eink_anim_on/off` | 无 | 保存翻页动画开关（`EINK_PAGE_TURN_ANIMATION`） |
 | `eink_style_directional` / `eink_style_ripple` | 无 | 保存动画样式，**不会自动打开动画开关**；要出效果需先 `eink_anim_on` |
 | `eink_fast_on/off` | 无 | 保存「智能刷新模式」开关（`EINK_INTERACTION_FAST_MODE`） |
+| `volume_keys_on/off` | 无 | 保存「音量键翻页」开关（`USE_VOLUME_KEYS_FOR_PAGES`）；键盘取证要反复开合它，别再点设置页或 `run-as` 灌 prefs |
 | `vendor_switches_on/off`（别名 `force_vendor_on/off`） | 无 | **调试后门**：无厂商固件（模拟器）时也强制显示「系统全刷 / 刷新动画 / 智能刷新模式」三项专属开关及厂商引导页；只改 UI 可见性，不伪造厂商接口。写在 `DEBUG_FORCE_VENDOR_SWITCHES`，重进 App 仍生效；release 构建忽略 |
 | `language` | --es language **必填**：`system` / `en` / `zh-CN`（另有 english、chinese、zh_cn、default 等别名） | 写应用内语言偏好并重建界面，与设置页「语言」选择器同一路径；applied message 是 `{"language":"en"}`（`system` 表示跟随系统）。 |
 | `backup` | 无 | 生成完整备份 ZIP，写到 `filesDir/backups/backup-<yyyyMMdd-HHmmss>.zip`；结果 JSON 回 `file/bytes/sha256` |
@@ -291,8 +292,61 @@ message是需二次解析的JSON字符串：
 | pagerMargin | 0..12整数 |
 | currentDestination | 导航resource entry name，如mainFragment/settingsFragment；**不包含设置内子路由或当前sheet** |
 | language | 应用内语言：`system` 或 tag（`en` / `zh-CN`）；读的是应用自管偏好，不是系统 LocaleManager |
+| sheetOpen | Boolean：是否还有底部面板显示或在排队显示。导航 dest 只回 `dispatched`，**上一层 sheet 还盖着时按键会打在 sheet 上**，这个字段用来判定目标画面是否真的可见 |
+| zoneEditor | Boolean：短滑区域编辑器是否打开（它是挂在 decorView 上的覆盖层，`currentDestination` 看不出来） |
+| onboarding | Boolean：当前是否在首启引导页。为 true 时 `onKeyDown` 会吞掉**所有**按键（BACK/ESC/音量都到不了系统），别把「按键没反应」当成键位缺失 |
+| windowFocus | Boolean：本 Activity 是否持有窗口焦点。为 false 说明按键被系统弹窗/其它 App 吃掉，此时任何按键结论都无效 |
+| volumeKeys | Boolean：「音量键翻页」偏好的实际值（与 `volume_keys_on/off` 配对使用） |
+| notifListener | Boolean：通知使用权是否已授予本包。为 false 时 Hub/Tray 必然「无通知」，那是环境没铺对，不是 App 缺陷 |
 
 `type=android/shortcuts/usage/pagedots/off` 分别存为android_widget/search/total_usage/page_dots/disabled。status可随时读，不取消等待动作；不允许附带skip_onboarding或refresh_eink=true。状态命令仍会启动/前置Activity，因此“只读”指不改偏好，不是无任何UI副作用。
+
+## 7.5 键盘 / 无触摸取证（注入按键）
+
+墨水屏 T9 键盘机的可达性只能靠注入按键取证。以下是 2026-11-26 一轮实测踩出来的硬规则，**照做再下结论**：
+
+### 先自证画面，再按按键
+
+```powershell
+.\tools\automate.ps1 -Dest hub -ExpectedText 'All (' -Serial $SERIAL -AdbPath $ADB   # 导航必须带锚点
+.\tools\automate.ps1 -Dest status -Serial $SERIAL -AdbPath $ADB                       # 再读 sheetOpen / windowFocus / onboarding
+```
+
+- **不要用裸 `am start --es dest X` 当导航**。它回 `dispatched` 只代表已分发；实测里 `dest hub`、`dest fonts` 多次「分发成功但画面仍是主页」，此时所有按键结论都是假的。要么走 `automate.ps1 -ExpectedText`，要么按完后用 `status` 的 `sheetOpen/currentDestination` + uiautomator 文本锚点自证。
+- 按键前后各取一次判据，**判据优先级**：① `status` 的 `page/pageCount` 等结构化字段 ② uiautomator 文本/结构指纹 ③ 像素差分。整帧 md5/像素差会被状态栏时钟污染（每分钟必变），单独用它判「有没有反应」必然误报。
+- **uiautomator 的 `focused` 对 Compose 虚拟节点不可靠**（实测大量 `focused=false` 而焦点其实在移动），`clickable` 同样会漏报 `pointerInput` 行。焦点位置只能靠截图高亮或行为结果反推。
+- 每次按键前先确认 `windowFocus=true` 且焦点窗口是本 App：`adb shell dumpsys window | grep mCurrentFocus`。系统弹窗（权限页、模拟器虚拟 SD 卡提示等）会静默吃掉按键并跳到别的 App，取证结果整段作废。
+
+### keycode 速查（`adb shell input keyevent`）
+
+| 注入值 | 实际含义 | 备注 |
+|---|---|---|
+| `19/20/21/22/23` | DPAD_UP/DOWN/LEFT/RIGHT/CENTER | 应用内 zone 模型的主键 |
+| `66` / `23` | ENTER / DPAD_CENTER | 激活 |
+| `4` / `111` | BACK / ESC | BACK 走 `OnBackPressedDispatcher`；ESC 走 `MainActivity.onKeyDown` 回主页 |
+| `82` | MENU | 开应用抽屉（仅 mainFragment） |
+| `3` | **HOME**，不是数字 3 | 数字键要写 `KEYCODE_` 名或用正确码位 |
+| `1` | **CALL**，不是数字 1 | 同上 |
+| `7`…`16` | KEYCODE_0 … KEYCODE_9 | 数字 `1`=`8`、`3`=`10`；本 App 里 `2/6/7/8` 与长按 `9`、`1`、`3` 有命令语义 |
+| `92` / `93` | PAGE_UP / PAGE_DOWN | 上游 #125 场景（侧键映射成 Page 键的机型） |
+| `24` / `25` | VOLUME_UP / DOWN | 受 `volumeKeys` 偏好门控；Hub/Tray 目前不生效 |
+| `67` | DEL（退格） | 通知删除语义；未消费时会被转成「打字即搜索」并进抽屉 |
+| `--longpress <code>` | 长按同一键 | 用于验 `NavHelper` 的 700ms 长按语义（换 App / 展开 / 删除） |
+
+### 铺通知（Hub / Tray 取证前置）
+
+```powershell
+# 探针包名是 app.notifprobe.<flavor>，不是 app.<flavor>.notifprobe
+adb shell pm grant app.notifprobe.alpha android.permission.POST_NOTIFICATIONS   # API 33+ 必须，否则静默丢弃
+adb shell am start -n app.notifprobe.alpha/app.notifprobe.MainActivity          # 每次启动先 cancelAll 再发 5 条
+adb shell settings put secure enabled_notification_listeners app.binkos.debug/com.github.gezimos.inkos.services.NotificationService
+```
+
+监听组件是 **`.services.NotificationService`**（写成 `NotificationManager` 会静默无效，Hub 显示「无通知」，容易被误判成缺陷）。改完用 `status.notifListener=true` 自证。
+
+### 已知取证盲区
+
+模拟器没有厂商墨水屏接口，也**没有 T9 数字键盘 IME**：数字→字母（multi-tap）、物理侧键真实 keycode、刷新波形与残影只能在真机验证。仓内也没有自带 IME（`SearchHelper` 只认 `a..z`），所以「T9 能否打字」这类问题在模拟器上无法定论。
 
 ## 8. Debug探针 — 不属于dest协议
 

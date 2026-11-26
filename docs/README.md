@@ -7,8 +7,8 @@ user-visible strings**, including as an AI agent.
 | Document | What it covers |
 |---|---|
 | [terminology.md](terminology.md) | Canonical English/Simplified-Chinese terms, do-not-use list, style rules, placeholder/XML rules and the translation workflow. Source of truth for all UI copy. |
-| [automation-entry.md](automation-entry.md) | `--es dest` automation contract: supported destinations, parameters, result JSON and testing boundaries. |
-| [testing-playbook.md](testing-playbook.md) | Manual QA checklists for home, widgets, fonts, paging, notifications and backups. |
+| [automation-entry.md](automation-entry.md) | `--es dest` automation contract: supported destinations, parameters, result JSON and testing boundaries. Includes the keyboard / no-touch probing section (keycode table, trustworthy judgements, notification seeding). |
+| [testing-playbook.md](testing-playbook.md) | Manual QA checklists for home, widgets, fonts, paging, notifications and backups, plus the measured keyboard/T9 reachability baseline and its known gaps. |
 | [ui-scroll-vs-paged.md](ui-scroll-vs-paged.md) | Which surfaces page and which intentionally scroll, with the reasons. |
 | [ui-search-fields.md](ui-search-fields.md) | Inventory of in-app search fields and their behavior. |
 

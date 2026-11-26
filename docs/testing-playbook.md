@@ -136,6 +136,35 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - 页码点当前12dp、其它10dp，大小随screenScale；圆角半径=size/3，固定槽同心。检查形状、圆心与文字岛设置，不仅看数量。
 - 主页翻页用home_next/home_prev，读取page；页边界/回主页重置选项可能导致不变；其它区域按其真实分页方向测试。
 
+### 键盘 / T9（无触摸可达性）
+
+上游 inkOS 的卖点之一是 T9 键盘机可用，fork 的新功能多数只在触摸下验过。**取证方法、keycode 表、判据优先级见 [automation-entry.md 的 7.5 节](<automation-entry.md#75-键盘--无触摸取证注入按键>)**，这里只记场景断言。2026-11-26 在模拟器（824×1648、API 34、debug 包）实测的基线：
+
+**键盘确实可用（别再当成缺陷）**
+
+- 设置树：页头返回键进页即持焦，DOWN 落到列表行，CENTER/ENTER 进子页；长页连按 DOWN 会把内容推到后面的行（`verticalScroll(enabled = false)` + 分页容器在焦点驱动下会翻页）。
+- 滑块 sheet：←/→ 真改值（实测 时钟字号 48 → ←×3 → 46 → →×5 → 51），不依赖触摸轨道。
+- 快捷菜单 → 编辑模式：`dest quick_menu` + DOWN + CENTER 能进（弹五步引导）。
+- 卡片选择器（shortcuticon/badgeindicator）：DOWN/RIGHT/CENTER 能换页选中；`PagedNavRow` 的可点 ‹ › 是键盘唯一出路，**新增分页 sheet 必须带箭头，不能只留页码点**。
+- 颜色编辑器、主题预设：手写 zone 状态机完整；`←/→` 切 tab/卡片，`↑/↓` 换区，CENTER 激活。
+- 壁纸页：←/→ 切条目。
+- PAGE_UP/PAGE_DOWN：主页、抽屉、最近任务、Hub、Tray、Letters 都认（实测 Hub 12 条两页可翻）。
+
+**实测确认的缺口（回归时按这些断言，别重新发现一遍）**
+
+1. **Hub：DOWN×1 + CENTER = 清空当前分类全部通知，无确认**（实测 12→0，复现两次）。默认区是 `CATEGORY_TABS`，一步 DOWN 就进 `CLEAR_ALL`。触摸至少看得见目标，键盘看不见。
+2. **Hub / Tray 的单条删除键全部无效**：`DEL`、`MENU`、`KEYCODE_1`、长按 `DEL`、长按 CENTER 都不减条（12→12），而界面提示写着「Dismiss: Del, C, #1」；同一套键在 **Letters 有效**（`#3` 能打开通知）。差异在 `HubFragment`/`SimpleTrayFragment` 的 View 级 `setOnKeyListener` 收不到键，而 Letters 走的是同一条路却生效——**改动通知键位时两个界面都要实测，不能只验一个**。
+3. **音量键翻页只在主页/抽屉/Letters 生效**，Hub/Tray 静默失效（`pageNavigationHandler` 被置 null）。用 `dest volume_keys_on --ez confirm_write true` 打开后按 `status.volumeKeys` 自证，再逐屏验。
+4. **短滑区域编辑器对键盘零响应，且按键穿透到下层主页手势**（DPAD_LEFT 会触发 `swipeLeftAction` 打开最近任务）。编辑器是挂在 decorView 的覆盖层，用 `status.zoneEditor` 判它在不在。
+5. **引导页 BACK/ESC 不能后退**：`MainActivity.onKeyDown` 在 `isOnboarding()` 时对所有 keyCode `return true`。用 `status.onboarding` 判是否处于该状态。
+6. **壁纸 CENTER 立即应用并退出**（无确认）；fork 新加的「长按删除自定义壁纸」无键盘路径。
+7. **Settings / 各 sheet / Onboarding / Guide / ColorEditor / ThemePresets 不认 PAGE_UP/PAGE_DOWN**（键位层 `NavHelper`/`KeyMapperHelper` 自 fork 点 `4aeb4e9` 起 0 次提交，功能加了 260 个提交）。
+8. 引导页截图看不到焦点落点（无 pillHighlight），设置页有。新增可聚焦控件时沿用 `collectIsFocusedAsState` + `pillHighlight`，否则键盘用户是盲按。
+
+**模拟器盲区**：没有 T9 数字键盘 IME（仓内无 multi-tap，`SearchHelper` 只认 `a..z`）、没有厂商物理侧键、没有墨水屏波形。数字→字母、侧键真实 keycode、刷新观感只能真机验。
+
+**取证纪律（本轮踩实）**：导航必须带 `-ExpectedText` 或按完后读 `status` 的 `currentDestination/sheetOpen/onboarding/windowFocus`；本轮有三轮结论因为「dest 分发成功但画面没落地」而作废（应用一直停在 onboardingFragment）。整帧截图 md5 会被状态栏时钟污染，不能单独当判据。
+
 ## 5. 通知探针
 
 完整构建/安装/权限命令见 [探针说明](<../tools/notifprobe/README.md>)，路径是仓库内tools/notifprobe。Android13+探针需要POST_NOTIFICATIONS；Bink OS需要通知访问权，脚本不静默帮用户授予。
