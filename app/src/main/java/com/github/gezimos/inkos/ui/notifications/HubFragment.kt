@@ -1,7 +1,6 @@
 package com.github.gezimos.inkos.ui.notifications
 
 import android.os.Bundle
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,12 +19,9 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
-import com.github.gezimos.common.showShortToast
 import com.github.gezimos.inkos.R
 import com.github.gezimos.inkos.data.Prefs
 import com.github.gezimos.inkos.helper.utils.VibrationHelper
-import com.github.gezimos.inkos.services.NotificationManager
-import com.github.gezimos.inkos.services.NotificationService
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
 import com.github.gezimos.inkos.style.rememberScreenScale
@@ -38,8 +34,6 @@ class HubFragment : Fragment() {
     }
 
     private lateinit var prefs: Prefs
-    private var dismissKeyDownTime: Long = 0L
-    private val LONG_PRESS_THRESHOLD_MS = 700L
     private var wasPaused = false
     private var focusRestoreTriggerState: androidx.compose.runtime.MutableState<Int>? = null
     private var permissionExplanationSheet: com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost? = null
@@ -90,7 +84,6 @@ class HubFragment : Fragment() {
             SettingsTheme(isDark = isDark) {
                 HubScreen(
                     prefs = prefs,
-                    composeView = composeView,
                     focusRestoreTrigger = triggerState.value,
                     onShowPermissionExplanationDialog = { title, message, onContinue ->
                         showPermissionExplanationDialog(title, message, onContinue)
@@ -117,104 +110,6 @@ class HubFragment : Fragment() {
         view.foreground = null
         view.background = null
         view.requestFocus()
-
-        view.setOnKeyListener { v, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_LEFT -> {
-                        context?.showShortToast("Dismiss: Del, C, #1 | Long press to dismiss all")
-                        return@setOnKeyListener true
-                    }
-                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                        context?.showShortToast("Open: Enter, Dpad Center, #3")
-                        return@setOnKeyListener true
-                    }
-                }
-            }
-
-            val mapped = com.github.gezimos.inkos.ui.compose.NavHelper.mapNotificationsKey(prefs, keyCode, event)
-            if (mapped == com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.None) return@setOnKeyListener false
-
-            if (mapped == com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.PageUp ||
-                mapped == com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.PageDown) {
-                return@setOnKeyListener false
-            }
-
-            val composeView = v as? ComposeView
-            val pagerState = composeView?.getTag(0xdeadbeef.toInt()) as? SimplePagerState
-            val coroutineScope = composeView?.getTag(0xcafebabe.toInt()) as? kotlinx.coroutines.CoroutineScope
-            val validNotifications = (composeView?.getTag(0xabcdef01.toInt()) as? List<*>)
-                ?.filterIsInstance<HubNotification>()
-
-            if (pagerState == null || coroutineScope == null || validNotifications == null) {
-                return@setOnKeyListener false
-            }
-
-            when (mapped) {
-                com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.Dismiss -> {
-                    when (event.action) {
-                        KeyEvent.ACTION_DOWN -> {
-                            dismissKeyDownTime = System.currentTimeMillis()
-                            if (event.repeatCount > 15) {
-                                try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                                validNotifications.forEach { hn ->
-                                    try {
-                                        if (hn.notif.notificationKey != null) {
-                                            NotificationService.dismissNotification(hn.notif.notificationKey)
-                                        }
-                                        NotificationManager.getInstance(requireContext())
-                                            .removeConversationNotification(hn.packageName, hn.notif.conversationId)
-                                    } catch (_: Exception) {}
-                                }
-                                context?.showShortToast(getString(R.string.toast_all_dismissed))
-                                dismissKeyDownTime = 0L
-                                return@setOnKeyListener true
-                            }
-                        }
-                        KeyEvent.ACTION_UP -> {
-                            val pressDuration = if (dismissKeyDownTime > 0) {
-                                System.currentTimeMillis() - dismissKeyDownTime
-                            } else { 0L }
-                            dismissKeyDownTime = 0L
-
-                            if (pressDuration >= LONG_PRESS_THRESHOLD_MS) {
-                                try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                                validNotifications.forEach { hn ->
-                                    try {
-                                        if (hn.notif.notificationKey != null) {
-                                            NotificationService.dismissNotification(hn.notif.notificationKey)
-                                        }
-                                        NotificationManager.getInstance(requireContext())
-                                            .removeConversationNotification(hn.packageName, hn.notif.conversationId)
-                                    } catch (_: Exception) {}
-                                }
-                                context?.showShortToast(getString(R.string.toast_all_dismissed))
-                                return@setOnKeyListener true
-                            } else {
-                                val notifIndex = pagerState.currentPage * pagerState.pageSize
-                                val hn = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
-                                try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                                if (hn.notif.notificationKey != null) {
-                                    NotificationService.dismissNotification(hn.notif.notificationKey)
-                                }
-                                NotificationManager.getInstance(requireContext())
-                                    .removeConversationNotification(hn.packageName, hn.notif.conversationId)
-                                return@setOnKeyListener true
-                            }
-                        }
-                    }
-                    true
-                }
-                com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.Open -> {
-                    val notifIndex = pagerState.currentPage * pagerState.pageSize
-                    val hn = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
-                    NotificationManager.getInstance(requireContext())
-                        .openNotification(hn.packageName, hn.notif.notificationKey, hn.notif.conversationId, removeAfterOpen = true)
-                    true
-                }
-                else -> false
-            }
-        }
     }
 
     override fun onResume() {

@@ -5,7 +5,9 @@ Bink OS releases use `bink-vX.Y.Z` tags. Historical Bink OS release notes are av
 ## v0.3.0 — unreleased
 
 ### Notifications
+- Keyboard users can dismiss one notification on the Hub and in the Simple Tray: `Del`, the menu key and `1` clear the **highlighted** notification and `3` opens it. Those keys were wired through a side channel that no longer reached either screen — measured with injected keypad events, they did nothing at all — and the code behind them aimed at the first row of the page instead of the selection. Ongoing and media notifications stay protected by the same check the row's ✕ uses. The long-press-`Del`-to-clear-all shortcut went away with that dead path; clearing a category still happens from the Clear All row.
 - The "Hide system notifications" switch now also hides clearable notifications sent by system apps, not just the ones that cannot be dismissed: OEM alerts like DuraSpeed's "apps were restricted" message disappear from the Hub, Tray, the home count and Letters while the switch is on. The system notification shade is left completely alone — those notifications still show there and can still be dismissed as usual. Calls are never hidden, and third-party app notifications are unaffected.
+
 ### Development
 - The debug automation `status` now also reports whether a sheet is covering the screen, whether the short-swipe zone editor is open, whether the app is on the first-run guide, whether the window holds focus, and the real values of the volume-key paging and notification-access settings — so a scripted check can prove the screen it is testing is the screen it asked for. Add `volume_keys_on/off` to toggle volume-key paging without tapping through Settings. `docs/automation-entry.md` gains a keyboard-probing section (keycode table, which judgements are trustworthy, how to seed notifications); `docs/testing-playbook.md` records the measured keyboard/T9 reachability baseline and its known gaps.
 

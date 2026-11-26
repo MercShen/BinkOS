@@ -107,7 +107,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
@@ -473,7 +472,6 @@ internal fun convertSbnToHubConversationNotification(
 @Composable
 fun HubScreen(
     prefs: Prefs,
-    composeView: ComposeView,
     focusRestoreTrigger: Int = 0,
     onShowPermissionExplanationDialog: (title: String, message: String, onContinue: () -> Unit) -> Unit,
     onEditModeClick: () -> Unit,
@@ -641,15 +639,14 @@ fun HubScreen(
 
     val keyPressTracker = remember { com.github.gezimos.inkos.ui.compose.KeyPressTracker() }
 
-    DisposableEffect(pagerState, coroutineScope, filteredNotifications, composeView) {
-        composeView.setTag(0xdeadbeef.toInt(), pagerState)
-        composeView.setTag(0xcafebabe.toInt(), coroutineScope)
-        composeView.setTag(0xabcdef01.toInt(), filteredNotifications)
-        onDispose {
-            composeView.setTag(0xdeadbeef.toInt(), null)
-            composeView.setTag(0xcafebabe.toInt(), null)
-            composeView.setTag(0xabcdef01.toInt(), null)
+    // 触摸行内小叉与键盘 Del/#1 共用同一个删除实现：删的都是「当前高亮那条」。
+    fun dismissHubNotification(hn: HubNotification) {
+        try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
+        if (hn.notif.notificationKey != null) {
+            NotificationService.dismissNotification(hn.notif.notificationKey)
         }
+        NotificationManager.getInstance(ctx).removeConversationNotification(hn.packageName, hn.notif.conversationId)
+        expandedNotificationKey = null
     }
 
     Box(
@@ -711,6 +708,12 @@ fun HubScreen(
                             expandedNotificationKey = if (expandedNotificationKey == hn.notif.notificationKey) null
                                 else hn.notif.notificationKey
                         }
+                    },
+                    onNotificationDismiss = { index ->
+                        // 与行内小叉同一道门槛：ongoing / 不可清除的通知（含媒体卡）不吃 Del/#1
+                        displayNotifications.getOrNull(index)
+                            ?.takeIf { isNotificationDismissible(it.sbn) }
+                            ?.let { hn -> dismissHubNotification(hn) }
                     },
                     bottomNavEnabled = false
                 )
@@ -846,14 +849,7 @@ fun HubScreen(
                             }
                             expandedNotificationKey = null
                         },
-                        onDismiss = { hn ->
-                            try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                            if (hn.notif.notificationKey != null) {
-                                NotificationService.dismissNotification(hn.notif.notificationKey)
-                            }
-                            NotificationManager.getInstance(ctx).removeConversationNotification(hn.packageName, hn.notif.conversationId)
-                            expandedNotificationKey = null
-                        },
+                        onDismiss = { hn -> dismissHubNotification(hn) },
                         onRowHeightMeasured = { height ->
                             if (anchorRowHeightPx.intValue <= 0 && height > 0) {
                                 anchorRowHeightPx.intValue = height
@@ -1574,7 +1570,6 @@ internal fun convertSbnToSimpleTrayConversationNotification(
 @Composable
 fun SimpleTrayScreen(
     prefs: Prefs,
-    composeView: ComposeView,
     simpleTrayViewModel: SimpleTrayViewModel?,
     requestBluetoothPermission: (onGranted: () -> Unit) -> Unit,
     requestPhoneStatePermission: (onGranted: () -> Unit) -> Unit,
@@ -2052,15 +2047,14 @@ fun SimpleTrayScreen(
         } catch (_: Exception) {}
     }
 
-    DisposableEffect(pagerState, coroutineScope, validNotifications, composeView) {
-        composeView.setTag(0xdeadbeef.toInt(), pagerState)
-        composeView.setTag(0xcafebabe.toInt(), coroutineScope)
-        composeView.setTag(0xabcdef01.toInt(), validNotifications)
-        onDispose {
-            composeView.setTag(0xdeadbeef.toInt(), null)
-            composeView.setTag(0xcafebabe.toInt(), null)
-            composeView.setTag(0xabcdef01.toInt(), null)
-        }
+    // 触摸行内小叉与键盘 Del/#1 共用同一个删除实现：删的都是「当前高亮那条」。
+    fun dismissTrayNotification(pkg: String, notif: NotificationManager.ConversationNotification) {
+        try {
+            if (notif.notificationKey != null) {
+                NotificationService.dismissNotification(notif.notificationKey)
+            }
+            NotificationManager.getInstance(ctx).removeConversationNotification(pkg, notif.conversationId)
+        } catch (_: Exception) {}
     }
 
     val density = LocalDensity.current
@@ -2194,6 +2188,14 @@ fun SimpleTrayScreen(
                                     NotificationService.dismissNotification(notif.notificationKey)
                                 }
                                 NotificationManager.getInstance(ctx).removeConversationNotification(pkg, notif.conversationId)
+                            }
+                        }
+                    },
+                    onNotificationDismiss = { index ->
+                        // 与行内小叉同一道门槛：不可清除的通知（含媒体卡）不吃 Del/#1
+                        displayNotifications.getOrNull(index)?.let { (pkg, notif) ->
+                            if (notif.notificationKey in dismissibleNotificationKeys) {
+                                dismissTrayNotification(pkg, notif)
                             }
                         }
                     },
@@ -2437,14 +2439,7 @@ fun SimpleTrayScreen(
                         isEditMode = isEditMode,
                         onEditModeTap = onNotificationEditModeClick,
                         dismissibleNotificationKeys = dismissibleNotificationKeys,
-                        onDismiss = { pkg, notif ->
-                            try {
-                                if (notif.notificationKey != null) {
-                                    NotificationService.dismissNotification(notif.notificationKey)
-                                }
-                                NotificationManager.getInstance(ctx).removeConversationNotification(pkg, notif.conversationId)
-                            } catch (_: Exception) {}
-                        }
+                        onDismiss = { pkg, notif -> dismissTrayNotification(pkg, notif) }
                     )
                 }
             }

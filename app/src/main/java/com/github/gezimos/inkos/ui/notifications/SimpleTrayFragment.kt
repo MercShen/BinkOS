@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.os.Vibrator
 import android.provider.Settings
 import android.util.Log
-import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -36,11 +35,8 @@ import androidx.navigation.fragment.findNavController
 import com.github.gezimos.common.showShortToast
 import com.github.gezimos.inkos.R
 import com.github.gezimos.inkos.data.Prefs
-import com.github.gezimos.inkos.helper.AudioWidgetHelper
 import com.github.gezimos.inkos.helper.EditModeHelper
 import com.github.gezimos.inkos.helper.utils.VibrationHelper
-import com.github.gezimos.inkos.services.NotificationManager
-import com.github.gezimos.inkos.services.NotificationService
 import com.github.gezimos.inkos.style.SettingsTheme
 import com.github.gezimos.inkos.style.Theme
 import com.github.gezimos.inkos.style.rememberScreenScale
@@ -54,8 +50,6 @@ class SimpleTrayFragment : Fragment() {
     private lateinit var prefs: Prefs
     private lateinit var vibrator: Vibrator
     private var simpleTrayViewModel: SimpleTrayViewModel? = null
-    private var dismissKeyDownTime: Long = 0L
-    private val LONG_PRESS_THRESHOLD_MS = 700L
     private var wasPaused = false
     private var focusRestoreTriggerState: androidx.compose.runtime.MutableState<Int>? = null
 
@@ -398,7 +392,6 @@ class SimpleTrayFragment : Fragment() {
                 key(simpleTrayRefreshTrigger.value) {
                     SimpleTrayScreen(
                         prefs = prefs,
-                        composeView = composeView,
                         simpleTrayViewModel = trayVm,
                         requestBluetoothPermission = ::requestBluetoothPermissions,
                         requestPhoneStatePermission = ::requestPhoneStatePermission,
@@ -492,129 +485,6 @@ class SimpleTrayFragment : Fragment() {
         view.foreground = null
         view.background = null
         view.requestFocus()
-
-        view.setOnKeyListener { v, keyCode, event ->
-            if (event.action == KeyEvent.ACTION_DOWN) {
-                when (keyCode) {
-                    KeyEvent.KEYCODE_DPAD_LEFT -> {
-                        context?.showShortToast("Dismiss: Del, C, #1 | Long press to dismiss all")
-                        return@setOnKeyListener true
-                    }
-                    KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                        context?.showShortToast("Open: Enter, Dpad Center, #3")
-                        return@setOnKeyListener true
-                    }
-                }
-            }
-
-            val mapped = com.github.gezimos.inkos.ui.compose.NavHelper.mapNotificationsKey(prefs, keyCode, event)
-            if (mapped == com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.None) return@setOnKeyListener false
-
-            if (mapped == com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.PageUp ||
-                mapped == com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.PageDown) {
-                return@setOnKeyListener false
-            }
-
-            val composeView = v as? ComposeView
-            val pagerState = composeView?.getTag(0xdeadbeef.toInt()) as? SimplePagerState
-            val coroutineScope = composeView?.getTag(0xcafebabe.toInt()) as? kotlinx.coroutines.CoroutineScope
-            val validNotifications = (composeView?.getTag(0xabcdef01.toInt()) as? List<*>)
-                ?.filterIsInstance<Pair<String, NotificationManager.ConversationNotification>>()
-
-            if (pagerState == null || coroutineScope == null || validNotifications == null) {
-                Log.d("NotificationsFragment", "pagerState, coroutineScope, or validNotifications is null")
-                return@setOnKeyListener false
-            }
-
-            when (mapped) {
-                com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.Dismiss -> {
-                    when (event.action) {
-                        KeyEvent.ACTION_DOWN -> {
-                            dismissKeyDownTime = System.currentTimeMillis()
-                            if (event.repeatCount > 15) {
-                                try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                                validNotifications.forEach { (pkg, notif) ->
-                                    try {
-                                        val isMedia = notif.category == android.app.Notification.CATEGORY_TRANSPORT
-                                        if (isMedia) {
-                                            AudioWidgetHelper.getInstance(requireContext()).stopMedia()
-                                        } else {
-                                            if (notif.notificationKey != null) {
-                                                NotificationService.dismissNotification(notif.notificationKey)
-                                            }
-                                            NotificationManager.getInstance(requireContext())
-                                                .removeConversationNotification(pkg, notif.conversationId)
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.w("SimpleTray", "Failed to dismiss notification for $pkg", e)
-                                    }
-                                }
-                                context?.showShortToast(getString(R.string.toast_all_dismissed))
-                                dismissKeyDownTime = 0L
-                                return@setOnKeyListener true
-                            }
-                        }
-                        KeyEvent.ACTION_UP -> {
-                            val pressDuration = if (dismissKeyDownTime > 0) {
-                                System.currentTimeMillis() - dismissKeyDownTime
-                            } else 0L
-                            dismissKeyDownTime = 0L
-
-                            if (pressDuration >= LONG_PRESS_THRESHOLD_MS) {
-                                try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-                                validNotifications.forEach { (pkg, notif) ->
-                                    try {
-                                        if (notif.notificationKey != null) {
-                                            NotificationService.dismissNotification(notif.notificationKey)
-                                        }
-                                        NotificationManager.getInstance(requireContext())
-                                            .removeConversationNotification(pkg, notif.conversationId)
-                                    } catch (e: Exception) {
-                                        Log.w("SimpleTray", "Failed to dismiss notification for $pkg", e)
-                                    }
-                                }
-                                context?.showShortToast(getString(R.string.toast_all_dismissed))
-                                return@setOnKeyListener true
-                            } else {
-                                val notifIndex = pagerState.currentPage * pagerState.pageSize
-                                val (pkg, notif) = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
-                                try { VibrationHelper.trigger(VibrationHelper.Effect.SELECT) } catch (_: Exception) {}
-
-                                val isMedia = notif.category == android.app.Notification.CATEGORY_TRANSPORT
-                                if (isMedia) {
-                                    AudioWidgetHelper.getInstance(requireContext()).stopMedia()
-                                } else {
-                                    if (notif.notificationKey != null) {
-                                        NotificationService.dismissNotification(notif.notificationKey)
-                                    }
-                                    NotificationManager.getInstance(requireContext())
-                                        .removeConversationNotification(pkg, notif.conversationId)
-                                }
-                                coroutineScope.launch {
-                                    val newCount = (validNotifications.size - 1).coerceAtLeast(0)
-                                    val newPages = ((newCount + 2) / 3).coerceAtLeast(1)
-                                    val nextPage = pagerState.currentPage.coerceAtMost(newPages - 1)
-                                    kotlinx.coroutines.delay(150)
-                                    if (validNotifications.size > 1) {
-                                        pagerState.scrollToPage(nextPage)
-                                    }
-                                }
-                                return@setOnKeyListener true
-                            }
-                        }
-                    }
-                    true
-                }
-                com.github.gezimos.inkos.ui.compose.NavHelper.NotificationKeyAction.Open -> {
-                    val notifIndex = pagerState.currentPage * pagerState.pageSize
-                    val (pkg, notif) = validNotifications.getOrNull(notifIndex) ?: return@setOnKeyListener true
-                    NotificationManager.getInstance(requireContext())
-                        .openNotification(pkg, notif.notificationKey, notif.conversationId, removeAfterOpen = true)
-                    true
-                }
-                else -> false
-            }
-        }
     }
 
     override fun onResume() {

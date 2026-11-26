@@ -656,6 +656,8 @@ object NavHelper {
         onPreviousPage: () -> Unit,
         onNotificationClick: (index: Int) -> Unit,
         onNotificationLongClick: (index: Int) -> Unit,
+        /** 键盘删除高亮那条通知（Del / MENU / #1），与行内小叉走同一个实现。 */
+        onNotificationDismiss: (index: Int) -> Unit = {},
         // Bottom Nav (2 buttons)
         selectedBottomNavIndex: MutableState<Int>,
         onBottomNavActivate: (index: Int) -> Unit,
@@ -712,6 +714,31 @@ object NavHelper {
             return true
         }
         
+        // --- Keypad dismiss / open aliases (Del, MENU, #1 = 删高亮那条；#3 = 打开) ---
+        // 同 Hub：以前这几颗键只挂在 SimpleTrayFragment 的 View 级监听器上，靠 setTag 取数据，
+        // 实测不生效；删除目标也是页首而不是高亮那条。
+        if (focusZone.value == SimpleTrayFocusZone.NOTIFICATIONS) {
+            val nativeCode = keyEvent.nativeKeyEvent.keyCode
+            when (nativeCode) {
+                android.view.KeyEvent.KEYCODE_DEL,
+                android.view.KeyEvent.KEYCODE_MENU,
+                android.view.KeyEvent.KEYCODE_1 -> {
+                    if (keyEvent.type == KeyEventType.KeyDown) {
+                        isDpadModeSetter(true)
+                        onNotificationDismiss(selectedNotificationIndex.value)
+                    }
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_3 -> {
+                    if (keyEvent.type == KeyEventType.KeyDown) {
+                        isDpadModeSetter(true)
+                        onNotificationClick(selectedNotificationIndex.value)
+                    }
+                    return true
+                }
+            }
+        }
+
         // For other keys, only handle on KeyDown
         if (keyEvent.type != KeyEventType.KeyDown) return false
 
@@ -889,6 +916,8 @@ object NavHelper {
         onPreviousPage: () -> Unit,
         onNotificationClick: (index: Int) -> Unit,
         onNotificationLongClick: (index: Int) -> Unit,
+        /** 键盘删除高亮那条通知（Del / MENU / #1），与行内小叉走同一个实现。 */
+        onNotificationDismiss: (index: Int) -> Unit = {},
         // Bottom Nav (kept for API compat, ignored)
         bottomNavEnabled: Boolean = false
     ): Boolean {
@@ -937,6 +966,32 @@ object NavHelper {
                 }
             }
             return true
+        }
+
+        // --- Keypad dismiss / open aliases (Del, MENU, #1 = 删高亮那条；#3 = 打开) ---
+        // 这几颗键以前只挂在 HubFragment 的 View 级 setOnKeyListener 上，靠 setTag 取
+        // pagerState 和列表，实测在 Hub 里根本不生效；而且用的是 currentPage * pageSize，
+        // 删的是页首那条而不是高亮那条。改到这里之后，索引与触摸小叉共用同一个高亮值。
+        if (focusZone.value == HubFocusZone.NOTIFICATIONS) {
+            val nativeCode = keyEvent.nativeKeyEvent.keyCode
+            when (nativeCode) {
+                android.view.KeyEvent.KEYCODE_DEL,
+                android.view.KeyEvent.KEYCODE_MENU,
+                android.view.KeyEvent.KEYCODE_1 -> {
+                    if (keyEvent.type == KeyEventType.KeyDown) {
+                        isDpadModeSetter(true)
+                        onNotificationDismiss(selectedNotificationIndex.value)
+                    }
+                    return true
+                }
+                android.view.KeyEvent.KEYCODE_3 -> {
+                    if (keyEvent.type == KeyEventType.KeyDown) {
+                        isDpadModeSetter(true)
+                        onNotificationClick(selectedNotificationIndex.value)
+                    }
+                    return true
+                }
+            }
         }
 
         // For other keys, only handle on KeyDown

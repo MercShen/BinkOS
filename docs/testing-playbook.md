@@ -153,12 +153,12 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 **实测确认的缺口（回归时按这些断言，别重新发现一遍）**
 
 1. **Hub：DOWN×1 + CENTER = 清空当前分类全部通知，无确认**（实测 12→0，复现两次）。默认区是 `CATEGORY_TABS`，一步 DOWN 就进 `CLEAR_ALL`。触摸至少看得见目标，键盘看不见。
-2. **Hub / Tray 的单条删除键全部无效**：`DEL`、`MENU`、`KEYCODE_1`、长按 `DEL`、长按 CENTER 都不减条（12→12），而界面提示写着「Dismiss: Del, C, #1」；同一套键在 **Letters 有效**（`#3` 能打开通知）。差异在 `HubFragment`/`SimpleTrayFragment` 的 View 级 `setOnKeyListener` 收不到键，而 Letters 走的是同一条路却生效——**改动通知键位时两个界面都要实测，不能只验一个**。
+2. **Hub / Tray 的单条删除键（2026-11-26 已修）**：原先挂在 View 级 `setOnKeyListener` + `setTag(0xdeadbeef)` 桥上，实测在 Hub/Tray **完全不生效**，而且删除目标写死 `currentPage * pageSize`（页首那条，不是高亮那条）。现在 `Del` / `MENU` / `#1` 在 Compose 键模型里删除**高亮那条**、`#3` 打开高亮那条，可清除性判定与行内小叉共用同一个 `isNotificationDismissible` / `dismissibleNotificationKeys` 门槛（ongoing、媒体卡不吃这些键）。回归断言（12 条探针通知）：进 Hub → `DOWN`×2 → `DEL` → 12→11 且消失的是高亮那条；再 `#1` → 11→10 且消失的是下一条；`DOWN`×3/4/5 各删掉的条目应依次移动，**不能总是页首**。`长按 Del 清空全部` 随桥接一起下线（它从未生效过），清空全部仍走页底「清除全部」行；那句写死的英文 toast 提示一并删除。
 3. **音量键翻页只在主页/抽屉/Letters 生效**，Hub/Tray 静默失效（`pageNavigationHandler` 被置 null）。用 `dest volume_keys_on --ez confirm_write true` 打开后按 `status.volumeKeys` 自证，再逐屏验。
 4. **短滑区域编辑器对键盘零响应，且按键穿透到下层主页手势**（DPAD_LEFT 会触发 `swipeLeftAction` 打开最近任务）。编辑器是挂在 decorView 的覆盖层，用 `status.zoneEditor` 判它在不在。
 5. **引导页 BACK/ESC 不能后退**：`MainActivity.onKeyDown` 在 `isOnboarding()` 时对所有 keyCode `return true`。用 `status.onboarding` 判是否处于该状态。
 6. **壁纸 CENTER 立即应用并退出**（无确认）；fork 新加的「长按删除自定义壁纸」无键盘路径。
-7. **Settings / 各 sheet / Onboarding / Guide / ColorEditor / ThemePresets 不认 PAGE_UP/PAGE_DOWN**（键位层 `NavHelper`/`KeyMapperHelper` 自 fork 点 `4aeb4e9` 起 0 次提交，功能加了 260 个提交）。
+7. **Settings / 各 sheet / Onboarding / Guide / ColorEditor / ThemePresets 不认 PAGE_UP/PAGE_DOWN**（键位层 `NavHelper`/`KeyMapperHelper` 从 fork 点 `4aeb4e9` 起长期没跟着功能走，2026-11-26 才开始补）。
 8. 引导页截图看不到焦点落点（无 pillHighlight），设置页有。新增可聚焦控件时沿用 `collectIsFocusedAsState` + `pillHighlight`，否则键盘用户是盲按。
 
 **模拟器盲区**：没有 T9 数字键盘 IME（仓内无 multi-tap，`SearchHelper` 只认 `a..z`）、没有厂商物理侧键、没有墨水屏波形。数字→字母、侧键真实 keycode、刷新观感只能真机验。
