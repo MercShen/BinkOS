@@ -124,8 +124,14 @@ fun showShortSwipeZoneEditor(context: Context, prefs: Prefs, onUpdate: () -> Uni
     // 面板本身是 Dialog 的 sheet 没这个问题（Dialog 有自己的窗口焦点），所以这里先尝试
     // 接管焦点。**2026-11-26 实测：接管没有生效**——按键仍然由主页的 ComposeView 收到，
     // DPAD_LEFT 照样触发 swipeLeftAction 打开最近任务，± 按钮收不到 CENTER。
-    // 下面这组调用是必要的但不充分；要真正键盘可用，得把编辑器改成 Dialog 窗口
-    // （见 docs/testing-playbook.md 键盘章节第 4 条），不能只靠 requestFocus。
+    //
+    // 这件事**已决定不继续修**（Merc 拍板）：短滑区配置的是触摸手势的生效范围，纯按键设备
+    // 用不到这个界面，默认值就是最终值；为它引入 Dialog 窗口要连带承担墨水屏刷新/过渡的
+    // 风险，不划算。± 步进保留，因为它让触摸也能把边界设准。
+    // 重新评估的触发条件与回归断言见 docs/testing-playbook.md 键盘章节第 4 条。
+    //
+    // 下面这组调用是必要的但不充分：真要键盘可用，必须把编辑器改成 Dialog 窗口，
+    // 不能只靠 requestFocus。
     overlay.isFocusable = true
     overlay.isFocusableInTouchMode = true
     overlay.descendantFocusability = android.view.ViewGroup.FOCUS_AFTER_DESCENDANTS
