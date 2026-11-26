@@ -162,7 +162,7 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
    - **关键坑（实测踩到）**：设置页的页头是**另一个 ComposeView**，进页就 `requestFocus()`；正文根节点上的按键处理器在焦点还在页头时**收不到键**。表现为「刚进设置页按 PAGE_DOWN 没反应，先按一次 DPAD_DOWN 才生效」。因此页头 `PageHeader` 也挂了同一套键，翻页动作由正文通过 `settingsPageMove` 交出来（`SideEffect` 赋值、`DisposableEffect` 置空）。回归时必须**进页后立刻按 PAGE_DOWN**，不能先按方向键。
    - 断言：`dest fonts` → `PAGE_DOWN` 一次，文本从「• 通用字体 | 全部重置…」变成「时钟小部件字体 | 时钟字号 | 48…」；`PAGE_UP` ×2 回第 1 页；再验一次触摸长滑仍能翻页（两条路共用 `pageBy`）。
    - 图标样式 sheet 的第 2 页要**装了第三方图标包**才会出现（模拟器上 5 个选项 = 1 页，测不出翻页）；同一接线已在角标 sheet 上验过（`PAGE_DOWN` 翻出「实心方块」那页）。
-8. 引导页截图看不到焦点落点（无 pillHighlight），设置页有。新增可聚焦控件时沿用 `collectIsFocusedAsState` + `pillHighlight`，否则键盘用户是盲按。
+8. **引导页焦点是可见的（此前误判）**：`阅读完整政策` / `我同意隐私政策` / 页底 `返回` / `下一步` 都带 `collectIsFocusedAsState` + 反色或 `pillHighlight`，截图里被选中的那一项会变成黑底白字。判读截图时注意：**页底两个按钮本来就一个是黑底**（`下一步` 的默认强调样式），别把默认样式当成焦点、也别把焦点当成默认样式——用「按一次 DOWN 换一项反色」来确认，而不是看单张静态图。
 
 **模拟器盲区**：没有 T9 数字键盘 IME（仓内无 multi-tap，`SearchHelper` 只认 `a..z`）、没有厂商物理侧键、没有墨水屏波形。数字→字母、侧键真实 keycode、刷新观感只能真机验。
 
