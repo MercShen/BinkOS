@@ -92,7 +92,7 @@ $packages = @{
     release = 'app.binkos'
 }
 $launcherComponent = 'com.github.gezimos.inkos.MainActivity'
-$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist', '^eink_', '^language$', '^backup$', '^restore$')
+$stateDestPatterns = @('^pager_', '^home_reset_', '^bottom', '^allowlist', '^eink_', '^volume_keys_', '^language$', '^backup$', '^restore$')
 $destPattern = '^[A-Za-z_]+$'
 $typePattern = '^[A-Za-z0-9_.\-]*$'
 $component = "$($packages[$App])/$launcherComponent"

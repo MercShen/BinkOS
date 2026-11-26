@@ -251,6 +251,15 @@ class MainActivity : AppCompatActivity() {
                 resources.getResourceEntryName(it)
             })
             .put("language", AppLocale.currentTag(this).ifEmpty { "system" })
+            // 键盘/交互取证用的画面状态：导航 dest 只回 dispatched，不代表目标画面真的可见。
+            // sheetOpen=true 时按键会打在盖着的面板上，不是新页面；onboarding=true 时
+            // onKeyDown 会吞掉所有按键（BACK/ESC/音量都到不了系统），别拿它当"键没反应"。
+            .put("sheetOpen", com.github.gezimos.inkos.ui.dialogs.ComposeBottomSheetHost.anyVisible())
+            .put("zoneEditor", EditModeHelper.zoneEditorVisible.value)
+            .put("onboarding", isOnboarding())
+            .put("windowFocus", hasWindowFocus())
+            .put("volumeKeys", prefs.useVolumeKeysForPages)
+            .put("notifListener", isNotificationServiceEnabled())
             .toString()
     }
 
@@ -486,6 +495,9 @@ class MainActivity : AppCompatActivity() {
             "eink_style_ripple" -> viewModel.setEinkPageTurnAnimationStyle(1)
             "eink_fast_on" -> viewModel.setEinkInteractionFastMode(true)
             "eink_fast_off" -> viewModel.setEinkInteractionFastMode(false)
+            // --- 音量键翻页：键盘取证要反复开关这个偏好，点设置页既慢又不可靠 ---
+            "volume_keys_on" -> viewModel.setUseVolumeKeysForPages(true)
+            "volume_keys_off" -> viewModel.setUseVolumeKeysForPages(false)
             // --- 调试后门：无厂商固件（模拟器）时也显示厂商专属开关；只影响 UI 可见性 ---
             "vendor_switches_on", "vendor_switches_off" -> {
                 val enabled = request.dest == "vendor_switches_on"

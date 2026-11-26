@@ -102,6 +102,17 @@ class AutomationContractTest {
             assertFalse(request.needsHome)
         }
     }
+    @Test fun volumeKeyCommandsRequireConfirmationAndAreNotHomeCommands() {
+        for (dest in listOf("volume_keys_on", "volume_keys_off", "volumekeys_on", "volumekeys_off")) {
+            rejected("dest" to dest)
+            val request = accepted("dest" to dest, "confirm_write" to true)
+            assertTrue(request.dest.startsWith("volume_keys_"))
+            assertTrue(request.writesPreferences)
+            assertFalse(request.needsHome)
+        }
+        rejected("dest" to "volume_keys_on", "tab" to 0, "confirm_write" to true)
+        rejected("dest" to "volume_keys_on", "value" to 1, "confirm_write" to true)
+    }
     @Test fun backIsCommandOnlyAndExternalNeedsPackage() {
         val back = accepted("dest" to "BACK")
         assertEquals("back", back.dest)

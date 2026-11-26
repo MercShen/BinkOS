@@ -172,6 +172,16 @@ Assert-True -Name 'request_id is uuid' -Ok ($requestId -match $uuidPattern) -Det
 Assert-True -Name 'request_id forwarded in am start' -Ok ($startLog -match [regex]::Escape($requestId))
 Assert-True -Name 'serial forwarded to adb' -Ok ((Read-StateFile $case 'last_serial.txt').Trim() -eq 'S1')
 
+$case = Join-Path $stateRoot 'volume-keys-denied'
+$r = Invoke-Child -ScriptPath $automate -ScriptArgs @('-Dest', 'volume_keys_on', '-Serial', 'S1', '-AdbPath', $fakeAdb) -Env $baseEnv -StateDir $case
+Assert-True -Name 'volume_keys_on refused without -AllowStateChanges' -Ok ($r.Code -eq 2 -and (($r.Err + $r.Out) -match 'refused')) -Detail ("code={0}" -f $r.Code)
+Assert-True -Name 'volume_keys_on refusal sends no am start' -Ok ((Read-StateFile $case 'am_start.txt').Trim() -eq '')
+
+$case = Join-Path $stateRoot 'volume-keys-allowed'
+$r = Invoke-Child -ScriptPath $automate -ScriptArgs @('-Dest', 'volume_keys_off', '-AllowStateChanges', '-Serial', 'S1', '-AdbPath', $fakeAdb) -Env (New-Env @{ FAKE_STATUS = 'applied'; FAKE_DEST = 'volume_keys_off' }) -StateDir $case
+Assert-True -Name 'volume_keys_off applied exits 0' -Ok ($r.Code -eq 0) -Detail $r.Err
+Assert-True -Name 'volume_keys_off sends confirm_write true' -Ok ((Read-StateFile $case 'am_start.txt') -match '--ez confirm_write true')
+
 $case = Join-Path $stateRoot 'language-denied'
 $r = Invoke-Child -ScriptPath $automate -ScriptArgs @('-Dest', 'language', '-Language', 'en', '-Serial', 'S1', '-AdbPath', $fakeAdb) -Env $baseEnv -StateDir $case
 Assert-True -Name 'language refused without -AllowStateChanges' -Ok ($r.Code -eq 2 -and (($r.Err + $r.Out) -match 'refused')) -Detail ("code={0}" -f $r.Code)

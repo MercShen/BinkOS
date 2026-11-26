@@ -176,6 +176,18 @@ class ComposeBottomSheetHost(private val activity: Activity) {
             }
             return hadSheet
         }
+
+        /**
+         * 是否还有面板显示或在排队显示。只读取证用：导航 dest 报 `dispatched` 不等于目标画面
+         * 真的可见——上一层 sheet 还盖着时，按键会打在 sheet 上而不是新页面上。
+         */
+        fun anyVisible(): Boolean {
+            val snapshot = synchronized(activeHosts) { activeHosts.toList() }
+            return snapshot.any { ref ->
+                val host = try { ref.get() } catch (_: Exception) { null }
+                host?.hasVisibleOrPending() == true
+            }
+        }
     }
 
     init {
