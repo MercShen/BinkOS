@@ -75,6 +75,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusEvent
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.TextUnit
@@ -82,6 +90,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import com.github.gezimos.inkos.ui.compose.gestureHelper
 import com.github.gezimos.inkos.ui.compose.onPageKeys
+import com.github.gezimos.inkos.ui.compose.LocalPageFocusEdges
+import com.github.gezimos.inkos.ui.compose.PageFocusEdges
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -222,6 +232,13 @@ class SettingsFragment : Fragment() {
     private var pageCount by mutableStateOf(1)
     /** 正文组合里算出来的翻页动作，交给页头，让 PAGE_UP/PAGE_DOWN 在焦点还在页头时也生效。 */
     private var settingsPageMove: ((Int) -> Unit)? = null
+
+    /**
+     * 「在列表顶端按 UP → 跳到本页最后一条」的实现，由正文 Composition 赋进来，
+     * 页头 ComposeView 只负责把 UP 转交过来（两个 ComposeView 之间焦点不能互相遍历，
+     * 键落在谁身上就得由谁转）。
+     */
+    private var settingsMoveToEnd: (() -> Unit)? = null
 
     // Last update-check result; kept on the fragment so it survives switching Settings pages.
     private var updateState by mutableStateOf<UpdateUiState>(UpdateUiState.Idle)
@@ -452,6 +469,7 @@ class SettingsFragment : Fragment() {
                                 },
                                 showStatusBar = uiState.showStatusBar,
                                 pageIndicator = {},
+                                onMoveToEnd = { settingsMoveToEnd?.invoke() },
                                 titleFontSize = if (settingsSize > 0) (settingsSize * 1.5).sp else TextUnit.Unspecified
                             )
                         } else {
@@ -464,6 +482,7 @@ class SettingsFragment : Fragment() {
                                     PageIndicator(currentPage = currentPage, pageCount = pageCount)
                                 },
                                 onPageMove = { delta -> settingsPageMove?.invoke(delta) },
+                                onMoveToEnd = { settingsMoveToEnd?.invoke() },
                                 titleFontSize = if (settingsSize > 0) (settingsSize * 1.5).sp else TextUnit.Unspecified
                             )
                         }
@@ -532,11 +551,26 @@ class SettingsFragment : Fragment() {
                         }
                     }
 
+                    // 键盘可达性：Compose 只在「向前」遍历时给初始焦点，向后（UP）没有
+                    // 「从末尾进入」这条规则——实测刚进设置页按 UP 是 0 像素变化，键盘用户
+                    // 既看不到焦点、也永远够不到列表最后一条。
+                    // 不用不可见锚点（试过：锚点抢不到焦点，还会顶掉 DOWN 原有的默认初始焦点，
+                    // 把「进页面按 DOWN 聚焦第一条」弄坏）。这里让本页所有行组件自己注册到
+                    // PageFocusEdges，注册顺序就是视觉顺序，于是「无人聚焦时 UP→最后一条、
+                    // DOWN→第一条」都是显式动作，不依赖 Compose 的遍历猜测。
+                    // 进页面不主动抢焦点，所以纯触摸设备的行为与今天完全一致。
+                    val pageEdges = remember(currentRoute) { PageFocusEdges() }
                     // 页头 ComposeView 进页就抢焦点，那时正文的按键处理器收不到键；
                     // 把同一个翻页函数交给页头，键盘用户刚进页就能按 PAGE_UP/PAGE_DOWN。
-                    SideEffect { settingsPageMove = { delta -> pageBy(delta) } }
+                    SideEffect {
+                        settingsPageMove = { delta -> pageBy(delta) }
+                        settingsMoveToEnd = { pageEdges.focusLast() }
+                    }
                     DisposableEffect(Unit) {
-                        onDispose { settingsPageMove = null }
+                        onDispose {
+                            settingsPageMove = null
+                            settingsMoveToEnd = null
+                        }
                     }
 
                     Box(
@@ -553,12 +587,30 @@ class SettingsFragment : Fragment() {
                                 onVerticalPageMove = { delta -> pageBy(delta) }
                             )
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .verticalScroll(scrollState, enabled = false)
-                        ) {
-                            SettingsRouteContent(settingsSize.sp)
+                        androidx.compose.runtime.CompositionLocalProvider(LocalPageFocusEdges provides pageEdges) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(scrollState, enabled = false)
+                                    .onPreviewKeyEvent { event ->
+                                        // 只有「本页没有任何一条被聚焦」时才接管上下键：
+                                        // 一旦列表里有焦点，交还给 Compose 的正常遍历，
+                                        // 中间行按 UP 仍然是往上走一格。
+                                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                                        if (pageEdges.anyFocused) return@onPreviewKeyEvent false
+                                        when (event.nativeKeyEvent.keyCode) {
+                                            android.view.KeyEvent.KEYCODE_DPAD_UP -> {
+                                                pageEdges.focusLast(); true
+                                            }
+                                            android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
+                                                pageEdges.focusFirst(); true
+                                            }
+                                            else -> false
+                                        }
+                                    }
+                            ) {
+                                SettingsRouteContent(settingsSize.sp)
+                            }
                         }
                     }
                 }

@@ -178,6 +178,12 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
    - 断言：`dest fonts` → `PAGE_DOWN` 一次，文本从「• 通用字体 | 全部重置…」变成「时钟小部件字体 | 时钟字号 | 48…」；`PAGE_UP` ×2 回第 1 页；再验一次触摸长滑仍能翻页（两条路共用 `pageBy`）。
    - 图标样式 sheet 的第 2 页要**装了第三方图标包**才会出现（模拟器上 5 个选项 = 1 页，测不出翻页）；同一接线已在角标 sheet 上验过（`PAGE_DOWN` 翻出「实心方块」那页）。
 8. **引导页焦点是可见的（此前误判）**：`阅读完整政策` / `我同意隐私政策` / 页底 `返回` / `下一步` 都带 `collectIsFocusedAsState` + 反色或 `pillHighlight`，截图里被选中的那一项会变成黑底白字。判读截图时注意：**页底两个按钮本来就一个是黑底**（`下一步` 的默认强调样式），别把默认样式当成焦点、也别把焦点当成默认样式——用「按一次 DOWN 换一项反色」来确认，而不是看单张静态图。
+9. **设置页 UP/DOWN 边界（2026-11-26 已实现）**：Compose 只在**向前**遍历（DOWN/Next）时给初始焦点，向后（UP）没有「从末尾进入」这条规则——实测刚进设置页按 UP 是 **0 像素变化**，键盘用户既看不到焦点、也永远够不到列表最后一条。现在：
+   - 实现走 `ui/compose/PageFocusEdges.kt`：本页行组件（`SettingsHomeItem` / `SettingsSwitch` / `SettingsSelect` / `SettingsStepper` / `SettingsSelectWithDualColorPreview`）用 `Modifier.pageEdge(isFocused)` 自己登记，注册顺序=视觉顺序；正文根节点**只在没有任何一条被聚焦时**接管 UP→最后一条、DOWN→第一条。页头是独立 ComposeView（焦点不能跨 view 遍历），所以它的 UP 通过 `PageHeader(onMoveToEnd=…)` 转交回正文。
+   - **不要用不可见焦点锚点**（试过）：1.dp 的 Box 抢不到焦点，还会顶掉 DOWN 原有的默认初始焦点，把「进页面按 DOWN 聚焦第一条」弄坏。
+   - **不要在进页面时主动抢焦点**（试过）：实测**触摸点击本来不会留下任何焦点色块**，无条件抢焦点会让纯触摸设备每次进设置凭空多出一个反色块。现在的机制只响应按键事件，触摸路径完全不变。
+   - 回归断言（看整行反色带，别信 uiautomator 的 `focused`——它对 Compose 虚拟节点不可靠）：① 进设置页未按键 → **无**整行反色条；② `DOWN` → 条在第一条（实测 y134–240）；③ 再 `DOWN` → 条下移一条（y258–364）；④ 重新进页直接 `UP` → 条落在**最后一条**（实测「关于」）；⑤ 触摸点进设置页 → 无条。
+   - 已知小别扭（可接受）：焦点已在第一条时按 UP，会先回到「无焦点」态（条消失），再按一次 UP 才跳到最后一条——中间行的 UP 仍交还给 Compose 正常遍历，不做双重语义。
 
 **模拟器盲区**：没有 T9 数字键盘 IME（仓内无 multi-tap，`SearchHelper` 只认 `a..z`）、没有厂商物理侧键、没有墨水屏波形。数字→字母、侧键真实 keycode、刷新观感只能真机验。
 

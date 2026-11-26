@@ -10,6 +10,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.focusable
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -252,7 +256,14 @@ object SettingsComposable {
          * 这时正文那层的按键处理器收不到键——实测「刚进设置页按 PAGE_DOWN 没反应，
          * 先按一次 DPAD_DOWN 才生效」。所以页头也要挂同一套键，共用正文的翻页回调。
          */
-        onPageMove: ((Int) -> Unit)? = null
+        onPageMove: ((Int) -> Unit)? = null,
+        /**
+         * 「在列表顶端按 UP」该做的事：跳到本页最后一条。
+         * Compose 只在向前遍历（DOWN/Next）时给初始焦点，向后没有「从末尾进入」这条，
+         * 所以刚进页面按 UP 原本是彻底没反应。页头持有焦点时键落在页头这边，
+         * 必须由页头把 UP 转交给正文，否则键盘用户永远够不到列表末尾。
+         */
+        onMoveToEnd: (() -> Unit)? = null
     ) {
         val prefTextColor = Theme.colors.text
         val prefBackgroundColor = Theme.colors.background
@@ -266,6 +277,20 @@ object SettingsComposable {
                             onPrevious = { onPageMove(-1) },
                             onNext = { onPageMove(1) }
                         )
+                    } else Modifier
+                )
+                .then(
+                    if (onMoveToEnd != null) {
+                        Modifier.onPreviewKeyEvent { event ->
+                            if (event.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_DPAD_UP &&
+                                event.type == KeyEventType.KeyDown
+                            ) {
+                                onMoveToEnd()
+                                true
+                            } else {
+                                false
+                            }
+                        }
                     } else Modifier
                 )
                 .padding(top = 12.dp)
@@ -345,6 +370,7 @@ object SettingsComposable {
                 .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
+                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor, outerVertical = focusVerticalPadding)
                 .clickable(
                     onClick = {
@@ -580,6 +606,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
+                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     enabled = enabled,
@@ -647,6 +674,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
+                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     enabled = enabled,
@@ -720,6 +748,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
+                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     onClick = {},
@@ -809,6 +838,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
+                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     enabled = enabled,
