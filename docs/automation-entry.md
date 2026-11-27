@@ -21,7 +21,9 @@ $SERIAL = 'B651D2W2GAPA006000108'                   # 按 adb devices 选择
 $PKG = 'app.binkos.debug'
 $MAIN = 'com.github.gezimos.inkos.MainActivity'
 & $ADB devices
-& $ADB -s $SERIAL install -r -t '.\app\build\outputs\apk\debug\app.binkos_v0.2.7-Debug.apk'
+# 安装产物按「最新的 debug APK」取，不要把版本号写死（写死会在每次 bump 后卡住复制粘贴）
+$APK = (Get-ChildItem '.\app\build\outputs\apk\debug\*.apk' | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+& $ADB -s $SERIAL install -r -t "$APK"
 if ($LASTEXITCODE -ne 0) { throw 'install failed' }
 & $ADB -s $SERIAL shell am force-stop $PKG
 pwsh -NoProfile -File ./tools/home.ps1 debug -Serial $SERIAL -AdbPath $ADB
@@ -262,7 +264,7 @@ e-ink 四个命令用来替代「点设置页 / 用 run-as 灌 prefs」，典型
 cmd /c "adb exec-out run-as app.binkos.debug cat files/backups/backup-20261118-220000.zip > ws3\device-backup\binkos-backups\backup-<目的>-20261118-220000.zip"
 
 # 3) 设备留档
-adb push ws3\device-backup\binkos-backups\backup-<目的>-20261118-220000.zip /sdcard/BinkOS-Test/v0.2.7/evidence/
+adb push ws3\device-backup\binkos-backups\backup-<目的>-<时间戳>.zip /sdcard/BinkOS-Test/v<versionName>/evidence/
 
 # 4) 恢复：先把 ZIP 送进 filesDir，再发 restore
 cmd /c "type ws3\device-backup\binkos-backups\backup-<目的>-20261118-220000.zip | adb shell run-as app.binkos.debug sh -c 'cat > files/backups/restore-in.zip'"

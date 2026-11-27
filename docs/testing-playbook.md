@@ -19,7 +19,9 @@ $MAIN = 'com.github.gezimos.inkos.MainActivity'
 # 先记录安装前默认桌面，测试后要恢复时用
 & $ADB -s $SERIAL shell cmd package resolve-activity -a android.intent.action.MAIN -c android.intent.category.HOME
 & $ADB -s $SERIAL shell cmd role get-role-holders android.app.role.HOME
-& $ADB -s $SERIAL install -r -t '.\app\build\outputs\apk\debug\app.binkos_v0.2.7-Debug.apk'
+# 安装产物按「最新的 debug APK」取，不要把版本号写死（写死会在每次 bump 后卡住复制粘贴）
+$APK = (Get-ChildItem '.\app\build\outputs\apk\debug\*.apk' | Sort-Object LastWriteTime -Descending | Select-Object -First 1).FullName
+& $ADB -s $SERIAL install -r -t "$APK"
 if ($LASTEXITCODE -ne 0) { throw 'install failed' }
 & $ADB -s $SERIAL shell am force-stop $PKG
 pwsh -NoProfile -File ./tools/home.ps1 debug -Serial $SERIAL -AdbPath $ADB
@@ -37,7 +39,7 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 自动化/调试只要会在设备上生成文件，就必须统一收纳，不得散落在 `/sdcard` 根目录。
 
 - 主目录：`/sdcard/BinkOS-Test/`
-- 版本目录：`/sdcard/BinkOS-Test/v<versionName>/`（例如 `v0.2.7`；版本未知用 `unversioned`）
+- 版本目录：`/sdcard/BinkOS-Test/v<versionName>/`（版本名从 `app/build.gradle.kts` 现取，别抄文档里的示例；版本未知用 `unversioned`）
 - 子目录：
   - `screenshots/`：截图
   - `ui/`：`uiautomator dump` XML
@@ -48,7 +50,8 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 - 设备产物需要带回仓库时，落到工作区的版本化目录（如 `emulator/artifacts/<version>/`），不要把设备根目录文件直接拷散。
 
 ```powershell
-$ROOT = '/sdcard/BinkOS-Test/v0.2.7'
+$VER = (Select-String -Path 'app\build.gradle.kts' -Pattern 'versionName\s*=\s*"([^"]+)"').Matches[0].Groups[1].Value
+$ROOT = "/sdcard/BinkOS-Test/v$VER"          # 现取，不写死版本号
 & $ADB -s $SERIAL shell mkdir -p "$ROOT/screenshots" "$ROOT/ui" "$ROOT/tmp" "$ROOT/evidence"
 & $ADB -s $SERIAL shell screencap -p "$ROOT/screenshots/onboarding-refresh-demo-20261117-032500.png"
 & $ADB -s $SERIAL shell uiautomator dump "$ROOT/ui/settings-extras-20261117-032500.xml"
@@ -298,4 +301,4 @@ pwsh -NoProfile -File ./tools/home.ps1 ensure debug -Serial $SERIAL -AdbPath $AD
 git status --short
 ```
 
-本项目当前发布准备：版本 **0.2.7 / versionCode 10**；开发/测试完提交 push，Release/tag/资产发布仍需用户明确确认。
+本项目当前发布准备：版本 **0.3.0 / versionCode 13**（以 `app/build.gradle.kts` 为准，别抄这一行）；开发/测试完提交 push，Release/tag/资产发布仍需用户明确确认。
