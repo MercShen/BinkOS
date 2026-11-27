@@ -2511,6 +2511,11 @@ private fun EventsBlock(
 ) {
     val context = LocalContext.current
     LocalDensity.current
+    // 排除带是进程级静态（GestureHelper.exclusionY/Height），只属于主页。
+    // 不清的话，进了抽屉/最近任务/设置之后那条带还在生效，会吞掉别处的双击与横向滑动。
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { GestureHelper.clearEventRowExclusion() }
+    }
     val scaledQuoteSize = state.quoteSize * rememberScreenScale()
     val highlightColor = Theme.colors.text
     val islandBackgroundColor = if (state.textIslandsInverted) Theme.colors.background else Theme.colors.text

@@ -51,14 +51,18 @@ fun Modifier.closeOnReverseLongSwipe(
     }
     val minDistance = with(density) { (100.dp * longRatio).toPx() }
     val currentOnClose = rememberUpdatedState(onClose)
+    // closeDirection 依赖「最近一次滑动的方向」（GestureBindings 内部读 BigmeEink.recentSwipeOrNull），
+    // 是会变的值。把它当 pointerInput 的 key，方向一变探测器就在**手势中途**被销毁重建，
+    // 前半段位移直接丢；锁屏解锁后方向过期时尤其容易踩到。改成每次手势开始时现读。
+    val currentCloseDirection = rememberUpdatedState(closeDirection)
 
-    return this.pointerInput(closeDirection, enabled, minDistance) {
+    return this.pointerInput(enabled, minDistance) {
         if (!enabled) return@pointerInput
-        val targetDirection = closeDirection ?: return@pointerInput
         awaitEachGesture {
+            val targetDirection = currentCloseDirection.value ?: return@awaitEachGesture
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             val start = down.position
-            val startTime = SystemClock.uptimeMillis()
+            val startTime = SystemClock.elapsedRealtime()
             var pressed = true
             var closing = false
 
@@ -70,7 +74,7 @@ fun Modifier.closeOnReverseLongSwipe(
                 val dist = hypot(dx, dy)
 
                 if (!closing && dist >= minDistance) {
-                    val elapsedMs = (SystemClock.uptimeMillis() - startTime).coerceAtLeast(1L)
+                    val elapsedMs = (SystemClock.elapsedRealtime() - startTime).coerceAtLeast(1L)
                     val velocity = dist / (elapsedMs / 1000f) // px/s
                     val direction = when {
                         abs(dx) > abs(dy) ->

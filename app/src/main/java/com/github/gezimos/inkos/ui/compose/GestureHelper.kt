@@ -49,8 +49,21 @@ object GestureHelper {
     var lastElementClickTime = 0L
         private set
 
+    /**
+     * 主页底部事件行的排除带（root 坐标，写入方见 HomeUI 的 EventsBlock）。
+     *
+     * 这两个值是**进程级静态**，而读方在双击否决（:456）与横向滑动否决（:489）里。
+     * 离开主页后如果不清，抽屉/最近任务/设置上会一直有一条「幽灵带」吞掉双击与横滑——
+     * 用户读成「我在这里点/划，触发的却是别的地方」。写入方必须配一个生命周期清除点。
+     */
     @Volatile var exclusionY = 0f
     @Volatile var exclusionHeight = 0f
+
+    /** EventsBlock 离开组合时调用：排除带只属于主页。 */
+    fun clearEventRowExclusion() {
+        exclusionY = 0f
+        exclusionHeight = 0f
+    }
 
     fun notifyElementClicked() {
         lastElementClickTime = System.currentTimeMillis()

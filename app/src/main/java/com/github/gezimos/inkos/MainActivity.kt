@@ -272,6 +272,11 @@ class MainActivity : AppCompatActivity() {
             .put("volumeKeys", prefs.useVolumeKeysForPages)
             .put("pageUpKeys", org.json.JSONArray(prefs.pageUpKeys.toList().sorted()))
             .put("pageDownKeys", org.json.JSONArray(prefs.pageDownKeys.toList().sorted()))
+            // 主页底部事件行的排除带：进程级静态，离开主页必须清零。
+            // 不清的话抽屉/最近任务/设置上会有一条幽灵带吞掉双击与横向滑动，
+            // 用户读成「点这里却触发那里」。做成可观测是为了能断言而不是靠手感。
+            .put("exclusionY", com.github.gezimos.inkos.ui.compose.GestureHelper.exclusionY)
+            .put("exclusionHeight", com.github.gezimos.inkos.ui.compose.GestureHelper.exclusionHeight)
             .put("notifListener", isNotificationServiceEnabled())
             .toString()
     }
