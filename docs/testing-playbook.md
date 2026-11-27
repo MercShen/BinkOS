@@ -252,6 +252,33 @@ if ($LASTEXITCODE -ne 0) { throw 'onboarding page 7 failed' }
 - 演示只在**首次开启开关**时弹出，onboarding 和 Settings 共用 `tooltip_refresh_animation_demo_shown`；onboarding 跳过 Extra 后，首次在 Settings 打开仍会弹。
 - Settings → More/More Features 的开关与样式交互与 onboarding 相同；动效是手动 60ms 帧计时器，不依赖 `animator_duration_scale`。
 
+### 5.1 智能刷新模式的波形归属（2026-11-27 重做，必须按这些断言验）
+
+规范：**Regal 的归属权在智能刷新开关上**。开启时记住当时的厂商波形并把基线设为 Regal；拖动/编辑期间切极速；关闭时把记住的那个波形还回去。读不到原波形就**拒绝开启**（宁可功能不生效，也不留下改不回来的状态）。
+
+- 记忆必须是**持久**的：`SMART_REFRESH_MODE_BEFORE` / `SMART_REFRESH_MODE_BASELINE`（哨兵 `-1` = 未记录，不能用 0，0 是合法波形编号）。厂商那份策略本身是持久的，只在内存里记的话进程一重启就还不回去。
+- 读取靠 **`getRefreshMode()` 方法**，不是公开字段：B651 实测 `getPolicyByPackage()` 返回的对象**没有名为 `refreshMode` 的字段**（`NoSuchFieldException`）。旧代码用 `getField("refreshMode")` 且把失败包在 `runCatching` 里，拿到 null 后照样「无条件写 Regal」——**这就是本包被静默搬到 Regal 且再也回不去的原因**。成功读取时会打一条 `refresh mode read via <策略> = <值>`，策略来源必须确认是 `field:` / `method:` 而不是 `toString:`（后者脆弱）。
+- 已经是 Regal/HD256 时开启**不写策略**：省掉一次「其实没变化」的 apply（观感上是一次全刷）。
+- 关闭时先比对当前值：等于基线、或等于我们自己写的极速（在编辑模式里直接关开关）才还原；否则视为用户在厂商菜单里自己改过，**不覆盖**，只清记忆。
+- 交互结束（`EinkInteractionMode.end`）只在开关开着时写基线；没有记录时兜底回 Regal（否则会永久停在极速 179，比改动前更糟）。开关已关则一律不动，避免和还原抢着写。
+
+真机回归（B651，debug 包）：
+
+```powershell
+# 开启：应记到 before/baseline，且日志显示读取策略
+adb shell "logcat -d -v brief" | grep -E 'BigmeEink|MainViewModel'
+pwsh -File tools/automate.ps1 -Dest eink_fast_on  -AllowStateChanges -Serial $SERIAL -AdbPath $ADB
+pwsh -File tools/automate.ps1 -Dest eink_fast_off -AllowStateChanges -Serial $SERIAL -AdbPath $ADB
+# 断言 1：开启后 prefs 里 BEFORE/BASELINE 是真实波形编号（本机为 180），不是 -1
+# 断言 2：关闭后二者回到 -1，且出现 `refreshMode=<before> ... result=true`
+# 断言 3：升级路径（开关已开但没有记忆）关闭时**不写任何波形**，日志为
+#         `smart refresh off: leaving the vendor mode alone (before=-1 baseline=-1)`
+# 断言 4：读不到时开启被拒绝：`smart refresh refused: cannot read the current vendor refresh mode`，
+#         且 EINK_INTERACTION_FAST_MODE 保持 false
+```
+
+纯规则在 `SmartRefreshPolicyTest`（14 条）里钉死，不需要真机；真机只验反射读写通道确实工作。
+
 ## 6. 构建与离线回归
 
 ```powershell
@@ -269,7 +296,6 @@ if ($LASTEXITCODE -ne 0) { throw 'script tests failed' }
 - 相关改动审查diff，不git add -A夹带其它任务；不要顺便发布、改tag或升级依赖。
 
 ## 7. 已知风险与收尾
-
 已修复：字体/长文双向滚动、ⓘ许可页跳转、小部件后台单飞/图片加载、自适应分页、通知合并原子写、托盘对称注销与手电筒真值、时钟分钟对齐、恢复校验与普通异常回滚。
 仍需验证边界：相机/蓝牙权限未授权设备的开关链、旧系统API、现代PinItemRequest OEM确认流程、大字号/键盘布局、恢复中进程强杀/断电。首次自定义字体解析仍可能同步；没有Profiler量化的耗时/内存数字不能写成改善百分比。
 

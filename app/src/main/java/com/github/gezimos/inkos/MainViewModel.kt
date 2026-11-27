@@ -2685,12 +2685,65 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setEinkInteractionFastMode(enabled: Boolean) {
-        prefs.einkInteractionFastMode = enabled
-        _homeUiState.value = _homeUiState.value.copy(einkInteractionFastMode = enabled)
-        // 关掉开关时如果正处在编辑模式/面板里，要立刻把波形恢复到 Regal。
-        if (!enabled) {
-            try { com.github.gezimos.inkos.helper.EinkInteractionMode.reset() } catch (_: Exception) {}
+        val bigme = com.github.gezimos.inkos.helper.BigmeEink.isAvailable
+        if (enabled) {
+            // 开启：先记住当时的厂商波形，再把基线设成 Regal。
+            // 读不到原波形就**拒绝开启**——没有「原值」就没有可靠的还原，
+            // 宁可这个开关不生效，也不能把一个改得回来的状态改成改不回来的。
+            // （厂商接口完全不存在的设备另说：那边整条链路都是空操作，开不开都不写策略。）
+            if (bigme) {
+                val current = com.github.gezimos.inkos.helper.BigmeEink.readPackageRefreshMode(appContext)
+                val decision = com.github.gezimos.inkos.helper.SmartRefreshPolicy.on(current)
+                if (decision == null) {
+                    android.util.Log.w(
+                        "MainViewModel",
+                        "smart refresh refused: cannot read the current vendor refresh mode"
+                    )
+                    prefs.einkInteractionFastMode = false
+                    _homeUiState.value = _homeUiState.value.copy(einkInteractionFastMode = false)
+                    return
+                }
+                prefs.smartRefreshModeBefore = decision.remember
+                prefs.smartRefreshModeBaseline =
+                    com.github.gezimos.inkos.helper.SmartRefreshPolicy.baselineOf(decision)
+                prefs.einkInteractionFastMode = true
+                _homeUiState.value = _homeUiState.value.copy(einkInteractionFastMode = true)
+                // 已经是 Regal/HD256 时不写：省掉一次「其实没变化」的策略 apply，
+                // 那在观感上是一次全刷。
+                decision.writeMode?.let {
+                    com.github.gezimos.inkos.helper.BigmeEink.setPackageRefreshMode(appContext, it)
+                }
+                return
+            }
+            prefs.einkInteractionFastMode = true
+            _homeUiState.value = _homeUiState.value.copy(einkInteractionFastMode = true)
+            return
         }
+
+        // 关闭：先停掉 token 维护（它自己不写波形），避免两处抢着写厂商策略。
+        try { com.github.gezimos.inkos.helper.EinkInteractionMode.clearTokens() } catch (_: Exception) {}
+        val before = prefs.smartRefreshModeBefore
+        val baseline = prefs.smartRefreshModeBaseline
+        val restore = com.github.gezimos.inkos.helper.SmartRefreshPolicy.restore(
+            before = before,
+            baseline = baseline,
+            current = if (bigme) com.github.gezimos.inkos.helper.BigmeEink.readPackageRefreshMode(appContext) else null,
+            // 交互进行中关开关时，当前那个极速是我们自己写的，不算用户改动
+            interactionMode = com.github.gezimos.inkos.helper.BigmeEink.MODE_SUPER
+        )
+        prefs.einkInteractionFastMode = false
+        _homeUiState.value = _homeUiState.value.copy(einkInteractionFastMode = false)
+        if (restore != null) {
+            com.github.gezimos.inkos.helper.BigmeEink.setPackageRefreshMode(appContext, restore)
+        } else if (bigme) {
+            // 读不到、没记住、或用户在开启期间自己去厂商菜单改过 —— 三种情况都不覆盖
+            android.util.Log.i(
+                "MainViewModel",
+                "smart refresh off: leaving the vendor mode alone (before=$before baseline=$baseline)"
+            )
+        }
+        prefs.smartRefreshModeBefore = com.github.gezimos.inkos.helper.SmartRefreshPolicy.UNKNOWN
+        prefs.smartRefreshModeBaseline = com.github.gezimos.inkos.helper.SmartRefreshPolicy.UNKNOWN
     }
 
     fun setEinkSystemFullRefresh(enabled: Boolean) {

@@ -42,11 +42,12 @@ object EinkInteractionMode {
         val ctx = appContext ?: return
         val last = synchronized(activeTokens) { activeTokens.remove(token) && activeTokens.isEmpty() }
         if (!last) return
-        Log.i(TAG, "leave fast mode token=$token -> Regal")
-        BigmeEink.setPackageRefreshMode(ctx, BigmeEink.MODE_REGAL)
+        // 开关已经关了就不该再写：那时关闭流程已经把用户的原波形还回去了，
+        // 这里再写一次基线等于把刚还的东西又抢回来。
+        restoreBaseline(ctx, "leave fast mode token=$token")
     }
 
-    /** Activity 销毁或开关被关掉时的兜底：清空 token 并回到 Regal。 */
+    /** Activity 销毁时的兜底：清空 token 并回到基线（开关还开着才有意义）。 */
     fun reset() {
         val ctx = appContext ?: return
         val had = synchronized(activeTokens) {
@@ -55,8 +56,35 @@ object EinkInteractionMode {
             active
         }
         if (!had) return
-        Log.i(TAG, "reset fast mode -> Regal")
-        BigmeEink.setPackageRefreshMode(ctx, BigmeEink.MODE_REGAL)
+        restoreBaseline(ctx, "reset")
+    }
+
+    /**
+     * 关闭智能刷新开关时用：只清 token，**不写任何波形**。
+     * 还回原模式由 [MainViewModel.setEinkInteractionFastMode] 负责，避免两处抢着写。
+     */
+    fun clearTokens() {
+        synchronized(activeTokens) { activeTokens.clear() }
+    }
+
+    private fun restoreBaseline(context: Context, reason: String) {
+        if (!enabled(context)) {
+            Log.i(TAG, "$reason: smart refresh off, leaving the vendor mode alone")
+            return
+        }
+        val prefs = try { Prefs(context) } catch (_: Throwable) { return }
+        val baseline = com.github.gezimos.inkos.helper.SmartRefreshPolicy.interactionBaseline(
+            smartRefreshOn = true,
+            before = prefs.smartRefreshModeBefore,
+            baseline = prefs.smartRefreshModeBaseline
+        )
+        if (baseline == null) {
+            // 没有记录就不要瞎猜 Regal：宁可停在极速，也不覆盖一个我们不知道的值
+            Log.w(TAG, "$reason: no recorded baseline, leaving the vendor mode alone")
+            return
+        }
+        Log.i(TAG, "$reason -> baseline $baseline")
+        BigmeEink.setPackageRefreshMode(context, baseline)
     }
 
     private fun enabled(context: Context): Boolean = try {

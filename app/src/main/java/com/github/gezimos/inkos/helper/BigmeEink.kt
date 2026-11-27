@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import android.view.WindowManager
+import com.github.gezimos.inkos.data.Prefs
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import java.lang.reflect.Method
 
@@ -43,11 +44,11 @@ object BigmeEink {
     private const val TAG = "BigmeEink"
     private const val CLASS_NAME = "xrz.framework.manager.XrzEinkManager"
     private const val ANIMATION_METHOD = "setEinkAnimationTimeout"
-    private const val REGAL_MODE = 180
-    private const val HD_256_MODE = 0x800000B1.toInt()
     /** 刷新波形：Regal（翻页动画可见所必需）。大我 Refresh mode 菜单里的 "Regal" = 180。 */
     const val MODE_REGAL = 180
-    /** 刷新波形：大我菜单里的 "Extreme"（=179，交互跟手，但翻页动画不可见）。 */
+    /** 刷新波形：HD256，与 Regal 一样能渲染擦除动画。 */
+    const val MODE_HD256 = 0x800000B1.toInt()
+    /** 刷新波形：Extreme（=179，交互跟手，但翻页动画不可见）。 */
     const val MODE_SUPER = 179
     private const val PAGE_TURN_STYLE_RIPPLE = 1
     /** 厂商动画样式：10 = 中间→圆周（打开），9 = 圆周→中间（关闭），0 = 无。 */
@@ -151,24 +152,102 @@ object BigmeEink {
     }
 
     /**
-     * 让动画真的可见：本包刷新波形必须是 Regal(180) 或 HD256。已满足则不写系统策略；
-     * 否则写一次 Regal（持久，可在系统设置里改回）。
+     * 读本包当前的厂商刷新波形；读不到返回 null（非大我设备、反射失败、厂商服务异常）。
+     *
+     * 智能刷新模式的「记住原模式 / 还回去」完全依赖这个值，所以取不到时必须当作
+     * **不知道**，不能拿默认值猜——猜错会把用户自己的选择覆盖掉。
+     *
+     * 2026-11-27 B651 实测：`getPolicyByPackage()` 返回的对象**没有名为 refreshMode 的
+     * 公开字段**（NoSuchFieldException）。也就是说以前那种单字段读法一直是失败的——
+     * 而旧代码把失败包在 runCatching 里、拿到 null 后照样往下走「无条件写 Regal」，
+     * 结果就是「读不到但一直改」，用户被静默搬到 Regal 且再也回不去。
+     * 所以这里按多种形状依次尝试，全部失败时把类名和字段清单打出来定位。
+     */
+    fun readPackageRefreshMode(context: Context): Int? {
+        if (!init(context)) return null
+        val getter = policyGetter ?: return null
+        val obj = try { getter.invoke(policy, context.packageName) } catch (t: Throwable) {
+            Log.w(TAG, "getPolicyByPackage failed: ${t.javaClass.simpleName}: ${t.message}")
+            null
+        } ?: return null
+
+        val cls = obj.javaClass
+        for (name in REFRESH_MODE_FIELDS) {
+            try {
+                val v = cls.getField(name).getInt(obj)
+                logPolicySourceOnce("field:$name", v)
+                return v
+            } catch (_: Throwable) {}
+        }
+        for (name in REFRESH_MODE_GETTERS) {
+            try {
+                val m = cls.getMethod(name)
+                val v = m.invoke(obj)
+                if (v is Int) {
+                    logPolicySourceOnce("method:$name", v)
+                    return v
+                }
+            } catch (_: Throwable) {}
+        }
+        // 兜底：厂商的 policy 对象普遍有可读的 toString()，形如 "…refreshMode=180…"
+        try {
+            val text = obj.toString()
+            for (key in REFRESH_MODE_FIELDS) {
+                val m = Regex("$key=(\\d+)").find(text)
+                if (m != null) {
+                    val v = m.groupValues[1].toInt()
+                    logPolicySourceOnce("toString:$key", v)
+                    return v
+                }
+            }
+        } catch (_: Throwable) {}
+
+        if (!loggedPolicyShape) {
+            loggedPolicyShape = true
+            val fields = try { cls.fields.map { "${it.name}:${it.type.simpleName}" } } catch (_: Throwable) { emptyList() }
+            val methods = try { cls.methods.map { it.name }.filter { it.contains("efresh", ignoreCase = true) }.distinct() } catch (_: Throwable) { emptyList() }
+            Log.w(TAG, "policy shape unknown: class=${cls.name} fields=${fields.joinToString(",")} refreshMethods=${methods.joinToString(",")} toString=${obj}")
+        }
+        return null
+    }
+
+    private var loggedPolicyShape = false
+
+    /**
+     * 第一次成功读取时把「靠哪条策略读到的」记下来。
+     * toString 解析比字段/方法脆弱得多，不知道走的是哪条就等于埋着一个未来会静默失效的依赖。
+     */
+    private var loggedPolicySource = false
+    private fun logPolicySourceOnce(source: String, value: Int) {
+        if (loggedPolicySource) return
+        loggedPolicySource = true
+        Log.i(TAG, "refresh mode read via $source = $value")
+    }
+
+    private val REFRESH_MODE_FIELDS = listOf("refreshMode", "mRefreshMode", "refresh_mode")
+    private val REFRESH_MODE_GETTERS = listOf("getRefreshMode")
+
+    /** 本包刷新波形是否已经是能渲染擦除动画的那两种（Regal / HD256）。 */
+    fun isAnimationCapable(mode: Int?): Boolean = mode == MODE_REGAL || mode == MODE_HD256
+
+    /**
+     * 让翻页动画真的可见：本包刷新波形必须是 Regal(180) 或 HD256。已满足则不写系统策略。
+     *
+     * **只在智能刷新模式开着时才做**（2026-11-27 决定）：Regal 的归属权在智能刷新开关上，
+     * 关掉就该把用户原来的波形还回去。如果这里无条件写，下次进程一起来就把刚还回去的
+     * 模式又覆盖成 Regal，那条「关掉就恢复」等于没实现。
      */
     private fun ensureAnimationVisible(context: Context) {
-        val getter = policyGetter ?: return
+        if (!Prefs(context).einkInteractionFastMode) return
         val setter = refreshModeSetter ?: return
+        val current = readPackageRefreshMode(context) ?: return
+        if (isAnimationCapable(current)) {
+            Log.i(TAG, "refresh mode already animation-capable: $current")
+            return
+        }
         try {
-            val current = runCatching {
-                @Suppress("UNCHECKED_CAST")
-                val p = getter.invoke(policy, context.packageName)
-                p?.javaClass?.getField("refreshMode")?.getInt(p)
-            }.getOrNull()
-            if (current == REGAL_MODE || current == HD_256_MODE) {
-                Log.i(TAG, "refresh mode already animation-capable: $current")
-                return
-            }
-            setter.invoke(policy, context.packageName, REGAL_MODE)
-            Log.i(TAG, "refresh mode $current -> $REGAL_MODE for ${context.packageName}")
+            setter.invoke(policy, context.packageName, MODE_REGAL)
+            Log.i(TAG, "refresh mode $current -> $MODE_REGAL for ${context.packageName}")
         } catch (t: Throwable) {
             Log.w(TAG, "ensureAnimationVisible failed: ${t.javaClass.simpleName}: ${t.message}")
         }

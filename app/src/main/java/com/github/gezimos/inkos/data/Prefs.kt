@@ -2161,6 +2161,26 @@ var pageIndicatorMargin: Int
         set(value) = prefs.edit { putBoolean("use_volume_keys_for_pages", value) }
 
     /**
+     * 智能刷新模式（`EINK_INTERACTION_FAST_MODE`）开启期间需要的两条厂商波形记忆。
+     *
+     * 必须是**持久**的：厂商那份策略本身是持久的，而 App 随时可能被杀；只在内存里记，
+     * 进程一重启就再也还不回去了。
+     *
+     * - [smartRefreshModeBefore]：开启那一刻读到的原波形（关开关时写回它）
+     * - [smartRefreshModeBaseline]：开启期间「应有的」波形；关闭时先比对当前值，
+     *   不一致说明用户在厂商菜单里自己改过，此时**不覆盖**，只清记忆
+     *
+     * 两者都用 `SmartRefreshPolicy.UNKNOWN(-1)` 表示「没记录」——不能用 0，0 是合法编号。
+     */
+    var smartRefreshModeBefore: Int
+        get() = prefs.getInt(SMART_REFRESH_MODE_BEFORE, com.github.gezimos.inkos.helper.SmartRefreshPolicy.UNKNOWN)
+        set(value) = prefs.edit { putInt(SMART_REFRESH_MODE_BEFORE, value) }
+
+    var smartRefreshModeBaseline: Int
+        get() = prefs.getInt(SMART_REFRESH_MODE_BASELINE, com.github.gezimos.inkos.helper.SmartRefreshPolicy.UNKNOWN)
+        set(value) = prefs.edit { putInt(SMART_REFRESH_MODE_BASELINE, value) }
+
+    /**
      * 自定义翻页键（上游 issue #125）。存的是 keycode 的 CSV。
      *
      * 这里是**附加**绑定：`PAGE_UP` / `PAGE_DOWN` 永远翻页，不在这份列表里也照样生效，
@@ -2329,6 +2349,8 @@ var pageIndicatorMargin: Int
         const val THEME_FORMAT_VERSION = 1
 
         private const val LETTERS_FONT = "letters_font"
+        private const val SMART_REFRESH_MODE_BEFORE = "SMART_REFRESH_MODE_BEFORE"
+        private const val SMART_REFRESH_MODE_BASELINE = "SMART_REFRESH_MODE_BASELINE"
         private const val LETTERS_TEXT_SIZE = "letters_text_size"
         private const val LETTERS_TITLE = "letters_title"
         private const val LETTERS_TITLE_FONT = "letters_title_font"
