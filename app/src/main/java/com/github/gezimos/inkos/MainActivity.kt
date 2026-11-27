@@ -1126,6 +1126,13 @@ class MainActivity : AppCompatActivity() {
             hideNavigationBar(this)
         }
 
+        // 从后台/解锁回来时重新确认本包波形：厂商 display-policy 服务可能在休眠中重启过，
+        // 缓存的反射句柄会一直静默失败。不在这儿自愈，就只能靠用户重启手机或手动换刷新模式
+        // ——那正是「锁屏一段时间后概率性触摸异常」现场能自愈的两条路径。
+        try {
+            com.github.gezimos.inkos.helper.BigmeEink.reassertBaseline(this)
+        } catch (_: Exception) {}
+
         if (prefs.showStatusBar) {
             com.github.gezimos.inkos.helper.showStatusBar(this)
         } else {

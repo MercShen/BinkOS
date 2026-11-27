@@ -75,8 +75,10 @@ object BigmeEink {
     /** 手势与导航之间的时间窗：超过这个间隔就不再认为动画由该手势触发。 */
     private const val SWIPE_WINDOW_MS = 600L
 
-    /** 连击节流：只防止同一次操作被重复下发；面板刷新的覆盖由 [DURATION_MS] 负责。 */
-    private const val THROTTLE_MS = 300L
+    /**
+     * 连击节流已经由 [AnimationWindowPolicy] 取代：那条规则必须同时看到「窗口长度」
+     * 和「是不是同一个操作」，用一个固定毫秒数表达不出来（原来的 300 < 350 就是事故本身）。
+     */
 
     /** 旋转 0/90/180/270 → 四个方向对应的面板模式（行 = 旋转档位，列 = Direction.base - 1）。 */
     private val PANEL_MODES = arrayOf(
@@ -95,7 +97,9 @@ object BigmeEink {
 
     @Volatile private var lastSwipe: Direction? = null
     @Volatile private var lastSwipeAt = 0L
-    private var lastTriggerAt = 0L
+
+    /** 动画窗口下发节奏（见 [AnimationWindowPolicy]）。取代原来那个比窗口还短的 THROTTLE_MS。 */
+    @Volatile private var windowState = AnimationWindowPolicy.State()
 
     val isAvailable: Boolean get() = available
 
@@ -274,7 +278,9 @@ object BigmeEink {
     /** 记录方向手势；由手势层在识别出方向时调用，供导航那一刻取用。 */
     fun noteSwipe(direction: Direction) {
         lastSwipe = direction
-        lastSwipeAt = SystemClock.uptimeMillis()
+        // elapsedRealtime 而不是 uptimeMillis：后者不计深度睡眠，锁屏几分钟回来
+        // 锁屏前那次滑动仍然算「刚刚」，解锁后第一次导航就会拿到过期的方向。
+        lastSwipeAt = SystemClock.elapsedRealtime()
     }
 
     /** 最近一次手势方向（仍在时间窗内），没有则返回 null。 */
@@ -366,7 +372,7 @@ object BigmeEink {
     const val MODE_GC16 = 4
 
     private fun recentSwipe(): Direction? =
-        lastSwipe?.takeIf { SystemClock.uptimeMillis() - lastSwipeAt <= SWIPE_WINDOW_MS }
+        lastSwipe?.takeIf { SystemClock.elapsedRealtime() - lastSwipeAt <= SWIPE_WINDOW_MS }
 
     private fun trigger(
         context: Context,
@@ -379,13 +385,9 @@ object BigmeEink {
             return
         }
 
-        val now = SystemClock.uptimeMillis()
-        if (now - lastTriggerAt < THROTTLE_MS) {
-            Log.d(TAG, "eink animation throttled: $reason dir=${direction.name}")
-            return
-        }
-        lastTriggerAt = now
-
+        // 下发节奏统一交给 triggerType 里的 AnimationWindowPolicy：
+        // 以前这里自带一个 THROTTLE_MS=300 的节流，比 350ms 的窗口还短，
+        // 结果第二次下发会落在第一个窗口到期之前，把厂商单槽覆盖掉。
         val rotation = rotationOf(context)
         val mode = panelMode(direction.base, rotation)
         triggerType(
@@ -407,6 +409,22 @@ object BigmeEink {
             Log.d(TAG, "eink animation $reason type=$type duration=${durationMs}ms skipped: vendor API unavailable")
             return
         }
+        // 唯一的下发口，所以节奏判定放这里：方向擦除、Ripple、清零全都受同一条
+        // 「不许撞自己还没落地的窗口」约束。用 elapsedRealtime（计入休眠），
+        // 否则锁屏回来上一个窗口会显得「刚刚」，第一次正常下发被误吞。
+        val now = SystemClock.elapsedRealtime()
+        when (val decision = AnimationWindowPolicy.decide(windowState, now, type, durationMs)) {
+            is AnimationWindowPolicy.Decision.Drop -> {
+                Log.d(TAG, "eink animation dropped: $reason type=$type (cooldown or duplicate)")
+                return
+            }
+            is AnimationWindowPolicy.Decision.EnterBurst -> {
+                windowState = decision.state
+                Log.i(TAG, "eink animation burst detected: $reason type=$type, quiet for ${AnimationWindowPolicy.BURST_COOLDOWN_MS}ms")
+                return
+            }
+            is AnimationWindowPolicy.Decision.Arm -> windowState = decision.state
+        }
         val method = animationMethod ?: return
         val target = policy ?: return
         try {
@@ -414,7 +432,51 @@ object BigmeEink {
             Log.i(TAG, "eink animation $reason type=$type duration=${durationMs}ms -> $result")
         } catch (t: Throwable) {
             Log.w(TAG, "invoke($type) failed: ${t.javaClass.simpleName}: ${t.message}")
+            // 厂商 display-policy 服务在休眠/升级中重启过的话，缓存的反射句柄会一直失败，
+            // 而 init() 每进程只解析一次 —— 不重解析就永久静默失效。识别到死句柄就丢掉。
+            if (isDeadVendorHandle(t)) invalidateHandles()
         }
+    }
+
+    /** 看起来像是 binder 对端已经死了（服务重启 / 进程被杀）。 */
+    private fun isDeadVendorHandle(t: Throwable): Boolean {
+        var c: Throwable? = t
+        while (c != null) {
+            val name = c.javaClass.name
+            if (name.contains("DeadObject", ignoreCase = true) ||
+                name.contains("DeadSystem", ignoreCase = true)
+            ) return true
+            val msg = c.message
+            if (msg != null && msg.contains("dead", ignoreCase = true)) return true
+            c = c.cause
+        }
+        return false
+    }
+
+    /**
+     * 丢掉缓存的反射句柄，下一次调用重新解析。
+     * 解锁后 [reassertBaseline] 也会走一遍，避免「厂商服务重启过但我们还在用旧句柄」。
+     */
+    fun invalidateHandles() {
+        synchronized(this) {
+            initialized = false
+            available = false
+            policy = null
+            animationMethod = null
+            policyGetter = null
+            refreshModeSetter = null
+        }
+        Log.w(TAG, "vendor handles invalidated; will re-resolve on next call")
+    }
+
+    /**
+     * 重新确认本包波形（只在智能刷新开着时才动，见 [ensureAnimationVisible]）。
+     * 由 `MainActivity.onResume` 在从后台回来时调用：厂商服务可能重启过，
+     * 而用户看不到我们的记忆，只能靠这里自愈，否则就得靠重启手机。
+     */
+    fun reassertBaseline(context: Context) {
+        if (!init(context)) return
+        ensureAnimationVisible(context)
     }
 
     /** 0° 下的方向值 → 当前屏幕旋转下的面板模式。 */
