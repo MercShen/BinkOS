@@ -151,7 +151,9 @@ object BigmeEink {
                 false
             }
         }
-        if (available) ensureAnimationVisible(context)
+        // init 可能在主线程被调用（Application.onCreate / 首次手势），
+        // 而 ensureAnimationVisible 要做 binder 读 —— 同样不能在主线程等。
+        if (available) reassertBaseline(context)
         return available
     }
 
@@ -352,17 +354,20 @@ object BigmeEink {
      */
     fun forceGlobalRefresh(context: Context, mode: Int = MODE_HD): Boolean {
         if (!init(context)) return false
-        return try {
-            val clazz = Class.forName(CLASS_NAME)
-            val method = clazz.getMethod("forceGlobalRefresh", Int::class.javaPrimitiveType)
-                .apply { isAccessible = true }
-            method.invoke(null, mode)
-            Log.i(TAG, "forceGlobalRefresh($mode) invoked")
-            true
-        } catch (t: Throwable) {
-            Log.w(TAG, "forceGlobalRefresh failed: ${t.javaClass.simpleName}: ${t.message}")
-            false
+        // 同 triggerType：binder 调用不进调用线程（导航与 onResume 都在主线程上）
+        policyExecutor.execute {
+            try {
+                val clazz = Class.forName(CLASS_NAME)
+                val method = clazz.getMethod("forceGlobalRefresh", Int::class.javaPrimitiveType)
+                    .apply { isAccessible = true }
+                method.invoke(null, mode)
+                Log.i(TAG, "forceGlobalRefresh($mode) invoked")
+            } catch (t: Throwable) {
+                Log.w(TAG, "forceGlobalRefresh failed: ${t.javaClass.simpleName}: ${t.message}")
+                if (isDeadVendorHandle(t)) invalidateHandles()
+            }
         }
+        return true
     }
 
     /** 系统全刷实测使用的波形（hwcomposer: handle delay clean,globalRefreshMode=b1）。 */
@@ -427,14 +432,17 @@ object BigmeEink {
         }
         val method = animationMethod ?: return
         val target = policy ?: return
-        try {
-            val result = method.invoke(target, type, durationMs)
-            Log.i(TAG, "eink animation $reason type=$type duration=${durationMs}ms -> $result")
-        } catch (t: Throwable) {
-            Log.w(TAG, "invoke($type) failed: ${t.javaClass.simpleName}: ${t.message}")
-            // 厂商 display-policy 服务在休眠/升级中重启过的话，缓存的反射句柄会一直失败，
-            // 而 init() 每进程只解析一次 —— 不重解析就永久静默失效。识别到死句柄就丢掉。
-            if (isDeadVendorHandle(t)) invalidateHandles()
+        // binder 调用离开调用线程：导航路径（handleScreenAnimation）在主线程上，
+        // 厂商服务一旦病着，同步 invoke 就是 5 秒 ANR（2026-11-28 事故）。
+        // 策略判定（上面的 decide）是纯计算，仍同步做，突发逻辑不受影响。
+        policyExecutor.execute {
+            try {
+                val result = method.invoke(target, type, durationMs)
+                Log.i(TAG, "eink animation $reason type=$type duration=${durationMs}ms -> $result")
+            } catch (t: Throwable) {
+                Log.w(TAG, "invoke($type) failed: ${t.javaClass.simpleName}: ${t.message}")
+                if (isDeadVendorHandle(t)) invalidateHandles()
+            }
         }
     }
 
@@ -473,10 +481,55 @@ object BigmeEink {
      * 重新确认本包波形（只在智能刷新开着时才动，见 [ensureAnimationVisible]）。
      * 由 `MainActivity.onResume` 在从后台回来时调用：厂商服务可能重启过，
      * 而用户看不到我们的记忆，只能靠这里自愈，否则就得靠重启手机。
+     * **异步**：见 [policyExecutor] 的事故说明。
      */
     fun reassertBaseline(context: Context) {
-        if (!init(context)) return
-        ensureAnimationVisible(context)
+        val ctx = context.applicationContext
+        policyExecutor.execute {
+            try {
+                if (!init(ctx)) return@execute
+                ensureAnimationVisible(ctx)
+            } catch (t: Throwable) {
+                Log.w(TAG, "reassertBaseline failed: ${t.javaClass.simpleName}: ${t.message}")
+            }
+        }
+    }
+
+    /**
+     * 所有厂商策略读写都走这条单线程队列，**不在调用线程（通常是主线程）上做 binder 调用**。
+     *
+     * 2026-11-28 事故：onResume 里同步调 display-policy 服务，而该服务几分钟前刚把
+     * system_server 搞崩、重启后仍是病的，binder 调用卡满 5 秒 → MainActivity 输入 ANR →
+     * 系统把 HOME 回退给 launcher3 → 回退过程又踩框架 NPE 二次重启。
+     */
+    private val policyExecutor = java.util.concurrent.Executors.newSingleThreadExecutor { r ->
+        Thread(r, "BigmeEink-policy").apply { isDaemon = true }
+    }
+
+    /** 主线程可等的有界读取：超时按「读不到」处理，绝不把 ANR 当代价。 */
+    private const val READ_TIMEOUT_MS = 800L
+
+    fun readPackageRefreshModeBounded(context: Context, timeoutMs: Long = READ_TIMEOUT_MS): Int? {
+        val future = policyExecutor.submit<Int?> {
+            try { readPackageRefreshMode(context) } catch (_: Throwable) { null }
+        }
+        return try {
+            future.get(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
+        } catch (t: Throwable) {
+            Log.w(TAG, "readPackageRefreshMode timed out after ${timeoutMs}ms; treating as unreadable")
+            future.cancel(true)
+            null
+        }
+    }
+
+    fun setPackageRefreshModeAsync(context: Context, mode: Int) {
+        policyExecutor.execute {
+            try {
+                setPackageRefreshMode(context, mode)
+            } catch (t: Throwable) {
+                Log.w(TAG, "async setPackageRefreshMode($mode) failed: ${t.javaClass.simpleName}")
+            }
+        }
     }
 
     /** 0° 下的方向值 → 当前屏幕旋转下的面板模式。 */

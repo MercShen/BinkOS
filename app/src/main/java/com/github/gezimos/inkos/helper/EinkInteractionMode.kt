@@ -35,7 +35,7 @@ object EinkInteractionMode {
         val first = synchronized(activeTokens) { activeTokens.add(token) && activeTokens.size == 1 }
         if (!first) return
         Log.i(TAG, "enter fast mode token=$token")
-        BigmeEink.setPackageRefreshMode(ctx, BigmeEink.MODE_SUPER)
+        BigmeEink.setPackageRefreshModeAsync(ctx, BigmeEink.MODE_SUPER)
     }
 
     fun end(token: String) {
@@ -84,7 +84,7 @@ object EinkInteractionMode {
             return
         }
         Log.i(TAG, "$reason -> baseline $baseline")
-        BigmeEink.setPackageRefreshMode(context, baseline)
+        BigmeEink.setPackageRefreshModeAsync(context, baseline)
     }
 
     private fun enabled(context: Context): Boolean = try {

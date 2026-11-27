@@ -922,6 +922,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 主线程看门狗：user 版拿不到 ANR 栈（kill -3 无输出、debuggerd 要 root、
+        // /data/anr 是 system 私有），只能进程内自取。见 helper/MainThreadWatchdog.kt。
+        try { com.github.gezimos.inkos.helper.MainThreadWatchdog.start() } catch (_: Exception) {}
+
         // --- Crash loop detection ---
         try {
             val crashPrefs = getSharedPreferences(CrashHandler.CRASH_LOOP_PREFS, MODE_PRIVATE)
@@ -1082,6 +1086,7 @@ class MainActivity : AppCompatActivity() {
             val skipIds = emptySet<Int>()
             navController.addOnDestinationChangedListener { _: NavController, destination: androidx.navigation.NavDestination, _: Bundle? ->
                 try {
+                    com.github.gezimos.inkos.helper.MainThreadWatchdog.screenHint = destination.id.toString()
                     val previousId = lastDestinationId
                     lastDestinationId = destination.id
                     // 大我墨水屏动画：只在打开 / 关闭手势绑定界面时触发，且必须先于重绘

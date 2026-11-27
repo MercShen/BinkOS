@@ -2692,7 +2692,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             // 宁可这个开关不生效，也不能把一个改得回来的状态改成改不回来的。
             // （厂商接口完全不存在的设备另说：那边整条链路都是空操作，开不开都不写策略。）
             if (bigme) {
-                val current = com.github.gezimos.inkos.helper.BigmeEink.readPackageRefreshMode(appContext)
+                // 有界等待：厂商服务病着的时候这里最多卡 800ms，超时按「读不到」拒绝开启。
+                // 绝不能无界同步等 —— 2026-11-28 的 ANR 就是这么来的。
+                val current = com.github.gezimos.inkos.helper.BigmeEink.readPackageRefreshModeBounded(appContext)
                 val decision = com.github.gezimos.inkos.helper.SmartRefreshPolicy.on(current)
                 if (decision == null) {
                     android.util.Log.w(
@@ -2711,7 +2713,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 // 已经是 Regal/HD256 时不写：省掉一次「其实没变化」的策略 apply，
                 // 那在观感上是一次全刷。
                 decision.writeMode?.let {
-                    com.github.gezimos.inkos.helper.BigmeEink.setPackageRefreshMode(appContext, it)
+                    com.github.gezimos.inkos.helper.BigmeEink.setPackageRefreshModeAsync(appContext, it)
                 }
                 return
             }
@@ -2727,14 +2729,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val restore = com.github.gezimos.inkos.helper.SmartRefreshPolicy.restore(
             before = before,
             baseline = baseline,
-            current = if (bigme) com.github.gezimos.inkos.helper.BigmeEink.readPackageRefreshMode(appContext) else null,
+            current = if (bigme) com.github.gezimos.inkos.helper.BigmeEink.readPackageRefreshModeBounded(appContext) else null,
             // 交互进行中关开关时，当前那个极速是我们自己写的，不算用户改动
             interactionMode = com.github.gezimos.inkos.helper.BigmeEink.MODE_SUPER
         )
         prefs.einkInteractionFastMode = false
         _homeUiState.value = _homeUiState.value.copy(einkInteractionFastMode = false)
         if (restore != null) {
-            com.github.gezimos.inkos.helper.BigmeEink.setPackageRefreshMode(appContext, restore)
+            com.github.gezimos.inkos.helper.BigmeEink.setPackageRefreshModeAsync(appContext, restore)
         } else if (bigme) {
             // 读不到、没记住、或用户在开启期间自己去厂商菜单改过 —— 三种情况都不覆盖
             android.util.Log.i(
