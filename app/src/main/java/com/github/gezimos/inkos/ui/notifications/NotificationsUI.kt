@@ -608,14 +608,21 @@ fun HubScreen(
 
     val hubScreenHeightDp = LocalConfiguration.current.screenHeightDp
     val estimatedItemsPerPage = remember(hubScreenHeightDp) { HubLayoutCache.cachedItemsPerPage ?: ((hubScreenHeightDp - 200) / 96).coerceAtLeast(1) }
-    val itemsPerPage = remember(containerSize.height, itemHeightPx) {
+    // 容器高度带迟滞：解锁时状态栏/导航栏会在 onResume 后约 150ms 重下发一次可见性，
+    // 容器高度会抖一下。没有迟滞的话，抖一下 = itemsPerPage 变 = pages 变 = 列表跳页，
+    // 手指按着时就是「画面自己跑」，点击也会落到别的条目上。
+    // 小于一个条目高度的变化一律忽略（真旋转/真改窗口尺寸会超过这个阈值）。
+    var itemsPerPage by remember { mutableIntStateOf(estimatedItemsPerPage) }
+    var acceptedHubHeight by remember { mutableIntStateOf(0) }
+    LaunchedEffect(containerSize.height) {
         val h = containerSize.height
-        val measured = if (h <= 0) estimatedItemsPerPage else ((h - hubOverheadPx) / itemHeightPx).coerceAtLeast(1)
-        if (h > 0) {
-            HubLayoutCache.cachedItemsPerPage = measured
-            HubLayoutCache.cachedContainerHeight = h
-        }
-        measured
+        if (h <= 0) return@LaunchedEffect
+        if (acceptedHubHeight > 0 && kotlin.math.abs(h - acceptedHubHeight) < itemHeightPx) return@LaunchedEffect
+        acceptedHubHeight = h
+        val measured = ((h - hubOverheadPx) / itemHeightPx).coerceAtLeast(1)
+        HubLayoutCache.cachedItemsPerPage = measured
+        HubLayoutCache.cachedContainerHeight = h
+        itemsPerPage = measured
     }
 
     val coroutineScope = rememberCoroutineScope()
@@ -623,11 +630,14 @@ fun HubScreen(
     val pagerState = remember { SimplePagerState(0, pages) }
 
     LaunchedEffect(filteredNotifications.size, itemsPerPage) {
+        val oldFirstItem = pagerState.currentPage * pagerState.pageSize
         pagerState.pageSize = itemsPerPage
         val oldPages = pagerState.pageCount
         pagerState.pageCount = pages
         if (pages != oldPages) {
-            pagerState.currentPage = 0
+            // 保留用户正在看的那一条，而不是跳回第 0 页：页数变化多半来自 inset 抖动
+            // 或通知增删，跳回第 0 页会让手指按着的内容自己跑掉。
+            pagerState.currentPage = (oldFirstItem / itemsPerPage).coerceIn(0, pages - 1)
         } else if (pagerState.currentPage >= pages) {
             pagerState.currentPage = (pages - 1).coerceAtLeast(0)
         }
@@ -1709,23 +1719,29 @@ fun SimpleTrayScreen(
     val trayOverheadPx = remember(trayDensity) { with(trayDensity) { 8.dp.toPx() }.toInt() }
     val trayScreenHeightDp = LocalConfiguration.current.screenHeightDp
     val estimatedTrayPageSize = remember(trayScreenHeightDp) { TrayLayoutCache.cachedPageSize ?: (((trayScreenHeightDp - 320) / 104).coerceAtLeast(1)) }
-    val pageSize = remember(trayContainerSize.height, trayItemHeightPx) {
+    // 与 Hub 同一条规则：容器高度带迟滞，inset 抖动不许改每页条数；
+    // 页数变化时保留正在看的那一条，不跳回第 0 页。
+    var pageSize by remember { mutableIntStateOf(estimatedTrayPageSize) }
+    var acceptedTrayHeight by remember { mutableIntStateOf(0) }
+    LaunchedEffect(trayContainerSize.height) {
         val h = trayContainerSize.height
-        val measured = if (h <= 0) estimatedTrayPageSize else ((h - trayOverheadPx) / trayItemHeightPx).coerceAtLeast(1)
-        if (h > 0) {
-            TrayLayoutCache.cachedPageSize = measured
-            TrayLayoutCache.cachedContainerHeight = h
-        }
-        measured
+        if (h <= 0) return@LaunchedEffect
+        if (acceptedTrayHeight > 0 && kotlin.math.abs(h - acceptedTrayHeight) < trayItemHeightPx) return@LaunchedEffect
+        acceptedTrayHeight = h
+        val measured = ((h - trayOverheadPx) / trayItemHeightPx).coerceAtLeast(1)
+        TrayLayoutCache.cachedPageSize = measured
+        TrayLayoutCache.cachedContainerHeight = h
+        pageSize = measured
     }
     val pages = ((validNotifications.size + pageSize - 1) / pageSize).coerceAtLeast(1)
     val pagerState = remember { SimplePagerState(0, pages) }
     LaunchedEffect(validNotifications.size, pageSize) {
+        val oldFirstItem = pagerState.currentPage * pagerState.pageSize
         pagerState.pageSize = pageSize
         val oldPages = pagerState.pageCount
         pagerState.pageCount = pages
         if (pages != oldPages) {
-            pagerState.currentPage = 0
+            pagerState.currentPage = (oldFirstItem / pageSize).coerceIn(0, pages - 1)
         } else if (pagerState.currentPage >= pages) {
             pagerState.currentPage = (pages - 1).coerceAtLeast(0)
         }
@@ -2251,7 +2267,10 @@ fun SimpleTrayScreen(
                     top = 24.dp.scaled(screenScale),
                     bottom = 80.dp
                 )
-                .pointerInput(pagerState.currentPage, isDpadMode) {
+                // isDpadMode 不能进 key：onVerticalDrag 第一帧就会把它写成 false，
+                // key 一变探测器就在手势中途销毁重建，dragSum 丢掉、onDragEnd 不执行。
+                // 它在探测器里只写不读，拿掉对语义无影响。
+                .pointerInput(pagerState.currentPage) {
                     var dragSum = 0f
                     detectVerticalDragGestures(
                         onVerticalDrag = { _, dragAmount ->

@@ -309,6 +309,29 @@ pwsh -File tools/automate.ps1 -Dest eink_fast_off -AllowStateChanges -Serial $SE
 
 注意这个 6% 是**合成按键**造出来的（每轮 3 次后有停顿，冷却过期后重新下发，属正常行为）；真人手指连续拖动应当逼近「一次擦除」，那条只有单测覆盖，需要真机复现时再采一次。
 
+### 5.3 Hub / Tray 分页：inset 抖动不许跳页（2026-11-28 修复）
+
+**症状**：锁屏一段时间后解锁，手指按在 Hub/Tray 列表上时画面自己跑、点击落点与看到的不一致。
+
+**机制（代码级）**：`MainActivity.onResume` 会在约 +150ms 重新下发状态栏/导航栏可见性，容器高度跟着抖一下；
+Hub/Tray 的每页条数是**直接用容器高度算的**，于是 `itemsPerPage` 变 → `pages` 变 →
+旧代码 `if (pages != oldPages) pagerState.currentPage = 0` ⇒ **列表自己跳回第 1 页**。
+手指按着时这就是「抽搐」，同时条目整体换位，点击也就落到别的地方。
+
+**现在的规则**：
+1. 容器高度带**迟滞**：与上次接受的差小于一个条目高度（Hub 96dp / Tray 104dp）一律忽略。真旋转、真改窗口尺寸会超过这个阈值，仍然生效。
+2. 页数变化时**保留正在看的那一条**：`currentPage = oldFirstItem / newPageSize` 再夹到合法范围，不再无条件归零。
+3. Tray 的 `pointerInput` key 去掉 `isDpadMode`——它在 `onVerticalDrag` 第一帧就被写成 false，留在 key 里会让探测器在手势中途销毁重建、`dragSum` 丢失、`onDragEnd` 不执行（该值在探测器内只写不读，去掉无副作用）。
+
+**回归配方**（模拟器，12 条探针通知，每页 7 条）：
+
+```powershell
+# 进 Hub → 记下第 1 页与最后一页的可见标题 → 到最后一页 → DOWN×2 进列表区 → DEL×3
+# 期望：删完仍显示尾部剩余条目（如 Alpha 消息 2 / 1），不得等于第 1 页内容
+```
+注意 `DEL` 只在**通知区**生效（默认区是分类页签，按 Del 删不动——踩过两次）；
+`DOWN×2` 才是进列表并让某条高亮。
+
 ## 6. 构建与离线回归
 
 ```powershell
