@@ -97,7 +97,7 @@ Bink OS 保留了 inkOS 的文字优先首页，并加入了面向墨水屏的�
 ./gradlew assembleRelease
 ```
 
-需要 Android SDK 36 和 JDK 17。Release 签名从环境变量读取 `KEYSTORE_FILE`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD`。
+需要 Android SDK 36 与 JDK 17。Release 签名从环境变量读取 `KEYSTORE_FILE`、`KEYSTORE_PASSWORD`、`KEY_ALIAS`、`KEY_PASSWORD`。若密钥材料放在仓库外的 `keystore.properties`，用 `tools/sign-release.ps1`：它会解析该文件（`storeFile` 写相对路径时按 properties 所在目录解析）、只向 Gradle 子进程注入变量、构建并打印签名指纹，全程不回显密码。
 
 ## 致谢
 

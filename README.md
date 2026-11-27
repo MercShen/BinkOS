@@ -97,7 +97,7 @@ Requires Android 8.0+ (API 26). Best on the Bigme HiBreak; other e-ink phones wo
 ./gradlew assembleRelease
 ```
 
-Needs Android SDK 36 and JDK 17. Release signing reads `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` from the environment.
+Needs Android SDK 36 and JDK 17. Release signing reads `KEYSTORE_FILE`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD` from the environment. If the key material lives in a `keystore.properties` file outside the repo, `tools/sign-release.ps1` resolves it (a relative `storeFile` is taken relative to that file's directory), injects the variables only into the Gradle child process, builds, and prints the signing fingerprint — without ever echoing a password.
 
 ## Credits
 
