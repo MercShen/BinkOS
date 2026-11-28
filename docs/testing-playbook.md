@@ -186,7 +186,9 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
    - **不要用不可见焦点锚点**（试过）：1.dp 的 Box 抢不到焦点，还会顶掉 DOWN 原有的默认初始焦点，把「进页面按 DOWN 聚焦第一条」弄坏。
    - **不要在进页面时主动抢焦点**（试过）：实测**触摸点击本来不会留下任何焦点色块**，无条件抢焦点会让纯触摸设备每次进设置凭空多出一个反色块。现在的机制只响应按键事件，触摸路径完全不变。
    - 回归断言（看整行反色带，别信 uiautomator 的 `focused`——它对 Compose 虚拟节点不可靠）：① 进设置页未按键 → **无**整行反色条；② `DOWN` → 条在第一条（实测 y134–240）；③ 再 `DOWN` → 条下移一条（y258–364）；④ 重新进页直接 `UP` → 条落在**最后一条**（实测「关于」）；⑤ 触摸点进设置页 → 无条。
-   - 已知小别扭（可接受）：焦点已在第一条时按 UP，会先回到「无焦点」态（条消失），再按一次 UP 才跳到最后一条——中间行的 UP 仍交还给 Compose 正常遍历，不做双重语义。
+   - **边界与回环（2026-11-28 重写）**：上下键完全由 `PageFocusEdges` 解释，不交回 Compose 遍历——交回去会落在禁用行上（`clickable(enabled=false)` 的节点在 Compose 里**仍然可聚焦**，`requestFocus()` 不抛异常、焦点真的会停上去，而禁用行是灰的，观感就是"焦点消失了一拍"）。语义：无焦点时 DOWN→第一条、UP→最后一条；已在最后一条继续 DOWN→回环到第一条；已在第一条继续 UP→回环到最后一条；中间行逐条移动。**禁用行不参与遍历**（行组件用 `pageEdge(canFocus = enabled)` 上报）。
+   - 回报机制：`pageEdge` 在挂 `focusRequester` 的**同一个节点**上用 `onFocusEvent` 同步回报，不再由调用方传 `isFocused`（第一版那么做，回报滞后且依赖 interactionSource，实测高级页 DOWN 会在「第一条」和「无焦点」之间来回摆、UP 一次跳到最后一条）。
+   - 实测（模拟器，反色条 y 坐标）：高级页 DOWN 126→381→505→629→753→877→1001→回环 126→381→505（跳过禁用行 250，"无焦点"0 次）；第一条按 UP 跳 y1001（最后一条）；更多页第一条按 UP 跳 y825；设置根页 DOWN 133→257→…→1001 逐条。
 10. **小部件布局编辑模式：键盘不可达，属上游既有边界，已决定暂缓（2026-11-28 核实）**。
     - 不是 fork 引入的退化。分叉点 `4aeb4e9` 的原版 `EditModeHelper.kt`（2805 行）里 `KeyEvent`/`onKeyEvent`/`onPreviewKeyEvent`/`FocusRequester`/`focusable`/`isDpadMode` **全为 0 处**，只有 6 处 `collectIsFocusedAsState()`（视觉高亮，不是按键通路）；当前版本同样只有 5 处 `collectIsFocusedAsState`，我们也没加。
     - 上游键盘模型的实际覆盖面（原版 `NavHelper` 里 DPAD/Direction 命中 30 处）：主页分页、时钟/日期/引言、收藏区、应用抽屉、Tray、Hub、主题预设、颜色编辑器，以及**编辑收藏**（`isEditFavoritesMode`）。**小部件布局编辑不在其中。**

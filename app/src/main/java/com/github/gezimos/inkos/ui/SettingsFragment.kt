@@ -559,7 +559,10 @@ class SettingsFragment : Fragment() {
                     // PageFocusEdges，注册顺序就是视觉顺序，于是「无人聚焦时 UP→最后一条、
                     // DOWN→第一条」都是显式动作，不依赖 Compose 的遍历猜测。
                     // 进页面不主动抢焦点，所以纯触摸设备的行为与今天完全一致。
-                    val pageEdges = remember(currentRoute) { PageFocusEdges() }
+                    // 登记表在整个内容 Composition 生命周期内保持稳定：换子页时旧行会随组合销毁自动
+                    // 注销，不需要（也不能）用 currentRoute 当 key —— 它是 fragment 字段而不是 Compose
+                    // 状态，拿它当 key 会让登记表在错误的时机被重建，行就登记到新表里去了。
+                    val pageEdges = remember { PageFocusEdges() }
                     // 页头 ComposeView 进页就抢焦点，那时正文的按键处理器收不到键；
                     // 把同一个翻页函数交给页头，键盘用户刚进页就能按 PAGE_UP/PAGE_DOWN。
                     SideEffect {
@@ -593,18 +596,15 @@ class SettingsFragment : Fragment() {
                                     .fillMaxWidth()
                                     .verticalScroll(scrollState, enabled = false)
                                     .onPreviewKeyEvent { event ->
-                                        // 只有「本页没有任何一条被聚焦」时才接管上下键：
-                                        // 一旦列表里有焦点，交还给 Compose 的正常遍历，
-                                        // 中间行按 UP 仍然是往上走一格。
+                                        // 上下键的边界与回环交给 PageFocusEdges：
+                                        // 无焦点 → 进一端；已在另一端 → 回环；中间行 → 交回 Compose 正常遍历。
+                                        // 回报由聚焦节点自身同步给出（onFocusEvent），不再依赖「有没有人聚焦」
+                                        // 这种滞后的间接判断——第一版那么写在高级页里会让 DOWN 在
+                                        // 「第一条」和「无焦点」之间来回摆。
                                         if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                                        if (pageEdges.anyFocused) return@onPreviewKeyEvent false
                                         when (event.nativeKeyEvent.keyCode) {
-                                            android.view.KeyEvent.KEYCODE_DPAD_UP -> {
-                                                pageEdges.focusLast(); true
-                                            }
-                                            android.view.KeyEvent.KEYCODE_DPAD_DOWN -> {
-                                                pageEdges.focusFirst(); true
-                                            }
+                                            android.view.KeyEvent.KEYCODE_DPAD_UP -> pageEdges.onUp()
+                                            android.view.KeyEvent.KEYCODE_DPAD_DOWN -> pageEdges.onDown()
                                             else -> false
                                         }
                                     }

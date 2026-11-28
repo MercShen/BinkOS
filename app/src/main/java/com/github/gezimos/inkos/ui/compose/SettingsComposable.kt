@@ -370,7 +370,7 @@ object SettingsComposable {
                 .then(if (fillWidth) Modifier.fillMaxWidth() else Modifier)
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
-                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
+                .pageEdge()   // 登记进本页焦点边界：上下键的首尾回环靠它，回报由同一节点同步给出
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor, outerVertical = focusVerticalPadding)
                 .clickable(
                     onClick = {
@@ -606,7 +606,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
-                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
+                .pageEdge(canFocus = enabled)   // 禁用行不参与上下键遍历，否则焦点会停在灰行上
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     enabled = enabled,
@@ -674,7 +674,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
-                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
+                .pageEdge(canFocus = enabled)   // 禁用行不参与上下键遍历，否则焦点会停在灰行上
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     enabled = enabled,
@@ -748,7 +748,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
-                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
+                .pageEdge()   // 登记进本页焦点边界：上下键的首尾回环靠它，回报由同一节点同步给出
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     onClick = {},
@@ -838,7 +838,7 @@ object SettingsComposable {
                 .fillMaxWidth()
                 .padding(horizontal = horizontalPadding)
                 .padding(vertical = verticalPadding)
-                .pageEdge(isFocused)   // 登记进本页焦点边界：无人聚焦时 UP 才能跳到最后一条
+                .pageEdge(canFocus = enabled)   // 禁用行不参与上下键遍历，否则焦点会停在灰行上
                 .pillHighlight(isHighlighted, 6.dp, prefTextColor)
                 .clickable(
                     enabled = enabled,
