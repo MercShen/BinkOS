@@ -202,6 +202,33 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 **取证纪律（本轮踩实）**：导航必须带 `-ExpectedText` 或按完后读 `status` 的 `currentDestination/sheetOpen/onboarding/windowFocus`；本轮有三轮结论因为「dest 分发成功但画面没落地」而作废（应用一直停在 onboardingFragment）。整帧截图 md5 会被状态栏时钟污染，不能单独当判据。
 
+## 4.9 键盘验证：不要用 scrcpy 的键盘注入（假阴性来源）
+
+2026-11-28 实测：同一台 B651、同一个构建，用 scrcpy 镜像 + 键盘测「抽屉里选中条目按回车」时，
+容器 `onPreviewKeyEvent` **从未收到 KEYCODE_ENTER(66)**，而激活的是 Compose 的当前焦点行；
+换成 adb 注入按键，ENTER 正常到达并被抽屉键盘链消费，激活的就是高亮那一行：
+
+```powershell
+$adb='C:\AndroidSDK\sdk\platform-tools\adb.exe'; $ser='B651D2W2GAPA006000108'
+# 开抽屉不用手势（真机上手势容易被当成翻页）：直接发 action
+adb -s $ser shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity -a com.github.gezimos.inkos.action.OPEN_APP_DRAWER
+adb -s $ser shell input keyevent 20        # DPAD_DOWN，选中下一条
+adb -s $ser shell input keyevent 20
+adb -s $ser shell input keyevent 66        # ENTER
+adb -s $ser shell "logcat -d -v time | grep -E 'AppDrawerKey|AppDrawerActivate'"
+# 期望：handled=true 且 keyboard index=N label=<高亮那一行>，随后 START 到该应用
+```
+
+要点：
+
+- **判据是日志里的 `keyboard index=N label=…` 与屏幕上高亮行是否同一条**，不是"看起来进了哪个界面"。
+- `input keyevent` 的按下时长为 0，而抽屉的激活条件是 `KeyUp` 且 `duration > 0`；需要真实按下间隔时用
+  `input keyevent --action DOWN 66` + 延时 + `--action UP 66`。
+- `${keyEvent.key}` 打出来是 Compose 内部值（`keyCode shl 32`，如 `253403070464`），要按 `shr 32` 换算才可读；
+  日志现在直接打 `nativeKeyEvent.keyCode`（20=DOWN、66=ENTER、23=CENTER）。
+- 诊断日志（`AppDrawerKey` / `AppDrawerActivate`）只在 **debug 构建**输出；release 上抓不到，别据此判断功能坏了。
+- 用 uiautomator dump 比对列表顺序时**不要加 y 下限过滤**，否则会截掉最上面几行，误判成"列表错位"（本次就这么误判过一次）。
+
 ## 5. 通知探针
 
 完整构建/安装/权限命令见 [探针说明](<../tools/notifprobe/README.md>)，路径是仓库内tools/notifprobe。Android13+探针需要POST_NOTIFICATIONS；Bink OS需要通知访问权，脚本不静默帮用户授予。
