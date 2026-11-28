@@ -420,7 +420,8 @@ if ($LASTEXITCODE -ne 0) { throw 'script tests failed' }
 **待办（已确认，暂不动代码）**
 
 - **自定义翻页键的绑定界面还要调**（Merc 2026-11-28）。真机已验证：大我实体侧键实际发出 **F1 / F2**（`KEYCODE_F1=131`、`KEYCODE_F2=132`），用「上一页按键 / 下一页按键」捕获框能成功绑定并使用，learn-key 路线成立。UI 的具体形态待定，先不改代码，改之前先对齐设计。
-- **release 包缺 baseline profile**：首次进入每个界面都要在运行时 JIT 编译巨型 Compose 方法（真机记录过一次 `Compiler allocated 6657KB` 编译单个 28 参数的 @Composable）。这是首屏卡顿源，与手势自转无关。方案与工程量见 [automation-entry.md](automation-entry.md) 之外的讨论记录，动手前需确认。
+- **release 包缺 baseline profile：暂缓，等实测数据**（Merc 2026-11-28 决定）。release 首次进入每个界面要在运行时 JIT 编译巨型 Compose 方法（真机记录过一次 `Compiler allocated 6657KB` 编译单个 28 参数 @Composable）。**但收益未证实**：模拟器给不出可信数字（`status=run-from-apk`、帧样本只有 5 帧、冷启动 0 个编译事件 vs 热态 2 个），而这台机器的可感延迟主要来自面板提交（实测整屏提交相对下发 `+0.31 ~ +0.68 秒`），JIT 不在这条路径上；ART 本身也会后台攒 profile 做 speed-profile，受影响的只有每次更新后那一小段。
+  要重启这件事，先在 B651 上量：正常用一天，抓 `dumpsys gfxinfo` 的 jank 率 + `Compiler allocated` 事件数 + `dumpsys package` 编译状态，对比「刚更新后」与「用了几小时后」两组。没有这两组数，不要写成百分比收益，也不要动手加 `:baseline-profile` 模块（约 1 人日，代价含安装期 dexpreopt 变慢与 profile 过期需长期重新生成）。
 - **T9 数字→字母无法在本机验证**：测试机无 T9 输入法，模拟器也没有；该路径仍需带 T9 IME 的设备。
 
 收尾：退出编辑模式→home关sheet→恢复获准写的旧状态→记录版本/PID/测试证据→保留用户可人工验收的环境。
