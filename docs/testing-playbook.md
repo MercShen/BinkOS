@@ -210,10 +210,12 @@ pwsh -NoProfile -File ./tools/automate.ps1 -Dest status -Serial $SERIAL -AdbPath
 
 ```powershell
 $adb='C:\AndroidSDK\sdk\platform-tools\adb.exe'; $ser='B651D2W2GAPA006000108'
-# 开抽屉不用手势（真机上手势容易被当成翻页）：直接发 action
+# 开抽屉有两条正规路径，都不要用手势：
+#   1) 产品 action（release/debug 都可用，契约见 automation-entry.md 第 7 节）
 adb -s $ser shell am start -n app.binkos/com.github.gezimos.inkos.MainActivity -a com.github.gezimos.inkos.action.OPEN_APP_DRAWER
+#   2) MENU 键（仅 mainFragment，见同文档键码表）
+adb -s $ser shell input keyevent 82
 adb -s $ser shell input keyevent 20        # DPAD_DOWN，选中下一条
-adb -s $ser shell input keyevent 20
 adb -s $ser shell input keyevent 66        # ENTER
 adb -s $ser shell "logcat -d -v time | grep -E 'AppDrawerKey|AppDrawerActivate'"
 # 期望：handled=true 且 keyboard index=N label=<高亮那一行>，随后 START 到该应用
@@ -221,6 +223,14 @@ adb -s $ser shell "logcat -d -v time | grep -E 'AppDrawerKey|AppDrawerActivate'"
 
 要点：
 
+- **判定"现在在哪个界面"要用内容签名，不要用控件名猜。** 主页签名是日期/电量（`周六, 11月 28`、`100%`、`充电`），
+  抽屉签名是应用名（`Reeden|小红书|闲鱼|FlClash` 这类）。本次先用「搜索」字样当判据，
+  而搜索框不暴露 `text`，把一次**成功**的 MENU 误判成了失败。
+- **界面跳转一律走 [automation-entry.md](automation-entry.md) 里已有的契约，不要自己拼手势。**
+  `--es dest` 只在 **debug 包**生效（正式包按契约拒绝）；要在 release 上跳界面就用产品 action，
+  或者用键码表里的入口键。两条都已在 B651（release `app.binkos`）实测：`keyevent 82` 与
+  `-a …OPEN_APP_DRAWER` 都能从主页打开抽屉。**手势是用户输入，不是测试接口**——真机上上滑还可能被当成翻页，
+  本次就是因此白绕了好几轮。
 - **判据是日志里的 `keyboard index=N label=…` 与屏幕上高亮行是否同一条**，不是"看起来进了哪个界面"。
 - `input keyevent` 的按下时长为 0，而抽屉的激活条件是 `KeyUp` 且 `duration > 0`；需要真实按下间隔时用
   `input keyevent --action DOWN 66` + 延时 + `--action UP 66`。
