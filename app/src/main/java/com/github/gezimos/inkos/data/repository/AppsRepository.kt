@@ -518,8 +518,14 @@ class AppsRepository(application: Application) {
                             fragment.findNavController().navigate(R.id.settingsFragment)
                         else -> return false
                     }
-                } catch (_: Exception) {
-                    return false
+                } catch (t: Throwable) {
+                    // 以前这里是 `catch (_: Exception) { return false }`，两个问题叠在一起：
+                    // 1) 异常被静默吞掉，「键盘进设置会回主页」这种报告完全查不到原因；
+                    // 2) return false 会让调用方回退到通用启动，而通用启动我们自己的包
+                    //    等于「回到桌面」—— 用户点的是「Bink OS 设置」，看到的却是主页。
+                    // 所以：记下真实异常，并且**不**回退。这个入口必须由我们自己处理。
+                    Log.w("AppsRepository", "synthetic shortcut navigation failed id=$shortcutId", t)
+                    return true
                 }
                 return true
             }
