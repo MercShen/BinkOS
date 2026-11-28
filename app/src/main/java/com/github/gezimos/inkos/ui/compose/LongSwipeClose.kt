@@ -55,11 +55,27 @@ fun Modifier.closeOnReverseLongSwipe(
     // 是会变的值。把它当 pointerInput 的 key，方向一变探测器就在**手势中途**被销毁重建，
     // 前半段位移直接丢；锁屏解锁后方向过期时尤其容易踩到。改成每次手势开始时现读。
     val currentCloseDirection = rememberUpdatedState(closeDirection)
+    // 闸门必须只看偏好、不看最近手势：`closeDirectionOrNull` 为 null 时既可能是「没绑定」，
+    // 也可能是「绑定了但这一刻取不到方向」。2026-11-28 就是把它挪进 awaitEachGesture 里当
+    // 早退条件，结果**未绑定的界面也开始跑指针循环**，而 `return@awaitEachGesture` 并不会
+    // 终止 awaitEachGesture —— 它会对同一个活动手势立刻重跑这个块，实测主线程 92% 单核
+    // 自转 90 秒以上不退出（模拟器与 B651 均复现，栈顶 LongSwipeClose.kt:62）。
+    // 契约在 GestureBindings.closeDirectionOrNull 的注释里写明：未绑定就不得启用退出探测。
+    val boundToSomeSwipe = remember(
+        action,
+        prefs.swipeLeftAction,
+        prefs.swipeRightAction,
+        prefs.swipeUpAction,
+        prefs.swipeDownAction
+    ) { GestureBindings.isBoundToAnySwipe(action, prefs) }
 
-    return this.pointerInput(enabled, minDistance) {
+    return this.pointerInput(enabled, minDistance, boundToSomeSwipe) {
         if (!enabled) return@pointerInput
+        // 未绑定：连探测器都不启动。这是修复自转的关键一行。
+        if (!boundToSomeSwipe) return@pointerInput
         awaitEachGesture {
-            val targetDirection = currentCloseDirection.value ?: return@awaitEachGesture
+            // 方向每轮现读；这一刻取不到就只是本轮不判定，循环照常走到抬手为止。
+            val targetDirection = currentCloseDirection.value
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             val start = down.position
             val startTime = SystemClock.elapsedRealtime()

@@ -63,6 +63,22 @@ object GestureBindings {
     }
 
     /**
+     * 该功能是否被用户绑定在**任意**滑动方向上。
+     *
+     * 只看偏好，不看「最近滑动方向」，所以它的值只在用户改绑定时变化 ——
+     * 正好适合当 `pointerInput` 的 key 和「要不要启动反向长滑探测器」的闸门。
+     * `closeDirectionOrNull` 不能当这个闸门：它依赖最近手势，每滑一次都可能变，
+     * 而且它是 null 时并不代表「没绑定」（见 [isBoundToAnySwipe] 的纯逻辑版）。
+     */
+    fun isBoundToAnySwipe(action: Constants.Action, prefs: Prefs): Boolean =
+        isBoundToAnySwipe(action, DIRECTIONS.associateWith { actionFor(it, prefs) })
+
+    internal fun isBoundToAnySwipe(
+        action: Constants.Action,
+        actions: Map<BigmeEink.Direction, Constants.Action>
+    ): Boolean = DIRECTIONS.any { actions[it] == action }
+
+    /**
      * 反向长滑关闭方向；**只有该功能被用户显式绑定到某个滑动方向时才返回**。
      *
      * 返回 null 表示这个界面没有“打开方向”，因此也不存在“反向”，

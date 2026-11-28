@@ -332,6 +332,50 @@ Hub/Tray 的每页条数是**直接用容器高度算的**，于是 `itemsPerPag
 注意 `DEL` 只在**通知区**生效（默认区是分类页签，按 Del 删不动——踩过两次）；
 `DOWN×2` 才是进列表并让某条高亮。
 
+### 5.4 反向长滑探测器：未绑定的界面绝不能启动它（2026-11-28 事故与复现法）
+
+**事故**：B651 上「一进设置就永久卡死」。看门狗取到的栈（模拟器 debug 包，符号完整）：
+
+```
+LongSwipeCloseKt$closeOnReverseLongSwipe$1$1$1.invokeSuspend(LongSwipeClose.kt:62)
+ForEachGestureKt$awaitEachGesture$2.invokeSuspend(ForEachGesture.kt:102)
+```
+
+**机制**：`2c113c0` 把 `closeDirection` 的 null 早退从 `awaitEachGesture` **外面**挪到**里面**。
+`return@awaitEachGesture` 不终止 `awaitEachGesture` —— 它会对同一个活动手势**立刻重跑这个块**。
+于是设置页（没有绑定反向长滑关闭）也开始跑指针循环，一旦触摸流给出「永不抬手」的幻影指针，
+每轮只做一次快照读取就重新进入，主线程 92% 单核、90 秒以上不退出，输入 ANR 永不恢复。
+`GestureBindings.closeDirectionOrNull` 的注释本来就写明契约：**未绑定就不得启用退出探测**。
+
+**现在的规则**（`GestureBindings.isBoundToAnySwipe` + `LongSwipeClose`）：
+
+- 闸门只看**偏好**（四个滑动方向有没有绑到这个功能），不看「最近滑动方向」——后者每滑一次都可能变，不能当闸门，也不能当 `pointerInput` 的 key（那会让探测器在手势中途重建、丢掉前半段位移）。
+- 未绑定 ⇒ `return@pointerInput`，循环一次都不跑。
+- 已绑定 ⇒ 方向每轮现读；那一刻取不到方向只是本轮不判定，循环照常走到抬手为止（**不许用 `return@awaitEachGesture` 当早退**）。
+
+**可复现环境（以后改手势必须跑）**：
+
+```powershell
+# 模拟器：注入「永不抬手」的指针 = 幻影指针
+adb -s emulator-5554 shell am start -n app.binkos.debug/...MainActivity --es dest settings
+adb -s emulator-5554 shell input motionevent DOWN 412 900   # 故意不发 UP
+adb -s emulator-5554 shell input motionevent UP 412 900     # 或补上，两种都要试
+# 判据：主线程 utime 增量（100 ticks = 1 秒 CPU）
+adb -s emulator-5554 shell "cut -d' ' -f14 /proc/<pid>/task/<pid>/stat"
+# 正常：10 秒 < 50 ticks；自转：10 秒 ~900 ticks 且永不回落
+# 同时看 logcat -s MainThreadWatchdog：自转时会连续报 MAIN THREAD STALLED 且时长单调递增
+```
+
+**功能回归（别把闸门修成把功能关掉）**：把「向左滑」绑成打开设置后——
+
+| 动作 | 期望 |
+|---|---|
+| 进设置，在列表空白处**向右**快速长滑 | 退出设置回主页 |
+| 进设置，**向左**（同向）长滑 | 仍停在设置 |
+| 空白处注入 DOWN+UP | 10 秒 ticks 接近 0、看门狗不报 |
+
+注意手势起点要选**空白区域**（如 y=1500）；打在列表行上会被当成点击而跳进子页，测不出东西。
+
 ## 6. 构建与离线回归
 
 ```powershell
