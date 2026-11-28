@@ -779,9 +779,9 @@ class AppsFragment : Fragment() {
                                         // onAppClick(index) 那条日志一次都没打 —— 也就是 Compose 的
                                         // 「焦点节点 + Enter = performClick」抢在了抽屉的键盘选中逻辑前面。
                                         // 这条日志用来分辨：键根本没到这里 / 到了但返回 false / 消费了却激活错行。
-                                        Log.d(
+                                        if (BuildConfig.DEBUG) Log.d(
                                             "AppDrawerKey",
-                                            "enter key=${keyEvent.key} type=${keyEvent.type} repeat=${keyEvent.nativeKeyEvent.repeatCount} " +
+                                            "enter kc=${keyEvent.nativeKeyEvent.keyCode} type=${keyEvent.type} repeat=${keyEvent.nativeKeyEvent.repeatCount} " +
                                                 "dpadMode=${state.isDpadMode} sel=${state.selectedItemIndex} " +
                                                 "az=${state.azFilterFocused} search=${state.searchFocused}"
                                         )
@@ -800,7 +800,7 @@ class AppsFragment : Fragment() {
                                             onPreviousPage = { previousPage() },
                                             onNextPage = { nextPage() },
                                             onAppClick = { index ->
-                                                Log.d(
+                                                if (BuildConfig.DEBUG) Log.d(
                                                     "AppDrawerActivate",
                                                     "keyboard index=$index size=${displayApps.size} " +
                                                         "label=${displayApps.getOrNull(index)?.label} " +
@@ -1013,7 +1013,14 @@ class AppsFragment : Fragment() {
                                                 }
                                             } } else null
                                         )
-                                        Log.d("AppDrawerKey", "handleAppsKeyEvent handled=$handled key=${keyEvent.key}")
+                                        if (BuildConfig.DEBUG) {
+                                            // 打数字 keycode：${keyEvent.key} 是 Compose 的 Key 内部值
+                                            // （keyCode shl 32），读出来是 253403070464 这种，不可用
+                                            Log.d(
+                                                "AppDrawerKey",
+                                                "handleAppsKeyEvent handled=$handled kc=${keyEvent.nativeKeyEvent.keyCode}"
+                                            )
+                                        }
                                         if (handled) return@onPreviewKeyEvent true
                                     } catch (_: Exception) {}
                                     
@@ -1368,7 +1375,7 @@ class AppsFragment : Fragment() {
         // START {act=MAIN cat=LAUNCHER flg=0x10200000 cmp=app.binkos/MainActivity}
         // from uid=我们自己 —— 那是「启动桌面本身」，等于回主页，
         // 而 AppsRepository 的合成入口日志没出现，说明被激活那条 shortcutId 为 null。
-        Log.d(
+        if (BuildConfig.DEBUG) Log.d(
             "AppDrawerActivate",
             "label=${app.label} pkg=${app.activityPackage} shortcut=${app.shortcutId} " +
                 "isShortcut=${app.isShortcut} flag=$flag"

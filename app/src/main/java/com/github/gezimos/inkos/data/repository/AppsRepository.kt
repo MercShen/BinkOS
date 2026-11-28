@@ -409,7 +409,7 @@ class AppsRepository(application: Application) {
                     val before = filteredApps.size
                     filteredApps.removeAll { it.activityPackage == appContext.packageName && it.shortcutId == null }
                     val removed = before - filteredApps.size
-                    if (removed > 0) {
+                    if (removed > 0 && BuildConfig.DEBUG) {
                         Log.d("AppsRepository", "dropped $removed launcher self-entr(y/ies) from the app list")
                     }
                 }
