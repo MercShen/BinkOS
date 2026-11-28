@@ -376,6 +376,19 @@ adb -s emulator-5554 shell "cut -d' ' -f14 /proc/<pid>/task/<pid>/stat"
 
 注意手势起点要选**空白区域**（如 y=1500）；打在列表行上会被当成点击而跳进子页，测不出东西。
 
+**写 `awaitEachGesture` 块的硬规则（这次事故的真正形状）**：块里的**任何早退都必须发生在至少一次 await 之后**。
+`awaitEachGesture` 的语义是"块返回后若手势未结束就继续跑这个块"，所以一个从未 await 过任何东西的块
+= 没有任何挂起点的忙循环。仓库里三处 `awaitEachGesture` 对照：
+
+| 位置 | 块首条语句 | 结论 |
+|---|---|---|
+| `AxisSwipeGestures.kt:109` | `awaitFirstDown(...)` | 安全 |
+| `GestureHelper.kt:599` | `awaitFirstDown(...)` | 安全 |
+| `LongSwipeClose.kt`（2c113c0 版） | `currentCloseDirection.value ?: return@awaitEachGesture` | **忙循环**，就是本次事故 |
+
+新增第四处时，先确认块的第一条语句是 await；否则就把早退提到 `pointerInput` 块层级（`return@pointerInput`），
+像现在的修法一样。
+
 ## 6. 构建与离线回归
 
 ```powershell
