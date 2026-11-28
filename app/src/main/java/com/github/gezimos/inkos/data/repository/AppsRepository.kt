@@ -403,6 +403,17 @@ class AppsRepository(application: Application) {
                     filteredApps.addAll(visiblePinnedShortcuts)
                 }
                 
+                // 抽屉/搜索里不列出「桌面自己」这个启动条目（必须在算 A-Z 之前剔除，
+                // 否则某个字母会因为唯一一条被删掉而点开是空结果）。
+                run {
+                    val before = filteredApps.size
+                    filteredApps.removeAll { it.activityPackage == appContext.packageName && it.shortcutId == null }
+                    val removed = before - filteredApps.size
+                    if (removed > 0) {
+                        Log.d("AppsRepository", "dropped $removed launcher self-entr(y/ies) from the app list")
+                    }
+                }
+
                 val privateSpaceUser = cachedPrivateSpaceUser
                 val isUnlocked = privateSpaceUser != null && !profileManager.isPrivateSpaceLocked()
                 _hasPrivateSpace.value = isUnlocked

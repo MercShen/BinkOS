@@ -1,5 +1,6 @@
 package com.github.gezimos.inkos.ui
 
+import android.util.Log
 import android.content.Intent
 import android.os.Bundle
 import android.os.Vibrator
@@ -771,6 +772,19 @@ class AppsFragment : Fragment() {
                                     }
 
                                     try {
+                                        // 键盘诊断（长期保留，定位完成后降级为 BuildConfig.DEBUG 才输出）：
+                                        // 报告 ENTER 这类键**有没有**进到抽屉自己的处理器、以及处理器
+                                        // 是否消费了它。BinkOS 报告「抽屉里选中 Bink OS 设置按回车跳回主页」，
+                                        // 实测被激活的是「Bink OS」普通条目（shortcut=null），而
+                                        // onAppClick(index) 那条日志一次都没打 —— 也就是 Compose 的
+                                        // 「焦点节点 + Enter = performClick」抢在了抽屉的键盘选中逻辑前面。
+                                        // 这条日志用来分辨：键根本没到这里 / 到了但返回 false / 消费了却激活错行。
+                                        Log.d(
+                                            "AppDrawerKey",
+                                            "enter key=${keyEvent.key} type=${keyEvent.type} repeat=${keyEvent.nativeKeyEvent.repeatCount} " +
+                                                "dpadMode=${state.isDpadMode} sel=${state.selectedItemIndex} " +
+                                                "az=${state.azFilterFocused} search=${state.searchFocused}"
+                                        )
                                         val handled = NavHelper.handleAppsKeyEvent(
                                             keyEvent = keyEvent,
                                             keyPressTracker = keyPressTracker,
@@ -786,6 +800,12 @@ class AppsFragment : Fragment() {
                                             onPreviousPage = { previousPage() },
                                             onNextPage = { nextPage() },
                                             onAppClick = { index ->
+                                                Log.d(
+                                                    "AppDrawerActivate",
+                                                    "keyboard index=$index size=${displayApps.size} " +
+                                                        "label=${displayApps.getOrNull(index)?.label} " +
+                                                        "list=" + displayApps.joinToString(";") { "${it.label}[${it.activityPackage}]" }
+                                                )
                                                 val selectedApp = displayApps.getOrNull(index)
                                                 if (selectedApp != null) {
                                                     handleAppClick(selectedApp)
@@ -993,6 +1013,7 @@ class AppsFragment : Fragment() {
                                                 }
                                             } } else null
                                         )
+                                        Log.d("AppDrawerKey", "handleAppsKeyEvent handled=$handled key=${keyEvent.key}")
                                         if (handled) return@onPreviewKeyEvent true
                                     } catch (_: Exception) {}
                                     
@@ -1339,6 +1360,19 @@ class AppsFragment : Fragment() {
 
     private fun handleAppClick(app: AppListItem) {
         if (flag == Constants.AppDrawerFlag.EditFavorites || flag == Constants.AppDrawerFlag.EditHiddenApps) return
+
+        // 诊断日志：报告「被激活的到底是哪一条」。触摸和键盘都汇聚到这里，但键盘路径
+        // 是 `displayApps.getOrNull(state.selectedItemIndex)` 取出来的，所以这条日志能
+        // 直接分辨「索引取错行」还是「导航本身失败」。
+        // 报告的现象：抽屉里选中 Bink OS 设置按回车 → 跳回主页。日志显示
+        // START {act=MAIN cat=LAUNCHER flg=0x10200000 cmp=app.binkos/MainActivity}
+        // from uid=我们自己 —— 那是「启动桌面本身」，等于回主页，
+        // 而 AppsRepository 的合成入口日志没出现，说明被激活那条 shortcutId 为 null。
+        Log.d(
+            "AppDrawerActivate",
+            "label=${app.label} pkg=${app.activityPackage} shortcut=${app.shortcutId} " +
+                "isShortcut=${app.isShortcut} flag=$flag"
+        )
 
         // Record launch for frequency boosting
         if (currentSearchQuery.isNotBlank()) {
